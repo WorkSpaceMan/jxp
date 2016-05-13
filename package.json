@@ -1,0 +1,25 @@
+{
+  "name": "jexpress",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "start": "node bin/server.js"
+  },
+  "dependencies": {
+    "bcrypt": "*",
+    "jsonwebtoken": "*",
+    "mongoose": "*",
+    "mongoose-friendly": "*",
+    "nodemailer": "*",
+    "nodemailer-smtp-transport": "*",
+    "q": "*",
+    "querystring": "*",
+    "rand-token": "*",
+    "restify": "*",
+    "restler-q": "*",
+    "underscore": "*"
+  },
+  "devDependencies": {
+    "should": "*"
+  }
+}
