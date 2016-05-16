@@ -113,7 +113,6 @@ var Security = {
 					}
 					req.user = user;
 					req.apikey = apikey.apikey;
-					var Groups = require("../models/usergroups_model.js");
 					Groups.findOne({ user_id: user._id }, function(err, userGroup) {
 						if (err) {
 							return fail(res, 500, err);
