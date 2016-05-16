@@ -263,6 +263,29 @@ Add the groups `test1` and `test2`
 curl -X PUT -F "group[0]=test0" -F "group[1]=test1" "http://localhost:3001/groups/5485bd62fbad8791660d2658"
 ```
 
+###Adding custom permission logic
+
+Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch 
+the user object in your model as a virtual attribute. (I suppose you could use a real Mixed attribute too.)
+
+Eg.
+
+```js
+var sender;
+
+LedgerSchema.virtual("__user").set(function(usr) {
+    sender = usr;
+});
+```
+
+And then later, say in your pre- or post-save...
+
+```js
+(!sender.admin)) {
+    return next(new Error( "Verboten!"));
+}
+```
+
 ## API
 
 The API lets us read, create, update and delete items. Generally, our `endpoint` (API-speak for URL) decides which collection or item we're referring to, and the HTTP `verb` describes whether we want to read (GET), create (POST), update (PUT) or delete (DELETE). Strict RESTful APIs also have PATCH and OPTIONS. JExpress doesn't. A PUT is a PATCH. Deal with it.
