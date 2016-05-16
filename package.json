@@ -1,25 +1,41 @@
 {
   "name": "jexpress",
+  "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
   "version": "0.2.0",
-  "private": true,
+  "private": false,
+  "main": "libs/jexpress.js",
   "scripts": {
     "start": "node bin/server.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/j-norwood-young/jexpress-2.git"
+  },
+  "keywords": [
+    "api",
+    "mongoose"
+  ],
+  "author": "Jason Norwood-Young <jason@10layer.com> (https://github.com/j-norwood-young/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/j-norwood-young/jexpress-2/issues"
+  },
   "dependencies": {
-    "bcrypt": "*",
-    "jsonwebtoken": "*",
-    "mongoose": "*",
-    "mongoose-friendly": "*",
-    "nodemailer": "*",
-    "nodemailer-smtp-transport": "*",
-    "q": "*",
-    "querystring": "*",
-    "rand-token": "*",
-    "restify": "*",
-    "restler-q": "*",
-    "underscore": "*"
+    "bcrypt": "^0.8.6",
+    "jsonwebtoken": "^6.2.0",
+    "mongoose": "^4.4.16",
+    "mongoose-friendly": "^0.1.4",
+    "nodemailer": "^2.4.1",
+    "nodemailer-smtp-transport": "^2.5.0",
+    "path": "^0.12.7",
+    "q": "^2.0.3",
+    "querystring": "^0.2.0",
+    "rand-token": "^0.2.1",
+    "restify": "^4.0.4",
+    "restler-q": "^0.1.1",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
-    "should": "*"
+    "should": "^8.3.1"
   }
 }
