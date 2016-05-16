@@ -1,6 +1,7 @@
 var restify = require("restify");
 var mongoose = require("mongoose");
 var Q = require("q");
+var path = require("path");
 var security = require("../libs/security");
 var datamunging = require("../libs/datamunging");
 var login = require("../libs/login");
@@ -13,7 +14,7 @@ var middlewareModel = function(req, res, next) {
 	req.modelname = modelname;
 	console.log("Model", modelname);
 	try {
-		req.Model = require('../models/' + modelname + "_model");
+		req.Model = require(path.join(req.config.model_dir, modelname + "_model"));
 		return next();
 	} catch(err) {
 		console.error(err);
@@ -32,7 +33,6 @@ var middlewarePasswords = function(req, res, next) {
 // Actions (verbs)
 var actionGet = function(req, res) {
 	console.time("GET " + req.modelname);
-	
 	var parseSearch = function(search) {
 		var result = {};
 		for(var i in search) {
@@ -508,6 +508,8 @@ var JExpress = function(options) {
 	var server = restify.createServer();
 	//Set up config with default
 	var config = {
+
+		model_dir: path.join(path.dirname(process.argv[1]), '../models'),
 		mongo: {
 			server: "localhost",
 			db: "openmembers",
@@ -529,9 +531,9 @@ var JExpress = function(options) {
 
 	//DB connection
 	mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
-	    if (err) {
-	        console.log("Connection error", err);
-	    }
+		if (err) {
+			console.log("Connection error", err);
+		}
 	}, { db: { safe:true } }); // connect to our database
 
 	// Set up our API server
