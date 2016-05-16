@@ -188,11 +188,9 @@ And then later, say in your pre- or post-save...
 ```
 */
 
+var mongoose = require("mongoose");
 var JExpress = require("../libs/jexpress");
-var User = require('../models/user_model');
-var APIKey = require('../models/apikey_model');
 var config = require('../config');
-var security = require("../libs/security");
 
 config.callbacks = {
 	post: function(modelname, item, user) {
@@ -205,6 +203,15 @@ config.callbacks = {
 		console.log("Delete callback");
 	}
 };
+
+config.mongo = config.mongo || { server: "localhost", db: "openmembers" };
+
+//DB connection
+mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
+	if (err) {
+		console.log("Connection error", err);
+	}
+}, { db: { safe:true } }); // connect to our database
 
 var server = new JExpress(config);
 
