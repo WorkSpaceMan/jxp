@@ -184,7 +184,7 @@ var actionPut = function(req, res) {
 				res.send(500, err.toString());
 			} else {
 				if (item) {
-					_populateItem(item, datamunging.deserialize(req.body));
+					_populateItem(item, datamunging.deserialize(req.params));
 					_versionItem(item);
 					try {
 						if (req.user) {
@@ -485,15 +485,15 @@ var _versionItem = function(item) {
 };
 
 var _fixArrays = function(req, res, next) {
-	if (req.body) {
-		for(var i in req.body) {
+	if (req.params) {
+		for(var i in req.params) {
 			if (i.search(/\[\d+\]/) > -1) {
 				var parts = i.match(/(^[A-Za-z]+)(\[)/);
 				var el = parts[1];
-				if (!req.body[el]) {
-					req.body[el] = [];
+				if (!req.params[el]) {
+					req.params[el] = [];
 				}
-				req.body[el].push(req.body[i]);
+				req.params[el].push(req.params[i]);
 			}
 		}
 	}
