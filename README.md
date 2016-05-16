@@ -263,7 +263,7 @@ Add the groups `test1` and `test2`
 curl -X PUT -F "group[0]=test0" -F "group[1]=test1" "http://localhost:3001/groups/5485bd62fbad8791660d2658"
 ```
 
-###Adding custom permission logic
+### Adding custom permission logic
 
 Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch 
 the user object in your model as a virtual attribute. (I suppose you could use a real Mixed attribute too.)
@@ -296,6 +296,34 @@ We can either GET an entire collection, or an individual item. For an entire col
 
 For an individual item, we just add the `_id` to the endpoint, as in `/api/{modelname}/{_id}`. Eg. GET `/api/test/5731a48b7571ff6248bd6d9c`.
 
+***Note that getting a single item returns just the item, without any meta data. This isn't great, but it's legacy.***
+
+### Populating
+
+This is one of the most useful features of this API. You can automatically populate the results with linked objects. 
+
+To autopopulate all the fields, use the parameter `autopopulate=1`
+
+To populate just one field, use `populate=field`
+
+### Limiting results
+
+Add the parameter `limit=x` to limit the results by x. You'll see the results now include a page count and a link to the next page. You can then use `page=x` to page through the results.
+
+### Filtering
+
+Use `filter[fieldname]=blah` to filter. 
+
+You can also filter for greater than, less than, greater than or equals and less than or equals for stuff like dates and numbers.
+
+`filter[start_date]=gte:12345678` (Pro tip: use Unix time to filter on dates.)
+
+### Searching
+
+This works like filtering, but it's a case-insensitive search:
+
+`search[email]=jason`
+
 ### POST
 
 POST always saves a new item, so the endpoint is always `/api/{modelname}`. For instance, POST `/api/test` would create a new test item.
@@ -307,3 +335,13 @@ PUT updates an existing item, so the endpoint needs to include the _id, as in `/
 ### DELETE
 
 As with PUT, we need to reference a specific item, so the endpoint needs to include the _id, as in `/api/{modelname}/{_id}`. Eg. DELETE `/api/test/5731a48b7571ff6248bd6d9c`.
+
+### An important note about Passwords
+
+You should note that if you send through anything called "password", it will automagically encrypt using bcrypt, unless you send the parameter `password_override=1`.
+
+### Reflection/navel gazing
+
+The endpoint `/model` shows us all available models.
+
+The endpoint `/model/modelname` gives us a description of a model. 
