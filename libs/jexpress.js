@@ -7,6 +7,9 @@ var datamunging = require("../libs/datamunging");
 var login = require("../libs/login");
 var groups = require("../libs/groups");
 var querystring = require('querystring');
+var fs = require("fs");
+
+var models = {};
 
 // Middleware
 var middlewareModel = function(req, res, next) {
@@ -14,7 +17,7 @@ var middlewareModel = function(req, res, next) {
 	req.modelname = modelname;
 	console.log("Model", modelname);
 	try {
-		req.Model = require(path.join(req.config.model_dir, modelname + "_model"));
+		req.Model = models[modelname];
 		return next();
 	} catch(err) {
 		console.error(err);
@@ -535,6 +538,20 @@ var JExpress = function(options) {
 			console.log("Connection error", err);
 		}
 	}, { db: { safe:true } }); // connect to our database
+
+	// Pre-load models
+	console.log("Getting models", config.model_dir);
+	fs.readdir(config.model_dir, (err, data) => {
+		if (err) throw err;
+		modelnames = data.filter(function(fname) {
+			return fname.indexOf("_model.js") !== -1;
+		});
+		modelnames.forEach(function(fname) {
+			var modelname = fname.replace("_model.js", "");
+			console.log(modelname);
+			models[modelname] = require(path.join(config.model_dir, fname));
+		});
+	});
 
 	// Set up our API server
 	server.use(
