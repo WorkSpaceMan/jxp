@@ -1,4 +1,9 @@
-var Groups = require("../models/usergroups_model.js");
+var Groups = null;
+
+var init = function(config) {
+	var path = require("path");
+	Groups = require(path.join(config.model_dir, 'usergroups_model'));
+};
 
 var actionPut = function(req, res, next) {
 	var user_id = req.params.user_id;
@@ -118,6 +123,7 @@ var actionDelete = function(req, res, next) {
 };
 
 module.exports = {
+	init: init,
 	actionPut: actionPut,
 	actionPost: actionPost,
 	actionGet: actionGet,

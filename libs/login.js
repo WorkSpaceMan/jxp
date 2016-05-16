@@ -9,6 +9,7 @@ var init = function(config) {
 	var path = require("path");
 	APIKey = require(path.join(config.model_dir, 'apikey_model'));
 	User = require(path.join(config.model_dir, 'user_model'));
+	security.init(config);
 };
 
 function recover(req, res, next) {
