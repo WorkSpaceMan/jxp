@@ -596,7 +596,6 @@ var JExpress = function(options) {
 
 	/* Login and authentication */
 	server.post("/login/recover", login.recover);
-	server.post("/login/reset", login.reset);
 	server.post("/login/getjwt", security.apiKeyAuth, login.getJWT);
 	server.get("/login/logout", login.logout);
 	server.post("/login/logout", login.logout);

@@ -71,10 +71,6 @@ function recover(req, res, next) {
 	});
 }
 
-function reset(req, res, next) { // Insecure - This is going to get deprecated
-	res.send(404, { status: "depricated", message: "This feature has been deprecated. Please use the JWT Token feature to reset passwords"});
-}
-
 function logout(req, res, next) {
 	var apikey = req.query.apikey || req.params.apikey;
 	APIKey.findOne({ apikey: apikey }, function(err, apikey) {
