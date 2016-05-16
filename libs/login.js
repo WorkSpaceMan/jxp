@@ -187,7 +187,6 @@ function login(req, res, next) {
 		res.send(404, { status: "fail", message: "Missing email or password parameters" });
 		return;
 	}
-	console.log(email, password);
 	User.findOne({ email: email }, function(err, user) {
 		if (err) {
 			console.error(err);
