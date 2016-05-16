@@ -553,6 +553,9 @@ var JExpress = function(options) {
 		});
 	});
 
+	security.init(config);
+	login.init(config);
+
 	// Set up our API server
 	server.use(
 		function crossOrigin(req,res,next){

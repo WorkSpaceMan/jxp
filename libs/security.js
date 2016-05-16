@@ -1,8 +1,15 @@
 var Q = require("q");
 var bcrypt = require('bcrypt');
-var APIKey = require('../models/apikey_model');
-var Groups = require("../models/usergroups_model.js");
-var User = require('../models/user_model');
+var APIKey = null;
+var Groups = null;
+var User = null;
+
+var init = function(config) {
+	var path = require("path");
+	APIKey = require(path.join(config.model_dir, 'apikey_model'));
+	Groups = require(path.join(config.model_dir, "usergroups_model.js"));
+	User = require(path.join(config.model_dir, 'user_model'));
+};
 
 var basicAuth = function(req) {
 	if (!req.headers.authorization) {
@@ -22,6 +29,7 @@ var fail = function(res, code, message) {
 };
 
 var Security = {
+	init: init,
 	basicAuth: basicAuth,
 	encPassword: function(password) {
 		hash = bcrypt.hashSync(password, 4);

@@ -2,8 +2,14 @@ var rest = require("restler-q");
 var jwt = require("jsonwebtoken");
 var bcrypt = require('bcrypt');
 var security = require("../libs/security");
-var User = require('../models/user_model');
-var APIKey = require('../models/apikey_model');
+var User = null;
+var APIKey = null;
+
+var init = function(config) {
+	var path = require("path");
+	APIKey = require(path.join(config.model_dir, 'apikey_model'));
+	User = require(path.join(config.model_dir, 'user_model'));
+};
 
 function recover(req, res, next) {
 	var email = req.params.email;
@@ -253,6 +259,7 @@ function getJWT(req, res, next) {
 }
 
 var Login = {
+	init: init,
 	recover: recover,
 	reset: reset,
 	logout: logout,
