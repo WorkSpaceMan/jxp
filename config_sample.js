@@ -5,7 +5,6 @@ module.exports = {
 		server: "{mongo_server}",
 		db: "{mongo_db}",
 	},
-	model_dir: "./models",
 	shared_secret: "{shared_secret}", // We use this to encrypt our JWT token, so it should be shared with our front-end site
 	smtp_server: "mail.myserver.com",
 	smtp_username: "me@myserver.com",
