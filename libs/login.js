@@ -258,7 +258,6 @@ function getJWT(req, res, next) {
 var Login = {
 	init: init,
 	recover: recover,
-	reset: reset,
 	logout: logout,
 	oauth: oauth,
 	oauth_callback: oauth_callback,
