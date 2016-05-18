@@ -7,6 +7,9 @@
   "scripts": {
     "start": "node bin/server.js"
   },
+  "bin": {
+    "jexpress-setup": "bin/setup.js"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/j-norwood-young/jexpress-2.git"
@@ -36,6 +39,9 @@
     "underscore": "^1.8.3"
   },
   "devDependencies": {
+    "commander": "^2.9.0",
+    "mkdirp": "^0.5.1",
+    "readline-sync": "^1.4.2",
     "should": "^8.3.1"
   }
 }
