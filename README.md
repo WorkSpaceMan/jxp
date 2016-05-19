@@ -6,7 +6,7 @@ It was initially built on Express and Mongoose (hence the name), but now it uses
 
 ## Quick Start
 
-    npm install -g j-norwood-young/jexpress
+    npm install -g j-norwood-young/jexpress-2
     mkdir my-app
     cd my-app
     jexpress-setup
