@@ -6,108 +6,12 @@ It was initially built on Express and Mongoose (hence the name), but now it uses
 
 ## Installing
 
-    npm install jexpress
-
-## Building a server
-
-### ./bin/server.js
-
-```js
-var mongoose = require("mongoose");
-var JExpress = require("jexpress");
-var config = require('../config'); // See the config sample
-
-/*
- * We can customise the callbacks for sending to a websocket, message queue or logging
- */
-
-config.callbacks = {
-    post: function(modelname, item, user) {
-        console.log("Post callback");
-    },
-    put: function(modelname, item, user) {
-        console.log("Put callback");
-    },
-    delete: function(modelname, item, user, opts) {
-        console.log("Delete callback");
-    }
-};
-
-/*
- * We establish our database connection
- */
-config.mongo = config.mongo || { server: "localhost", db: "openmembers" };
-
-mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
-    if (err) {
-        console.error("Connection error", err);
-        throw(err);
-    }
-}, { db: { safe:true } }); // connect to our database
-
-/*
- * Start your engines!
- */
-var server = new JExpress(config);
-server.listen(config.port || 4001, function() {
-    console.log('%s listening at %s', server.name, server.url);
-});
-```
-
-### ./config.js
-
-```js
-module.exports = {
-    port: "3001",
-    url: "http://localhost:3001",
-    mongo: {
-        server: "localhost",
-        db: "openmembers",
-    },
-    model_dir: "./models",
-    smtp_server: "mail.myserver.com",
-    smtp_username: "me@myserver.com",
-    smtp_password: "MyPassword",
-    password_recovery_url: 'http://localhost:3000/login/reset',
-    shared_secret: "DontTell", // We use this to encrypt our JWT token, so it should be shared with our front-end site
-    oauth: {
-        success_uri: "http://localhost:3000/login/oauth",
-        fail_uri: "http://localhost:3000/login/oauth/fail",
-        facebook: {
-            app_id: "12345",
-            app_secret: "abcd123",
-            scope: "email,user_about_me,user_friends",
-            auth_uri: "https://www.facebook.com/dialog/oauth",
-            token_uri: "https://graph.facebook.com/v2.3/oauth/access_token",
-            api_uri: "https://graph.facebook.com/me?fields=id,name,about,age_range,bio,email,picture",
-        },
-        twitter: {
-            app_id: "12345",
-            app_secret: "abcd123",
-            auth_uri: "https://api.twitter.com/oauth/authenticate",
-            api_uri: "https://api.twitter.com/1.1/",
-            token_uri: "https://api.twitter.com/oauth2/token"
-        },
-        google: {
-            app_id: "12345",
-            app_secret: "abcd123",
-            auth_uri: "https://accounts.google.com/o/oauth2/auth",
-            scope: "email+profile",
-            api_uri: "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
-            token_uri: "https://www.googleapis.com/oauth2/v3/token"
-        },
-        linkedin: {
-            app_id: "12345",
-            app_secret: "abcd123",
-            auth_uri: "https://www.linkedin.com/uas/oauth2/authorization",
-            scope: "r_basicprofile%20r_emailaddress",
-            api_uri: "https://api.linkedin.com/v1/people/~:(id,num-connections,picture-url,email-address)?format=json",
-            token_uri: "https://www.linkedin.com/uas/oauth2/accessToken",
-            email_field: "emailAddress"
-        }
-    }
-};
-```
+    npm install -g j-norwood-young/jexpress
+    mkdir my-app
+    cd my-app
+    jexpress-setup
+    jexpress-add-admin
+    npm start
 
 ## Models
 
