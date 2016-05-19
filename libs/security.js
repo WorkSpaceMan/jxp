@@ -147,14 +147,14 @@ var Security = {
 		} else if (req.method == "DELETE") {
 			method = "d";
 		} else {
-			req.console.error("Unsupported operation", req.method);
+			console.error("Unsupported operation", req.method);
 			return fail(res, 500, "Unsupported operation: " + req.method);
 		}
 		req.authorized = false;
 		console.log("perms", perms.admin);
 		//If no perms are set, then this isn't an available model
 		if (!perms.admin) {
-			req.console.error("Model not available");
+			console.error("Model not available");
 			return fail(res, 500, "Model not available");
 		}
 		//First check if "all" is able to do this. If so, let's get on with it.
@@ -197,7 +197,7 @@ var Security = {
 			var owner_id = false;
 			req.Model.findById(req.params.item_id, function(err, item) {
 				if (err) {
-					req.console.error(err);
+					console.error(err);
 					return fail(res, 500, err);
 				}
 				if ((item) && (item._owner_id) && (item._owner_id.toString() == req.user._id.toString()) && ((perms.owner) && (perms.owner.indexOf(method) !== -1))) {
@@ -206,7 +206,7 @@ var Security = {
 						next();
 						return;
 				} else {
-					req.console.error("All authorizations failed");
+					console.error("All authorizations failed");
 					if(!req.authorized) {
 						return fail(res, 403, "Authorization failed");
 					}
