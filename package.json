@@ -8,7 +8,8 @@
     "start": "node bin/server.js"
   },
   "bin": {
-    "jexpress-setup": "bin/setup.js"
+    "jexpress-setup": "bin/setup.js",
+    "jexpress-add-admin": "bin/init_db.js"
   },
   "repository": {
     "type": "git",
