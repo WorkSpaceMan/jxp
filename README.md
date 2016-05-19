@@ -4,7 +4,7 @@ JExpress is an opinionated RESTful API framework that lets you make an API just 
 
 It was initially built on Express and Mongoose (hence the name), but now it uses Restify.
 
-## Installing
+## Quick Start
 
     npm install -g j-norwood-young/jexpress
     mkdir my-app
