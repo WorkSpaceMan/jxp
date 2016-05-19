@@ -33,6 +33,14 @@ var middlewarePasswords = function(req, res, next) {
 	next();
 };
 
+var middlewareCheckAdmin = function(req, res, next) {
+	//We don't want users to pump up their own permissions
+	if (req.modelname !== "user") return next();
+	if (req.user.admin) return next();
+	req.params.admin = false;
+	next();
+};
+
 // Actions (verbs)
 var actionGet = function(req, res) {
 	console.time("GET " + req.modelname);
@@ -181,6 +189,7 @@ var actionPut = function(req, res) {
 	try {
 		req.Model.findById(req.params.item_id, function(err, item) {
 			if (err) {
+				console.error(err);
 				res.send(500, err.toString());
 			} else {
 				if (item) {
@@ -201,9 +210,9 @@ var actionPut = function(req, res) {
 								console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
 							}
 						});
-					} catch(error) {
-						console.error(error);
-						res.send(500, error.toString());
+					} catch(err) {
+						console.error(err);
+						res.send(500, err.toString());
 						return;
 					}
 				} else {
@@ -535,7 +544,7 @@ var JExpress = function(options) {
 	//DB connection
 	mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
 		if (err) {
-			console.log("Connection error", err);
+			console.error("Connection error", err);
 		}
 	}, { db: { safe:true } }); // connect to our database
 
@@ -548,7 +557,7 @@ var JExpress = function(options) {
 		});
 		modelnames.forEach(function(fname) {
 			var modelname = fname.replace("_model.js", "");
-			console.log(modelname);
+			// console.log(modelname);
 			models[modelname] = require(path.join(config.model_dir, fname));
 		});
 	});
@@ -583,7 +592,7 @@ var JExpress = function(options) {
 	server.get('/api/:modelname', middlewareModel, security.auth, actionGet);
 	server.get('/api/:modelname/:item_id', middlewareModel, security.auth, actionGetOne);
 	server.post('/api/:modelname', middlewareModel, security.auth, middlewarePasswords, actionPost);
-	server.put('/api/:modelname/:item_id', middlewareModel, security.auth, middlewarePasswords, actionPut);
+	server.put('/api/:modelname/:item_id', middlewareModel, security.auth, middlewarePasswords, middlewareCheckAdmin, actionPut);
 	server.del('/api/:modelname/:item_id', middlewareModel, security.auth, actionDelete);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
