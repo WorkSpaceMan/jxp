@@ -41,6 +41,15 @@ var middlewareCheckAdmin = function(req, res, next) {
 	next();
 };
 
+// Just log the most NB user fields
+var filterLogUser = function(user) {
+	return {
+		_id: user._id,
+		email: user.email,
+		name: user.name
+	};
+}
+
 // Actions (verbs)
 var actionGet = function(req, res) {
 	console.time("GET " + req.modelname);
@@ -125,7 +134,7 @@ var actionGet = function(req, res) {
 					console.error(err);
 					res.send(500, err);
 				} else {
-					console.log({ action_id: 3, action: "Fetched documents", type: req.modelname, count: result.count, autopopulate: result.autopopulate, limit: result.limit, page: result.page, filters: filters, user: req.user });
+					console.log({ action_id: 3, action: "Fetched documents", type: req.modelname, count: result.count, autopopulate: result.autopopulate, limit: result.limit, page: result.page, filters: filters, user: filterLogUser(req.user) });
 					result.data = items;
 					res.send(result);
 					console.timeEnd("GET " + req.modelname);
@@ -170,7 +179,7 @@ var actionPost = function(req, res, next) {
 				res.send(500, err.toString());
 				return;
 			} else {
-				console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: req.user });
+				console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user) });
 				req.config.callbacks.post.call(null, req.modelname, result, req.user);
 				res.json({ status: "ok", message: req.modelname + " created", data: item });
 				console.timeEnd("POST " + req.modelname);
@@ -204,7 +213,7 @@ var actionPut = function(req, res) {
 								console.error(err);
 								res.send(500, err.toString());
 							} else {
-								console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: req.user });
+								console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user) });
 								req.config.callbacks.put.call(null, req.modelname, item, req.user);
 								res.json({ status: "ok", message: req.modelname + " updated", data: data });
 								console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
@@ -253,7 +262,7 @@ var actionDelete = function(req, res) {
 					console.error(err);
 					res.send(500, err.toString());
 				} else {
-					console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: req.user });
+					console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user) });
 					req.config.callbacks.delete.call(null, req.modelname, item, req.user, { soft: true });
 					res.json({ status: "ok", message: req.modelname + ' deleted' });
 				}
@@ -265,7 +274,7 @@ var actionDelete = function(req, res) {
 					console.error(err);
 					res.send(500, err.toString());
 				} else {
-					console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: req.user });
+					console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user) });
 					req.config.callbacks.delete.call(null, req.modelname, item, req.user, { soft: false });
 					res.json({ status: "ok", message: req.modelname + ' deleted' });
 				}
@@ -275,7 +284,7 @@ var actionDelete = function(req, res) {
 };
 
 var actionCall = function(req, res) {
-	console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: req.user });
+	console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
 	req.params.__user = req.user || null;
 	req.Model[req.params.method_name](req.params)
 	.then(function(result) {
@@ -300,7 +309,7 @@ var actionCallItem = function(req, res) {
 		req.params.__user = req.user || null;
 		req.Model[req.params.method_name](item)
 		.then(function(item) {
-			console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: req.user });
+			console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
 			res.json(item);
 		}, function(err) {
 			console.error(err);
@@ -331,7 +340,7 @@ var actionCallItem = function(req, res) {
 // 			res.status(500).send(err.toString());
 // 		} else {
 // 			// websocket.emit(modelname, { method: "post", _id: result._id });
-// 			console.log({ action_id: 8, action: "Batch insert", type: req.modelname, count: items.length, user: req.user });
+// 			console.log({ action_id: 8, action: "Batch insert", type: req.modelname, count: items.length, user: filterLogUser(req.user) });
 // 			res.send({ message: req.modelname + " created ", data: items.length });
 // 			console.timeEnd("BATCH " + req.modelname);
 // 			return;
