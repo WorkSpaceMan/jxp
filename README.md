@@ -90,6 +90,8 @@ TestSchema.statics.testItem = function(item, data) {
 };
 ```
 
+The static call will include the user's data as `data.__user`.
+
 ## Authentication
 
 ### API Key
