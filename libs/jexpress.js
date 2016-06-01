@@ -276,7 +276,7 @@ var actionDelete = function(req, res) {
 
 var actionCall = function(req, res) {
 	console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: req.user });
-	req.params.__user = req.user;
+	req.params.__user = req.user || null;
 	req.Model[req.params.method_name](req.params)
 	.then(function(result) {
 		res.json(result);
@@ -297,6 +297,7 @@ var actionCallItem = function(req, res) {
 			res.send(500, err);
 			return;
 		}
+		req.params.__user = req.user || null;
 		req.Model[req.params.method_name](item)
 		.then(function(item) {
 			console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: req.user });
