@@ -276,6 +276,7 @@ var actionDelete = function(req, res) {
 
 var actionCall = function(req, res) {
 	console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: req.user });
+	req.params.__user = req.user;
 	req.Model[req.params.method_name](req.params)
 	.then(function(result) {
 		res.json(result);
