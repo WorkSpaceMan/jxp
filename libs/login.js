@@ -140,13 +140,14 @@ function oauth_callback(req, res, next) {
 			res.redirect(req.config.oauth.fail_uri + "?error=missing_data&provider=" + provider, next);
 			return;
 		}
-		var key = provider + ".id";
 		var search = {};
 		search[provider + ".id"] = result.id;
+		console.log("Search", search);
 		return User.findOne(search);
 	})
 	.then(function(result) {
 		user = result;
+		console.log("User login", user);
 		if (!user) {
 			res.redirect(req.config.oauth.fail_uri + "?error=no_user&provider=" + provider, next);
 			return;
