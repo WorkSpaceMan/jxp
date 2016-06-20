@@ -43,7 +43,7 @@ var middlewareCheckAdmin = function(req, res, next) {
 
 // Just log the most NB user fields
 var filterLogUser = function(user) {
-	if (user._id) {
+	if (user && user._id) {
 		return {
 			_id: user._id,
 			email: user.email,
