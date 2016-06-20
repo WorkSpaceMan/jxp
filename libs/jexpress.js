@@ -43,11 +43,14 @@ var middlewareCheckAdmin = function(req, res, next) {
 
 // Just log the most NB user fields
 var filterLogUser = function(user) {
-	return {
-		_id: user._id,
-		email: user.email,
-		name: user.name
-	};
+	if (user._id) {
+		return {
+			_id: user._id,
+			email: user.email,
+			name: user.name
+		};
+	}
+	return null;
 }
 
 // Actions (verbs)
