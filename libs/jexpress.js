@@ -367,7 +367,7 @@ var metaModels = function(req, res, next) {
 		files.forEach(function(file) {
 			var modelname = path.basename(file, ".js").replace("_model", "");
 			try {
-				var modelobj = require("../models/" + file);
+				var modelobj = require(model_dir + "/" + file);
 				if (modelobj.schema && modelobj.schema.get("_perms") && (modelobj.schema.get("_perms").admin || modelobj.schema.get("_perms").user || modelobj.schema.get("_perms").owner || modelobj.schema.get("_perms").all)) {
 					var model = {
 						model: modelname,
