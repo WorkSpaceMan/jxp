@@ -51,7 +51,7 @@ var filterLogUser = function(user) {
 		};
 	}
 	return null;
-}
+};
 
 // Actions (verbs)
 var actionGet = function(req, res) {
@@ -411,9 +411,14 @@ var getOne = function(Model, item_id, params) {
 			// res.send(500, err);
 			return;
 		} else {
-			if (!item || item._deleted) {
+			if (!item) {
 				console.error("Could not find document");
 				deferred.reject({ code: 404, msg: "Could not find document" });
+				return;
+			}
+			if (item._deleted && !(params.showDeleted)) {
+				console.error("Document is deleted");
+				deferred.reject({ code: 404, msg: "Document is deleted" });
 				return;
 			}
 			//Don't ever return passwords
