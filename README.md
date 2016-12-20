@@ -251,3 +251,26 @@ You should note that if you send through anything called "password", it will aut
 The endpoint `/model` shows us all available models.
 
 The endpoint `/model/modelname` gives us a description of a model. 
+
+### Callbacks
+
+You can code callbacks by passing them as a config.
+
+```
+config.callbacks = {
+    post: function(modelname, item, user) {
+        websocket.emit(modelname, { method: "post", _id: item._id });
+        messagequeue.action(modelname, "post", trimuser(user), item);
+    },
+    put: function(modelname, item, user) {
+        websocket.emit(modelname, { method: "put", _id: item._id });
+        messagequeue.action(modelname, "put", trimuser(user), item);
+    },
+    delete: function(modelname, item, user, opts) {
+        websocket.emit(modelname, { method: "delete", _id: item._id });
+        messagequeue.action(modelname, "delete", trimuser(user), item);
+    }
+};
+```
+
+To suppress a callback, pass `_silence=true` as a parameter. This helps avoid infinite loops, for instance when your PUT updates the same model.

@@ -186,6 +186,10 @@ And then later, say in your pre- or post-save...
 	return next(new Error( "Verboten!"));
 }
 ```
+
+###Silencing Callbacks
+
+Add the parameter `_silence` to supress callbacks. Useful to avoid infinite loops.
 */
 
 var mongoose = require("mongoose");
