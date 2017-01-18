@@ -573,16 +573,13 @@ var JExpress = function(options) {
 
 	// Pre-load models
 	console.log("Getting models", config.model_dir);
-	fs.readdir(config.model_dir, (err, data) => {
-		if (err) throw err;
-		modelnames = data.filter(function(fname) {
-			return fname.indexOf("_model.js") !== -1;
-		});
-		modelnames.forEach(function(fname) {
-			var modelname = fname.replace("_model.js", "");
-			// console.log(modelname);
-			models[modelname] = require(path.join(config.model_dir, fname));
-		});
+	var files = fs.readdirSync(config.model_dir);
+	modelnames = files.filter(function(fname) {
+		return fname.indexOf("_model.js") !== -1;
+	});
+	modelnames.forEach(function(fname) {
+		var modelname = fname.replace("_model.js", "");
+		models[modelname] = require(path.join(config.model_dir, fname));
 	});
 
 	security.init(config);

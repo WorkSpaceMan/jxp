@@ -1,7 +1,7 @@
 {
   "name": "jexpress",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": false,
   "main": "libs/jexpress.js",
   "scripts": {
