@@ -24,11 +24,11 @@ program
 
 function main() {
 	var pwd = process.cwd();
-	var config = require(program.config || path.join(pwd, "./config.js"));
+	var config = require("config");
 	var email = program.email || readline.question("Admin user email: ");
 	var password = program.password || readline.question("Admin user password: ");
 	var name = program.username || readline.question("Admin user name (Admin): ", { defaultInput: "Admin" });
-	config.mongo = config.mongo || { server: "localhost", db: "openmembers" };
+	config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
 	//DB connection
 	mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
 		if (err) {

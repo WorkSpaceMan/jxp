@@ -194,7 +194,7 @@ Add the parameter `_silence` to supress callbacks. Useful to avoid infinite loop
 
 var mongoose = require("mongoose");
 var JExpress = require("../libs/jexpress");
-var config = require('../config');
+var config = require("config");
 
 config.callbacks = {
 	post: function(modelname, item, user) {
@@ -208,7 +208,7 @@ config.callbacks = {
 	}
 };
 
-config.mongo = config.mongo || { server: "localhost", db: "openmembers" };
+config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
 
 //DB connection
 mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {

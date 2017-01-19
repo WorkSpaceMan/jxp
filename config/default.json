@@ -1,0 +1,5 @@
+{
+	"port": 4001,
+	"mongo_server": "localhost",
+	"mongo_db": "jexpress"
+}

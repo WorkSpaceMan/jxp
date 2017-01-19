@@ -1,6 +1,6 @@
 var mongoose     = require('mongoose');
 var Schema       = mongoose.Schema;
-var config		 = require("../config");
+var config		 = require("config");
 
 var Objectid = mongoose.Schema.Types.ObjectId;
 

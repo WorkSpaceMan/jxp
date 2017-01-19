@@ -26,7 +26,10 @@
   },
   "dependencies": {
     "bcrypt": "^0.8.6",
+    "commander": "^2.9.0",
+    "config": "^1.24.0",
     "jsonwebtoken": "^6.2.0",
+    "mkdirp": "^0.5.1",
     "mongoose": "^4.4.16",
     "mongoose-friendly": "^0.1.4",
     "nodemailer": "^2.4.1",
@@ -35,12 +38,10 @@
     "q": "^2.0.3",
     "querystring": "^0.2.0",
     "rand-token": "^0.2.1",
+    "readline-sync": "^1.4.2",
     "restify": "^4.0.4",
     "restler-q": "^0.1.1",
-    "underscore": "^1.8.3",
-    "commander": "^2.9.0",
-    "mkdirp": "^0.5.1",
-    "readline-sync": "^1.4.2"
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "should": "^8.3.1"
