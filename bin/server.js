@@ -198,13 +198,13 @@ var config = require("config");
 
 config.callbacks = {
 	post: function(modelname, item, user) {
-		console.log("Post callback");
+		// console.log("Post callback");
 	},
 	put: function(modelname, item, user) {
-		console.log("Put callback");
+		// console.log("Put callback");
 	},
 	delete: function(modelname, item, user, opts) {
-		console.log("Delete callback");
+		// console.log("Delete callback");
 	}
 };
 
@@ -213,7 +213,7 @@ config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
 //DB connection
 mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
 	if (err) {
-		console.log("Connection error", err);
+		console.error("MongoDB connection error", err);
 	}
 }, { db: { safe:true } }); // connect to our database
 
@@ -222,3 +222,5 @@ var server = new JExpress(config);
 server.listen(config.port || 4001, function() {
 	console.log('%s listening at %s', server.name, server.url);
 });
+
+module.exports = server; // For testing

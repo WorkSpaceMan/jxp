@@ -48,7 +48,7 @@ var Security = {
 				deferred.reject(err);
 				return;
 			}
-			console.log({ action_id: 1, action: "User logged on", user: user });
+			// console.log({ action_id: 1, action: "User logged on", user: user });
 			deferred.resolve(apikey);
 		});
 		return deferred.promise;
@@ -96,7 +96,7 @@ var Security = {
 			if (!apikey) {
 				return fail(res, 403, "Unauthorized");
 			}
-			console.log("Logging on with apikey", apikey);
+			// console.log("Logging on with apikey", apikey);
 			APIKey.findOne({ apikey: apikey }, function(err, apikey) {
 				if (err) {
 					return fail(res, 500, err);
@@ -125,7 +125,7 @@ var Security = {
 		}
 	},
 	auth: function(req, res, next) {
-		console.log("Started Auth");
+		// console.log("Started Auth");
 		// Check against model as to whether we're allowed to edit this model
 		var perms = req.Model.schema.get("_perms");
 		var passed = {
@@ -151,7 +151,7 @@ var Security = {
 			return fail(res, 500, "Unsupported operation: " + req.method);
 		}
 		req.authorized = false;
-		console.log("perms", perms.admin);
+		// console.log("perms", perms.admin);
 		//If no perms are set, then this isn't an available model
 		if (!perms.admin) {
 			console.error("Model not available");
@@ -160,7 +160,7 @@ var Security = {
 		//First check if "all" is able to do this. If so, let's get on with it.
 		if (perms.all) {
 			if (perms.all.indexOf(method) !== -1) {
-				console.log("Matched permission 'all':" + method);
+				// console.log("Matched permission 'all':" + method);
 				req.authorized = true;
 				next();
 				return;
@@ -172,14 +172,14 @@ var Security = {
 			//Let's check perms in this order - admin, user, group, owner
 			//Admin check
 			if ((req.user.admin) && (perms.admin) && (perms.admin.indexOf(method) !== -1)) {
-				console.log("Matched permission 'admin':" + method);
+				// console.log("Matched permission 'admin':" + method);
 				req.authorized = true;
 				next();
 				return;
 			}
 			//User check
 			if ((perms.user) && (perms.user.indexOf(method) !== -1)) {
-				console.log("Matched permission 'user':" + method);
+				// console.log("Matched permission 'user':" + method);
 				req.authorized = true;
 				next();
 				return;
@@ -187,7 +187,7 @@ var Security = {
 			//Group check
 			req.groups.forEach(function(group) {
 				if ((perms[group]) && (perms[group].indexOf(method) !== -1)) {
-					console.log("Matched permission '" + group + "':" + method);
+					// console.log("Matched permission '" + group + "':" + method);
 					req.authorized = true;
 					next();
 					return;
@@ -201,12 +201,12 @@ var Security = {
 					return fail(res, 500, err);
 				}
 				if ((item) && (item._owner_id) && (item._owner_id.toString() == req.user._id.toString()) && ((perms.owner) && (perms.owner.indexOf(method) !== -1))) {
-						console.log("Matched permission 'owner':" + method);
+						// console.log("Matched permission 'owner':" + method);
 						req.authorized = true;
 						next();
 						return;
 				} else {
-					console.error("All authorizations failed");
+					// console.error("All authorizations failed");
 					if(!req.authorized) {
 						return fail(res, 403, "Authorization failed");
 					}

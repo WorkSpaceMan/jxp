@@ -8,6 +8,7 @@ var login = require("../libs/login");
 var groups = require("../libs/groups");
 var querystring = require('querystring');
 var fs = require("fs");
+var morgan = require('morgan');
 
 var models = {};
 
@@ -15,7 +16,7 @@ var models = {};
 var middlewareModel = function(req, res, next) {
 	var modelname = req.params.modelname;
 	req.modelname = modelname;
-	console.log("Model", modelname);
+	// console.log("Model", modelname);
 	try {
 		req.Model = models[modelname];
 		return next();
@@ -28,7 +29,7 @@ var middlewareModel = function(req, res, next) {
 var middlewarePasswords = function(req, res, next) {
 	if (req.params.password && !(req.query.password_override)) {
 		req.params.password = security.encPassword(req.params.password);
-		console.log("Password encrypted");
+		// console.log("Password encrypted");
 	}
 	next();
 };
@@ -137,7 +138,7 @@ var actionGet = function(req, res) {
 					console.error(err);
 					res.send(500, err);
 				} else {
-					console.log({ action_id: 3, action: "Fetched documents", type: req.modelname, count: result.count, autopopulate: result.autopopulate, limit: result.limit, page: result.page, filters: filters, user: filterLogUser(req.user) });
+					// console.log({ action_id: 3, action: "Fetched documents", type: req.modelname, count: result.count, autopopulate: result.autopopulate, limit: result.limit, page: result.page, filters: filters, user: filterLogUser(req.user) });
 					result.data = items;
 					res.send(result);
 					console.timeEnd("GET " + req.modelname);
@@ -182,7 +183,7 @@ var actionPost = function(req, res, next) {
 				res.send(500, err.toString());
 				return;
 			} else {
-				console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
+				// console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
 				if (!req.params._silence)
 					req.config.callbacks.post.call(null, req.modelname, result, req.user);
 				res.json({ status: "ok", message: req.modelname + " created", data: item });
@@ -217,7 +218,7 @@ var actionPut = function(req, res) {
 								console.error(err);
 								res.send(500, err.toString());
 							} else {
-								console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
+								// console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
 								if (!req.params._silence)
 									req.config.callbacks.put.call(null, req.modelname, item, req.user);
 								res.json({ status: "ok", message: req.modelname + " updated", data: data });
@@ -259,7 +260,7 @@ var actionDelete = function(req, res) {
 			item.__user = req.user;
 		}
 		if (req.Model.schema.paths.hasOwnProperty("_deleted")) {
-			console.log("Soft deleting");
+			// console.log("Soft deleting");
 			item._deleted = true;
 			_versionItem(item);
 			item.save(function(err) {
@@ -267,20 +268,20 @@ var actionDelete = function(req, res) {
 					console.error(err);
 					res.send(500, err.toString());
 				} else {
-					console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
+					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
 					if (!req.params._silence)
 						req.config.callbacks.delete.call(null, req.modelname, item, req.user, { soft: true });
 					res.json({ status: "ok", message: req.modelname + ' deleted' });
 				}
 			});
 		} else {
-			console.log("Hard deleting");
+			// console.log("Hard deleting");
 			item.remove(function(err) {
 				if (err) {
 					console.error(err);
 					res.send(500, err.toString());
 				} else {
-					console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
+					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
 					if (!req.params._silence)
 						req.config.callbacks.delete.call(null, req.modelname, item, req.user, { soft: false });
 					res.json({ status: "ok", message: req.modelname + ' deleted' });
@@ -291,7 +292,7 @@ var actionDelete = function(req, res) {
 };
 
 var actionCall = function(req, res) {
-	console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
+	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
 	req.params.__user = req.user || null;
 	req.Model[req.params.method_name](req.params)
 	.then(function(result) {
@@ -316,7 +317,7 @@ var actionCallItem = function(req, res) {
 		req.params.__user = req.user || null;
 		req.Model[req.params.method_name](item)
 		.then(function(item) {
-			console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
+			// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
 			res.json(item);
 		}, function(err) {
 			console.error(err);
@@ -541,6 +542,7 @@ var changeUrlParams = function(req, key, val) {
 
 var JExpress = function(options) {
 	var server = restify.createServer();
+
 	//Set up config with default
 	var config = {
 
@@ -556,12 +558,16 @@ var JExpress = function(options) {
 			delete: function() {},
 			get: function() {},
 			getOne: function() {},
-		}
+		},
+		log: "access.log"
 	};
 
 	//Override config with passed in options
 	for(var i in options) {
 		config[i] = options[i];
+		if (i === "model_dir") {
+			config[i] = path.join(path.dirname(process.argv[1]), options[i]);
+		}
 	}
 
 	//DB connection
@@ -572,7 +578,6 @@ var JExpress = function(options) {
 	}, { db: { safe:true } }); // connect to our database
 
 	// Pre-load models
-	console.log("Getting models", config.model_dir);
 	var files = fs.readdirSync(config.model_dir);
 	modelnames = files.filter(function(fname) {
 		return fname.indexOf("_model.js") !== -1;
@@ -587,6 +592,13 @@ var JExpress = function(options) {
 	groups.init(config);
 
 	// Set up our API server
+
+	// Logging
+	console.log("Logging to", path.join(__dirname, config.log));
+	var accessLogStream = fs.createWriteStream(path.join(__dirname, config.log), {flags: 'a'});
+	server.use(morgan("combined", { stream: accessLogStream }));
+
+	// CORS
 	server.use(
 		function crossOrigin(req,res,next){
 			res.header("Access-Control-Allow-Origin", "*");
@@ -597,6 +609,7 @@ var JExpress = function(options) {
 		}
 	);
 
+	// Parse data
 	server.use(restify.queryParser());
 	server.use(restify.bodyParser());
 
