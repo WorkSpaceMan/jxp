@@ -566,7 +566,12 @@ var JExpress = function(options) {
 	for(var i in options) {
 		config[i] = options[i];
 		if (i === "model_dir") {
-			config[i] = path.join(path.dirname(process.argv[1]), options[i]);
+			// Decide whether it's absolute or relative
+			if (config.model_dir.charAt(0) === "/") {
+				config[i] = options[i];
+			}  else {
+				config[i] = path.join(path.dirname(process.argv[1]), options[i]);
+			}
 		}
 	}
 
