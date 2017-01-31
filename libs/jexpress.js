@@ -565,7 +565,7 @@ var JExpress = function(options) {
 	//Override config with passed in options
 	for(var i in options) {
 		config[i] = options[i];
-		if (i === "model_dir") {
+		if ((i === "model_dir") || (i === "log")) {
 			// Decide whether it's absolute or relative
 			if (config.model_dir.charAt(0) === "/") {
 				config[i] = options[i];
@@ -599,8 +599,9 @@ var JExpress = function(options) {
 	// Set up our API server
 
 	// Logging
-	console.log("Logging to", path.join(__dirname, config.log));
-	var accessLogStream = fs.createWriteStream(path.join(__dirname, config.log), {flags: 'a'});
+	console.log("Logging to", config.log);
+
+	var accessLogStream = fs.createWriteStream(config.log, {flags: 'a'});
 	server.use(morgan("combined", { stream: accessLogStream }));
 
 	// CORS
