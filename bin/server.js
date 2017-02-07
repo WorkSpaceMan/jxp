@@ -208,6 +208,24 @@ config.callbacks = {
 	}
 };
 
+config.pre_hooks = {
+	get: (req, res, next) => {
+		next();
+	},
+	getOne: (req, res, next) => {
+		next();
+	},
+	post: (req, res, next) => {
+		next();
+	},
+	put: (req, res, next) => {
+		next();
+	},
+	delete: (req, res, next) => {
+		next();
+	},
+};
+
 config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
 
 //DB connection

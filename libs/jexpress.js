@@ -559,12 +559,45 @@ var JExpress = function(options) {
 			get: function() {},
 			getOne: function() {},
 		},
-		log: "access.log"
+		log: "access.log",
+		pre_hooks: {
+			get: (req, res, next) => {
+				next();
+			},
+			getOne: (req, res, next) => {
+				next();
+			},
+			post: (req, res, next) => {
+				next();
+			},
+			put: (req, res, next) => {
+				next();
+			},
+			delete: (req, res, next) => {
+				next();
+			},
+		},
+		post_hooks: {
+			get: (modelname, result) => {},
+			getOne: (modelname, id, result) => {},
+			post: (modelname, id, data, result) => {},
+			put: (modelname, id, data, result) => {},
+			delete: (modelname, id, data, result) => {},
+		}
 	};
 
 	//Override config with passed in options
+	
 	for(var i in options) {
-		config[i] = options[i];
+		if (typeof config[i] === 'object' && !Array.isArray(config[i])) {
+			if (typeof options[i] === "object" && !Array.isArray(options[i])) {
+				for(var j in options[i]) {
+					config[i][j] = options[i][j]; // Second level object copy
+				}
+			}
+		} else {
+			config[i] = options[i];
+		}
 		if ((i === "model_dir") || (i === "log")) {
 			// Decide whether it's absolute or relative
 			if (config.model_dir.charAt(0) === "/") {
@@ -574,7 +607,7 @@ var JExpress = function(options) {
 			}
 		}
 	}
-
+	
 	//DB connection
 	mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
 		if (err) {
@@ -628,11 +661,11 @@ var JExpress = function(options) {
 	// Define our endpoints
 
 	/* Our API endpoints */
-	server.get('/api/:modelname', middlewareModel, security.auth, actionGet);
-	server.get('/api/:modelname/:item_id', middlewareModel, security.auth, actionGetOne);
-	server.post('/api/:modelname', middlewareModel, security.auth, middlewarePasswords, actionPost);
-	server.put('/api/:modelname/:item_id', middlewareModel, security.auth, middlewarePasswords, middlewareCheckAdmin, actionPut);
-	server.del('/api/:modelname/:item_id', middlewareModel, security.auth, actionDelete);
+	server.get('/api/:modelname', middlewareModel, security.auth, config.pre_hooks.get, actionGet);
+	server.get('/api/:modelname/:item_id', middlewareModel, security.auth, config.pre_hooks.getOne, actionGetOne);
+	server.post('/api/:modelname', middlewareModel, security.auth, middlewarePasswords, config.pre_hooks.post, actionPost);
+	server.put('/api/:modelname/:item_id', middlewareModel, security.auth, middlewarePasswords, middlewareCheckAdmin, config.pre_hooks.put, actionPut);
+	server.del('/api/:modelname/:item_id', middlewareModel, security.auth, config.pre_hooks.delete, actionDelete);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
 	// server.post('/batch/create/:modelname', middlewareModel, security.auth, actionBatch);
