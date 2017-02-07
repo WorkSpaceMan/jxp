@@ -28,6 +28,19 @@ var fail = function(res, code, message) {
 	res.send(code, { status: "error", message: message });
 };
 
+var getGroups = user_id => {
+	return new Promise((resolve, reject) => {
+		Groups.findOne({ user_id }, (err, userGroup) => {
+			if (err) {
+				console.error(err);
+				reject(err);
+			}
+			req.groups = (userGroup && userGroup.groups) ? userGroup.groups : [];
+			next();
+		});
+	});
+};
+
 var Security = {
 	init: init,
 	basicAuth: basicAuth,
@@ -78,6 +91,7 @@ var Security = {
 						return fail(res, 403, "Unauthorized");
 					}
 					req.user = user;
+					// console.log(user);
 					Groups.findOne({ user_id: user._id }, function(err, userGroup) {
 						if (err) {
 							return fail(res, 500, err);
@@ -162,8 +176,47 @@ var Security = {
 			if (perms.all.indexOf(method) !== -1) {
 				// console.log("Matched permission 'all':" + method);
 				req.authorized = true;
-				next();
-				return;
+				if (req.headers.authorization) { // Basic Auth 
+					var ba = basicAuth(req);
+					if (Array.isArray(ba) && (ba.length == 2)) {
+						var email = ba[0];
+						var password = ba[1];
+						User.findOne({ email: email }, function(err, user) {
+							if (err) {
+								console.error(err); 
+								return done(err); 
+							}
+							if (!user) {
+								console.error("Incorrect username");
+								return fail(res, 403, "Unauthorized");
+							}
+							try {
+								if (!bcrypt.compareSync(password, user.password)) {
+									console.error("Incorrect password");
+									return fail(res, 403, "Unauthorized");
+								}
+							} catch (error) {
+								console.error(error);
+								return fail(res, 403, "Unauthorized");
+							}
+							req.user = user;
+							Groups.findOne({ user_id: user._id }, function(err, userGroup) {
+								if (err) {
+									return fail(res, 500, err);
+								}
+								req.groups = (userGroup && userGroup.groups) ? userGroup.groups : [];
+								next();
+							});
+						});
+					} else {
+
+					}
+				} else if (req.query.apikey) {
+
+				} else {
+					next();
+					return;
+				}
 			}
 		}
 		
