@@ -661,23 +661,23 @@ var JExpress = function(options) {
 	// Define our endpoints
 
 	/* Our API endpoints */
-	server.get('/api/:modelname', middlewareModel, security.auth, config.pre_hooks.get, actionGet);
-	server.get('/api/:modelname/:item_id', middlewareModel, security.auth, config.pre_hooks.getOne, actionGetOne);
-	server.post('/api/:modelname', middlewareModel, security.auth, middlewarePasswords, config.pre_hooks.post, actionPost);
-	server.put('/api/:modelname/:item_id', middlewareModel, security.auth, middlewarePasswords, middlewareCheckAdmin, config.pre_hooks.put, actionPut);
-	server.del('/api/:modelname/:item_id', middlewareModel, security.auth, config.pre_hooks.delete, actionDelete);
+	server.get('/api/:modelname', middlewareModel, security.login, security.auth, config.pre_hooks.get, actionGet);
+	server.get('/api/:modelname/:item_id', middlewareModel, security.login, security.auth, config.pre_hooks.getOne, actionGetOne);
+	server.post('/api/:modelname', middlewareModel, security.login, security.auth, middlewarePasswords, config.pre_hooks.post, actionPost);
+	server.put('/api/:modelname/:item_id', middlewareModel, security.login, security.auth, middlewarePasswords, middlewareCheckAdmin, config.pre_hooks.put, actionPut);
+	server.del('/api/:modelname/:item_id', middlewareModel, security.login, security.auth, config.pre_hooks.delete, actionDelete);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
-	// server.post('/batch/create/:modelname', middlewareModel, security.auth, actionBatch);
+	// server.post('/batch/create/:modelname', middlewareModel, security.login, security.auth, actionBatch);
 
 	/* Call Methods in our models */
-	server.get('/call/:modelname/:method_name', middlewareModel, security.auth, actionCall);
-	server.post('/call/:modelname/:method_name', middlewareModel, security.auth, actionCall);
-	server.get('/call/:modelname/:item_id/:method_name', middlewareModel, security.auth, actionCallItem);
+	server.get('/call/:modelname/:method_name', middlewareModel, security.login, security.auth, actionCall);
+	server.post('/call/:modelname/:method_name', middlewareModel, security.login, security.auth, actionCall);
+	server.get('/call/:modelname/:item_id/:method_name', middlewareModel, security.login, security.auth, actionCallItem);
 
 	/* Login and authentication */
 	server.post("/login/recover", login.recover);
-	server.post("/login/getjwt", security.apiKeyAuth, login.getJWT);
+	server.post("/login/getjwt", security.login, login.getJWT);
 	server.get("/login/logout", login.logout);
 	server.post("/login/logout", login.logout);
 	server.get("/login/oauth/:provider", login.oauth);
@@ -685,10 +685,10 @@ var JExpress = function(options) {
 	server.post("/login", login.login);
 
 	/* Groups */
-	server.put("/groups/:user_id", security.apiKeyAuth, _fixArrays, groups.actionPut);
-	server.post("/groups/:user_id", security.apiKeyAuth, _fixArrays, groups.actionPost);
-	server.get("/groups/:user_id", security.apiKeyAuth, groups.actionGet);
-	server.del("/groups/:user_id", security.apiKeyAuth, groups.actionDelete);
+	server.put("/groups/:user_id", security.login, _fixArrays, groups.actionPut);
+	server.post("/groups/:user_id", security.login, _fixArrays, groups.actionPost);
+	server.get("/groups/:user_id", security.login, groups.actionGet);
+	server.del("/groups/:user_id", security.login, groups.actionDelete);
 
 	/* Meta */
 	server.get('/model/:modelname', middlewareModel, metaModel);
