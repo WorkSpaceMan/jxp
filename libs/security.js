@@ -58,17 +58,17 @@ var basicAuth  = (ba) => {
 	});
 };
 
-var apiKeyAuth = (key) => {
+var apiKeyAuth = (apikey) => {
 	return new Promise((resolve, reject) => {
-		if (!key) 
+		if (!apikey) 
 			return reject("Missing apikey");
-		APIKey.findOne({ key }, function(err, apikey) {
+		APIKey.findOne({ apikey }, function(err, result) {
 			if (err) 
 				return reject(err);
-			if (!apikey)
+			if (!result)
 				return reject("Could not find apikey");
-			User.findOne({ _id: apikey.user_id }, function(err, user) {
-				if (err) 
+			User.findOne({ _id: result.user_id }, function(err, user) {
+				if (err)
 					return reject(err);
 				if (!user)
 					return reject("Could not find user associated to apikey");
