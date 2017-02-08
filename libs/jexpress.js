@@ -69,14 +69,15 @@ var actionGet = function(req, res) {
 	try {
 		filters = parseFilter(req.query.filter);
 	} catch(err) {
-		console.error(err);
-		res.send(500, err.toString());
+		console.trace(err);
+		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
 	var search = parseSearch(req.query.search);
 	for (var i in search) {
 		filters[i] = search[i];
 	}
+	console.log(filters);
 	var qcount = req.Model.find(filters);
 	var q = req.Model.find(filters);
 	var checkDeleted = [ { _deleted: false }, { _deleted: null }];
@@ -86,8 +87,8 @@ var actionGet = function(req, res) {
 	}
 	qcount.count({}, function(err, count) {
 		if (err) {
-			console.error(err);
-			res.send(500, err);
+			console.trace(err);
+			res.send(500, { status: "error", message: err.toString() });
 			return;
 		}
 		var result = {};
@@ -117,9 +118,9 @@ var actionGet = function(req, res) {
 			try {
 				q.populate(req.query.populate);
 				result.populate = req.query.populate;
-			} catch(error) {
-				console.error(error);
-				res.send(500, error.toString());
+			} catch(err) {
+				console.trace(err);
+				res.send(500, { status: "error", message: err.toString() });
 				return;
 			}
 		}
@@ -144,9 +145,9 @@ var actionGet = function(req, res) {
 					console.timeEnd("GET " + req.modelname);
 				}
 			});
-		} catch(error) {
-			console.error(error);
-			res.send(500, error);
+		} catch(err) {
+			console.trace(err);
+			res.send(500, { status: "error", message: err.toString() });
 			return;
 		}
 	});
@@ -159,11 +160,11 @@ var actionGetOne = function(req, res) {
 		res.send(item);
 		console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
 	}, function(err) {
-		console.error(err);
+		console.trace(err);
 		if (err.code) {
-			res.send(500,err.msg);
+			res.send(500, { status: "error", message: err.msg });
 		} else {
-			res.send(500, err.toString());
+			res.send(500, { status: "error", message: err.toString() });
 		}
 	});
 };
@@ -179,8 +180,8 @@ var actionPost = function(req, res, next) {
 		}
 		item.save(function(err, result) {
 			if (err) {
-				console.error(err);
-				res.send(500, err.toString());
+				console.trace(err);
+				res.send(500, { status: "error", message: err.toString() });
 				return;
 			} else {
 				// console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
@@ -192,8 +193,8 @@ var actionPost = function(req, res, next) {
 			}
 		});
 	} catch(err) {
-		console.error(err);
-		res.send(500, err.toString());
+		console.trace(err);
+		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
 };
@@ -203,8 +204,8 @@ var actionPut = function(req, res) {
 	try {
 		req.Model.findById(req.params.item_id, function(err, item) {
 			if (err) {
-				console.error(err);
-				res.send(500, err.toString());
+				console.trace(err);
+				res.send(500, { status: "error", message: err.toString() });
 			} else {
 				if (item) {
 					_populateItem(item, datamunging.deserialize(req.params));
@@ -215,8 +216,8 @@ var actionPut = function(req, res) {
 						}
 						item.save(function(err, data) {
 							if (err) {
-								console.error(err);
-								res.send(500, err.toString());
+								console.trace(err);
+								res.send(500, { status: "error", message: err.toString() });
 							} else {
 								// console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
 								if (!req.params._silence)
@@ -226,8 +227,8 @@ var actionPut = function(req, res) {
 							}
 						});
 					} catch(err) {
-						console.error(err);
-						res.send(500, err.toString());
+						console.trace(err);
+						res.send(500, { status: "error", message: err.toString() });
 						return;
 					}
 				} else {
@@ -238,8 +239,8 @@ var actionPut = function(req, res) {
 			}
 		});
 	} catch(err) {
-		console.error(err);
-		res.send(500, err.toString());
+		console.trace(err);
+		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
 };
@@ -252,8 +253,8 @@ var actionDelete = function(req, res) {
 			return;
 		}
 		if (err) {
-			console.error(err);
-			res.send(500, err.toString());
+			console.trace(err);
+			res.send(500, { status: "error", message: err.toString() });
 			return;
 		}
 		if (req.user) {
@@ -265,8 +266,8 @@ var actionDelete = function(req, res) {
 			_versionItem(item);
 			item.save(function(err) {
 				if (err) {
-					console.error(err);
-					res.send(500, err.toString());
+					console.trace(err);
+					res.send(500, { status: "error", message: err.toString() });
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
 					if (!req.params._silence)
@@ -278,8 +279,8 @@ var actionDelete = function(req, res) {
 			// console.log("Hard deleting");
 			item.remove(function(err) {
 				if (err) {
-					console.error(err);
-					res.send(500, err.toString());
+					console.trace(err);
+					res.send(500, { status: "error", message: err.toString() });
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
 					if (!req.params._silence)
@@ -298,8 +299,8 @@ var actionCall = function(req, res) {
 	.then(function(result) {
 		res.json(result);
 	}, function(err) {
-		console.error(err);
-		res.send(500, err);
+		console.trace(err);
+		res.send(500, { status: "error", message: err.toString() });
 	});
 };
 
@@ -310,8 +311,8 @@ var actionCallItem = function(req, res) {
 			return;
 		}
 		if (err) {
-			console.error(err);
-			res.send(500, err);
+			console.trace(err);
+			res.send(500, { status: "error", message: err.toString() });
 			return;
 		}
 		req.params.__user = req.user || null;
@@ -320,8 +321,8 @@ var actionCallItem = function(req, res) {
 			// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
 			res.json(item);
 		}, function(err) {
-			console.error(err);
-			res.send(500, err);
+			console.trace(err);
+			res.send(500, { status: "error", message: err.toString() });
 		});
 	});
 };
@@ -364,8 +365,8 @@ var metaModels = function(req, res, next) {
 	model_dir = path.join(process.argv[1], "/../../models");
 	fs.readdir(model_dir, function(err, files) {
 		if (err) {
-			console.error(err);
-			res.send(500, "Error reading models directory " + model_dir);
+			console.trace(err);
+			res.send(500, { status: "error", message: "Error reading models directory " + model_dir });
 			return false;
 		}
 		var models = [];
@@ -413,7 +414,6 @@ var getOne = function(Model, item_id, params) {
 		if (err) {
 			console.error(err);
 			deferred.reject({ code: 500, msg: err });
-			// res.send(500, err);
 			return;
 		} else {
 			if (!item) {
@@ -439,21 +439,23 @@ function parseFilter(filter) {
 	if (typeof(filter) == "object") {
 		Object.keys(filter).forEach(function(key) {
 			var val = filter[key];
-			try {
-				if (val.indexOf(":") !== -1) {
-					var tmp = val.split(":");
-					filter[key] = {};
-					filter[key][tmp[0]] = tmp[1];
-				}
-				if (typeof(val) == "object") {
-					result = parseFilter(val);
-					filter[key] = {};
-					for(var x = 0; x < result.length; x++) {
-						filter[key][Object.keys(result[x])[0]]=result[x][Object.keys(result[x])[0]];
+			if (val.indexOf) {
+				try {
+					if (val.indexOf(":") !== -1) {
+						var tmp = val.split(":");
+						filter[key] = {};
+						filter[key][tmp[0]] = tmp[1];
 					}
+					if (typeof(val) == "object") {
+						result = parseFilter(val);
+						filter[key] = {};
+						for(var x = 0; x < result.length; x++) {
+							filter[key][Object.keys(result[x])[0]]=result[x][Object.keys(result[x])[0]];
+						}
+					}
+				} catch(err) {
+					throw(err);
 				}
-			} catch(err) {
-				throw(err);
 			}
 		});
 	}
