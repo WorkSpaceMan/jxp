@@ -184,7 +184,7 @@ function oauth_callback(req, res, next) {
 function login(req, res, next) {
 	var email = req.params.email || req.params.email;
 	var password = req.params.password || req.params.password;
-	var user = security.basicAuth(req);
+	var user = security.basicAuthData(req);
 	if (user) {
 		email = user[0];
 		password = user[1];
