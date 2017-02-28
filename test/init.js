@@ -52,7 +52,7 @@ var init = () => {
 		return empty(Apikey);
 	})
 	.then(() => {
-		return post(User, { name: "Test User", email, password: encPassword(password) });
+		return post(User, { name: "Test User", email, password: encPassword(password), urlid: "test-user" });
 	})
 	;
 };
