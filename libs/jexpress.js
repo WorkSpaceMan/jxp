@@ -440,9 +440,9 @@ function parseFilter(filter) {
 		Object.keys(filter).forEach(function(key) {
 			var val = filter[key];
 			if (filter[key] === "false")
-				val = false;
+				filter[key] = false;
 			if (filter[key] === "true")
-				val = true;
+				filter[key] = true;
 			if (val.indexOf) {
 				try {
 					if (val.indexOf(":") !== -1) {
