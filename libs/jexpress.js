@@ -77,7 +77,6 @@ var actionGet = function(req, res) {
 	for (var i in search) {
 		filters[i] = search[i];
 	}
-	console.log(filters);
 	var qcount = req.Model.find(filters);
 	var q = req.Model.find(filters);
 	var checkDeleted = [ { _deleted: false }, { _deleted: null }];
@@ -132,6 +131,14 @@ var actionGet = function(req, res) {
 				}
 			}
 			result.autopopulate = true;
+		}
+		if (req.query.fields) {
+			var fields = req.query.fields.split(",");
+			var select = {};
+			fields.forEach(field => {
+				select[field] = 1;
+			});
+			q.select(select);
 		}
 		try {
 			q.exec(function(err, items) {
