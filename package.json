@@ -27,28 +27,28 @@
   },
   "dependencies": {
     "bcrypt": "^0.8.6",
-    "commander": "^2.9.0",
-    "config": "^1.24.0",
+    "commander": "^2.12.2",
+    "config": "^1.28.1",
     "jsonwebtoken": "^6.2.0",
     "mkdirp": "^0.5.1",
-    "mongoose": "^4.4.16",
+    "mongoose": "^4.13.7",
     "mongoose-friendly": "^0.1.4",
-    "morgan": "^1.7.0",
+    "morgan": "^1.9.0",
     "nodemailer": "^2.4.1",
-    "nodemailer-smtp-transport": "^2.5.0",
+    "nodemailer-smtp-transport": "^2.7.4",
     "path": "^0.12.7",
     "q": "^2.0.3",
     "querystring": "^0.2.0",
-    "rand-token": "^0.2.1",
-    "readline-sync": "^1.4.2",
-    "restify": "^4.0.4",
+    "rand-token": "^0.4.0",
+    "readline-sync": "^1.4.7",
+    "restify": "^4.3.2",
     "restler-q": "^0.1.1",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "chai-http": "^3.0.0",
-    "mocha": "^3.2.0",
+    "mocha": "^3.5.3",
     "should": "^8.3.1"
   }
 }
