@@ -847,6 +847,7 @@ var JExpress = function(options) {
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
+	server.post("/setup", setup.checkUserDoesNotExist, setup.setup);
 
 	return server;
 };
