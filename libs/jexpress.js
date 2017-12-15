@@ -6,6 +6,7 @@ var security = require("../libs/security");
 var datamunging = require("../libs/datamunging");
 var login = require("../libs/login");
 var groups = require("../libs/groups");
+var setup = require("../libs/setup");
 var querystring = require("querystring");
 var fs = require("fs");
 var morgan = require("morgan");
@@ -845,7 +846,7 @@ var JExpress = function(options) {
 	server.get("/model", metaModels);
 
 	/* Setup */
-	server.get("/setup", security.checkUserDoesNotExist, security.setup);
+	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
 
 	return server;
 };
