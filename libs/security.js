@@ -1,14 +1,14 @@
 var Q = require("q");
-var bcrypt = require('bcrypt');
+var bcrypt = require("bcrypt");
 var APIKey = null;
 var Groups = null;
 var User = null;
 
 var init = function(config) {
 	var path = require("path");
-	APIKey = require(path.join(config.model_dir, 'apikey_model'));
+	APIKey = require(path.join(config.model_dir, "apikey_model"));
 	Groups = require(path.join(config.model_dir, "usergroups_model.js"));
-	User = require(path.join(config.model_dir, 'user_model'));
+	User = require(path.join(config.model_dir, "user_model"));
 };
 
 var basicAuthData = function(req) {
@@ -17,10 +17,10 @@ var basicAuthData = function(req) {
 	}
 	try {
 		auth = req.headers.authorization.split(" ")[1];
-	} catch(err) {
+	} catch (err) {
 		return false;
 	}
-	decoded = new Buffer(auth, 'base64').toString();
+	decoded = new Buffer(auth, "base64").toString();
 	return decoded.split(":");
 };
 
@@ -28,16 +28,16 @@ var fail = function(res, code, message) {
 	res.send(code, { status: "error", message: message });
 };
 
-var basicAuth  = (ba) => {
+var basicAuth = ba => {
 	return new Promise((resolve, reject) => {
-		if (!Array.isArray(ba) || (ba.length !== 2)) {
+		if (!Array.isArray(ba) || ba.length !== 2) {
 			return reject("Basic Auth incorrectly formatted");
 		}
 		var email = ba[0];
 		var password = ba[1];
 		User.findOne({ email }, function(err, user) {
 			if (err) {
-				console.error(err); 
+				console.error(err);
 				return reject(err);
 			}
 			if (!user) {
@@ -49,7 +49,7 @@ var basicAuth  = (ba) => {
 					console.error("Incorrect password");
 					return reject("Incorrect username or password");
 				}
-			} catch(e) {
+			} catch (e) {
 				console.error(e);
 				return reject(e);
 			}
@@ -58,18 +58,14 @@ var basicAuth  = (ba) => {
 	});
 };
 
-var apiKeyAuth = (apikey) => {
+var apiKeyAuth = apikey => {
 	return new Promise((resolve, reject) => {
-		if (!apikey) 
-			return reject("Missing apikey");
+		if (!apikey) return reject("Missing apikey");
 		APIKey.findOne({ apikey }, function(err, result) {
-			if (err) 
-				return reject(err);
-			if (!result)
-				return reject("Could not find apikey");
+			if (err) return reject(err);
+			if (!result) return reject("Could not find apikey");
 			User.findOne({ _id: result.user_id }, function(err, user) {
-				if (err)
-					return reject(err);
+				if (err) return reject(err);
 				if (!user)
 					return reject("Could not find user associated to apikey");
 				return resolve(user);
@@ -85,7 +81,7 @@ var getGroups = user_id => {
 				console.error(err);
 				return reject(err);
 			}
-			var groups = (userGroup && userGroup.groups) ? userGroup.groups : [];
+			var groups = userGroup && userGroup.groups ? userGroup.groups : [];
 			return resolve(groups);
 		});
 	});
@@ -100,7 +96,7 @@ var generateApiKey = user => {
 	return new Promise((resolve, reject) => {
 		var apikey = new APIKey();
 		apikey.user_id = user._id;
-		apikey.apikey = require('rand-token').generate(16);
+		apikey.apikey = require("rand-token").generate(16);
 
 		apikey.save(function(err) {
 			if (err) {
@@ -113,36 +109,39 @@ var generateApiKey = user => {
 };
 
 var login = (req, res, next) => {
-	if (req.headers.authorization) { // Basic Auth 
+	if (req.headers.authorization) {
+		// Basic Auth
 		var ba = basicAuthData(req);
 		basicAuth(ba)
-		.then(user => {
-			req.user = user;
-			return getGroups(user._id);
-		})
-		.then(groups => {
-			req.groups = groups;
-			next();
-		})
-		.catch(err => {
-			console.error(err);
-			return fail(res, 403, err);
-		});
-	} else if (req.query.apikey) { // APIKey
+			.then(user => {
+				req.user = user;
+				return getGroups(user._id);
+			})
+			.then(groups => {
+				req.groups = groups;
+				next();
+			})
+			.catch(err => {
+				console.error(err);
+				return fail(res, 403, err);
+			});
+	} else if (req.query.apikey) {
+		// APIKey
 		apiKeyAuth(req.query.apikey)
-		.then(user => {
-			req.user = user;
-			return getGroups(user._id);
-		})
-		.then(groups => {
-			req.groups = groups;
-			next();
-		})
-		.catch(err => {
-			console.error(err);
-			return fail(res, 403, err);
-		});
-	} else { // No login details
+			.then(user => {
+				req.user = user;
+				return getGroups(user._id);
+			})
+			.then(groups => {
+				req.groups = groups;
+				next();
+			})
+			.catch(err => {
+				console.error(err);
+				return fail(res, 403, err);
+			});
+	} else {
+		// No login details
 		req.user = null;
 		req.groups = [];
 		next();
@@ -159,7 +158,8 @@ var auth = (req, res, next) => {
 		user: false,
 		all: false
 	};
-	for (var i in perms) { // Add any user-defined perms to our passed table
+	for (var i in perms) {
+		// Add any user-defined perms to our passed table
 		passed[i] = false;
 	}
 	var method = null;
@@ -188,7 +188,7 @@ var auth = (req, res, next) => {
 			return;
 		}
 	}
-	
+
 	//This isn't an 'all' situation, so let's bail if the user isn't logged in
 	if (!req.user) {
 		return fail(res, 403, "Unauthorized");
@@ -196,14 +196,14 @@ var auth = (req, res, next) => {
 
 	//Let's check perms in this order - admin, user, group, owner
 	//Admin check
-	if ((req.user.admin) && (perms.admin) && (perms.admin.indexOf(method) !== -1)) {
+	if (req.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
 		// console.log("Matched permission 'admin':" + method);
 		req.authorized = true;
 		next();
 		return;
 	}
 	//User check
-	if ((perms.user) && (perms.user.indexOf(method) !== -1)) {
+	if (perms.user && perms.user.indexOf(method) !== -1) {
 		// console.log("Matched permission 'user':" + method);
 		req.authorized = true;
 		next();
@@ -211,7 +211,7 @@ var auth = (req, res, next) => {
 	}
 	//Group check
 	req.groups.forEach(function(group) {
-		if ((perms[group]) && (perms[group].indexOf(method) !== -1)) {
+		if (perms[group] && perms[group].indexOf(method) !== -1) {
 			// console.log("Matched permission '" + group + "':" + method);
 			req.authorized = true;
 			next();
@@ -225,16 +225,78 @@ var auth = (req, res, next) => {
 			console.error(err);
 			return fail(res, 500, err);
 		}
-		if ((item) && (item._owner_id) && (item._owner_id.toString() == req.user._id.toString()) && ((perms.owner) && (perms.owner.indexOf(method) !== -1))) {
-				// console.log("Matched permission 'owner':" + method);
-				req.authorized = true;
-				next();
-				return;
+		if (
+			item &&
+			item._owner_id &&
+			item._owner_id.toString() == req.user._id.toString() &&
+			(perms.owner && perms.owner.indexOf(method) !== -1)
+		) {
+			// console.log("Matched permission 'owner':" + method);
+			req.authorized = true;
+			next();
+			return;
 		} else {
 			// console.error("All authorizations failed");
-			if(!req.authorized) {
+			if (!req.authorized) {
 				return fail(res, 403, "Authorization failed");
 			}
+		}
+	});
+};
+
+var checkUserDoesNotExist = (req, res, next) => {
+	config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
+	//DB connection
+	mongoose.connect(
+		"mongodb://" + config.mongo.server + "/" + config.mongo.db,
+		function(err) {
+			if (err) {
+				console.log("Database connection error", err);
+			}
+		},
+		{ db: { safe: true } }
+	); // connect to our database
+	User.count().then(result => {
+		if (result)
+			return res.send({
+				status: "failed",
+				error: "Cannot setup if user exists"
+			});
+		return next();
+	});
+};
+
+var setup = (req, res, next) => {
+	config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
+	//DB connection
+	mongoose.connect(
+		"mongodb://" + config.mongo.server + "/" + config.mongo.db,
+		function(err) {
+			if (err) {
+				console.log("Database connection error", err);
+			}
+		},
+		{ db: { safe: true } }
+	); // connect to our database
+	var user = new User();
+	var password = req.body.password || require("rand-token").generate(12);
+	user.email = req.body.email;
+	user.password = security.encPassword(password);
+	user.name = req.body.name || "admin";
+	user.admin = true;
+	user.save((err, result) => {
+		if (err) {
+			console.log("Error:", err.message);
+			res.send({ status: "failed", error: err.message });
+		} else {
+			console.log(
+				"Created admin user",
+				name,
+				"<" + email + ">",
+				":",
+				password
+			);
+			res.send({ status: "success", name, email, password });
 		}
 	});
 };
@@ -245,7 +307,9 @@ var Security = {
 	encPassword,
 	generateApiKey,
 	login,
-	auth
+	auth,
+	setup,
+	checkUserDoesNotExist
 };
 
 module.exports = Security;

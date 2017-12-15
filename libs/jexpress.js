@@ -6,9 +6,9 @@ var security = require("../libs/security");
 var datamunging = require("../libs/datamunging");
 var login = require("../libs/login");
 var groups = require("../libs/groups");
-var querystring = require('querystring');
+var querystring = require("querystring");
 var fs = require("fs");
-var morgan = require('morgan');
+var morgan = require("morgan");
 
 var models = {};
 
@@ -20,14 +20,14 @@ var middlewareModel = function(req, res, next) {
 	try {
 		req.Model = models[modelname];
 		return next();
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
 		return res.send(404, "Model " + modelname + " not found");
 	}
 };
 
 var middlewarePasswords = function(req, res, next) {
-	if (req.params.password && !(req.query.password_override)) {
+	if (req.params.password && !req.query.password_override) {
 		req.params.password = security.encPassword(req.params.password);
 		// console.log("Password encrypted");
 	}
@@ -59,7 +59,7 @@ var actionGet = function(req, res) {
 	console.time("GET " + req.modelname);
 	var parseSearch = function(search) {
 		var result = {};
-		for(var i in search) {
+		for (var i in search) {
 			result[i] = new RegExp(search[i], "i");
 		}
 		return result;
@@ -68,7 +68,7 @@ var actionGet = function(req, res) {
 	var filters = {};
 	try {
 		filters = parseFilter(req.query.filter);
-	} catch(err) {
+	} catch (err) {
 		console.trace(err);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
@@ -79,7 +79,7 @@ var actionGet = function(req, res) {
 	}
 	var qcount = req.Model.find(filters);
 	var q = req.Model.find(filters);
-	var checkDeleted = [ { _deleted: false }, { _deleted: null }];
+	var checkDeleted = [{ _deleted: false }, { _deleted: null }];
 	if (!req.query.showDeleted) {
 		qcount.or(checkDeleted);
 		q.or(checkDeleted);
@@ -99,13 +99,13 @@ var actionGet = function(req, res) {
 			var page_count = Math.ceil(count / limit);
 			result.page_count = page_count;
 			var page = parseInt(req.query.page);
-			page = (page) ? page : 1;
+			page = page ? page : 1;
 			result.page = page;
 			if (page < page_count) {
-				result.next = changeUrlParams(req, "page", (page + 1));
+				result.next = changeUrlParams(req, "page", page + 1);
 			}
 			if (page > 1) {
-				result.prev = changeUrlParams(req, "page", (page - 1));
+				result.prev = changeUrlParams(req, "page", page - 1);
 				q.skip(limit * (page - 1));
 			}
 		}
@@ -117,16 +117,16 @@ var actionGet = function(req, res) {
 			try {
 				q.populate(req.query.populate);
 				result.populate = req.query.populate;
-			} catch(err) {
+			} catch (err) {
 				console.trace(err);
 				res.send(500, { status: "error", message: err.toString() });
 				return;
 			}
 		}
 		if (req.query.autopopulate) {
-			for(var key in req.Model.schema.paths) {
+			for (var key in req.Model.schema.paths) {
 				var path = req.Model.schema.paths[key];
-				if ((path.instance == "ObjectID") && (path.options.ref)) {
+				if (path.instance == "ObjectID" && path.options.ref) {
 					q.populate(path.path);
 				}
 			}
@@ -152,7 +152,7 @@ var actionGet = function(req, res) {
 					console.timeEnd("GET " + req.modelname);
 				}
 			});
-		} catch(err) {
+		} catch (err) {
 			console.trace(err);
 			res.send(500, { status: "error", message: err.toString() });
 			return;
@@ -162,18 +162,20 @@ var actionGet = function(req, res) {
 
 var actionGetOne = function(req, res) {
 	console.time("GET " + req.modelname + "/" + req.params.item_id);
-	getOne(req.Model, req.params.item_id, req.query)
-	.then(function(item) {
-		res.send(item);
-		console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
-	}, function(err) {
-		console.trace(err);
-		if (err.code) {
-			res.send(500, { status: "error", message: err.msg });
-		} else {
-			res.send(500, { status: "error", message: err.toString() });
+	getOne(req.Model, req.params.item_id, req.query).then(
+		function(item) {
+			res.send(item);
+			console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
+		},
+		function(err) {
+			console.trace(err);
+			if (err.code) {
+				res.send(500, { status: "error", message: err.msg });
+			} else {
+				res.send(500, { status: "error", message: err.toString() });
+			}
 		}
-	});
+	);
 };
 
 var actionPost = function(req, res, next) {
@@ -193,13 +195,22 @@ var actionPost = function(req, res, next) {
 			} else {
 				// console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
 				if (!req.params._silence)
-					req.config.callbacks.post.call(null, req.modelname, result, req.user);
-				res.json({ status: "ok", message: req.modelname + " created", data: item });
+					req.config.callbacks.post.call(
+						null,
+						req.modelname,
+						result,
+						req.user
+					);
+				res.json({
+					status: "ok",
+					message: req.modelname + " created",
+					data: item
+				});
 				console.timeEnd("POST " + req.modelname);
 				return;
 			}
 		});
-	} catch(err) {
+	} catch (err) {
 		console.trace(err);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
@@ -224,18 +235,38 @@ var actionPut = function(req, res) {
 						item.save(function(err, data) {
 							if (err) {
 								console.trace(err);
-								res.send(500, { status: "error", message: err.toString() });
+								res.send(500, {
+									status: "error",
+									message: err.toString()
+								});
 							} else {
 								// console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
 								if (!req.params._silence)
-									req.config.callbacks.put.call(null, req.modelname, item, req.user);
-								res.json({ status: "ok", message: req.modelname + " updated", data: data });
-								console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
+									req.config.callbacks.put.call(
+										null,
+										req.modelname,
+										item,
+										req.user
+									);
+								res.json({
+									status: "ok",
+									message: req.modelname + " updated",
+									data: data
+								});
+								console.timeEnd(
+									"PUT " +
+										req.modelname +
+										"/" +
+										req.params.item_id
+								);
 							}
 						});
-					} catch(err) {
+					} catch (err) {
 						console.trace(err);
-						res.send(500, { status: "error", message: err.toString() });
+						res.send(500, {
+							status: "error",
+							message: err.toString()
+						});
 						return;
 					}
 				} else {
@@ -245,7 +276,7 @@ var actionPut = function(req, res) {
 				}
 			}
 		});
-	} catch(err) {
+	} catch (err) {
 		console.trace(err);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
@@ -278,8 +309,17 @@ var actionDelete = function(req, res) {
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
 					if (!req.params._silence)
-						req.config.callbacks.delete.call(null, req.modelname, item, req.user, { soft: true });
-					res.json({ status: "ok", message: req.modelname + ' deleted' });
+						req.config.callbacks.delete.call(
+							null,
+							req.modelname,
+							item,
+							req.user,
+							{ soft: true }
+						);
+					res.json({
+						status: "ok",
+						message: req.modelname + " deleted"
+					});
 				}
 			});
 		} else {
@@ -291,8 +331,17 @@ var actionDelete = function(req, res) {
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
 					if (!req.params._silence)
-						req.config.callbacks.delete.call(null, req.modelname, item, req.user, { soft: false });
-					res.json({ status: "ok", message: req.modelname + ' deleted' });
+						req.config.callbacks.delete.call(
+							null,
+							req.modelname,
+							item,
+							req.user,
+							{ soft: false }
+						);
+					res.json({
+						status: "ok",
+						message: req.modelname + " deleted"
+					});
 				}
 			});
 		}
@@ -302,13 +351,15 @@ var actionDelete = function(req, res) {
 var actionCall = function(req, res) {
 	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
 	req.params.__user = req.user || null;
-	req.Model[req.params.method_name](req.params)
-	.then(function(result) {
-		res.json(result);
-	}, function(err) {
-		console.trace(err);
-		res.send(500, { status: "error", message: err.toString() });
-	});
+	req.Model[req.params.method_name](req.params).then(
+		function(result) {
+			res.json(result);
+		},
+		function(err) {
+			console.trace(err);
+			res.send(500, { status: "error", message: err.toString() });
+		}
+	);
 };
 
 var actionCallItem = function(req, res) {
@@ -323,14 +374,16 @@ var actionCallItem = function(req, res) {
 			return;
 		}
 		req.params.__user = req.user || null;
-		req.Model[req.params.method_name](item)
-		.then(function(item) {
-			// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
-			res.json(item);
-		}, function(err) {
-			console.trace(err);
-			res.send(500, { status: "error", message: err.toString() });
-		});
+		req.Model[req.params.method_name](item).then(
+			function(item) {
+				// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
+				res.json(item);
+			},
+			function(err) {
+				console.trace(err);
+				res.send(500, { status: "error", message: err.toString() });
+			}
+		);
 	});
 };
 
@@ -373,7 +426,10 @@ var metaModels = function(req, res, next) {
 	fs.readdir(model_dir, function(err, files) {
 		if (err) {
 			console.trace(err);
-			res.send(500, { status: "error", message: "Error reading models directory " + model_dir });
+			res.send(500, {
+				status: "error",
+				message: "Error reading models directory " + model_dir
+			});
 			return false;
 		}
 		var models = [];
@@ -381,15 +437,22 @@ var metaModels = function(req, res, next) {
 			var modelname = path.basename(file, ".js").replace("_model", "");
 			try {
 				var modelobj = require(model_dir + "/" + file);
-				if (modelobj.schema && modelobj.schema.get("_perms") && (modelobj.schema.get("_perms").admin || modelobj.schema.get("_perms").user || modelobj.schema.get("_perms").owner || modelobj.schema.get("_perms").all)) {
+				if (
+					modelobj.schema &&
+					modelobj.schema.get("_perms") &&
+					(modelobj.schema.get("_perms").admin ||
+						modelobj.schema.get("_perms").user ||
+						modelobj.schema.get("_perms").owner ||
+						modelobj.schema.get("_perms").all)
+				) {
 					var model = {
 						model: modelname,
 						file: file,
-						perms: modelobj.schema.get("_perms"),
+						perms: modelobj.schema.get("_perms")
 					};
 					models.push(model);
 				}
-			} catch(error) {
+			} catch (error) {
 				console.error("Error with model " + modelname, error);
 			}
 		});
@@ -410,9 +473,9 @@ var getOne = function(Model, item_id, params) {
 		query.populate(params.populate);
 	}
 	if (params.autopopulate) {
-		for(var key in Model.schema.paths) {
+		for (var key in Model.schema.paths) {
 			var path = Model.schema.paths[key];
-			if ((path.instance == "ObjectID") && (path.options.ref)) {
+			if (path.instance == "ObjectID" && path.options.ref) {
 				query.populate(path.path);
 			}
 		}
@@ -428,7 +491,7 @@ var getOne = function(Model, item_id, params) {
 				deferred.reject({ code: 404, msg: "Could not find document" });
 				return;
 			}
-			if (item._deleted && !(params.showDeleted)) {
+			if (item._deleted && !params.showDeleted) {
 				console.error("Document is deleted");
 				deferred.reject({ code: 404, msg: "Document is deleted" });
 				return;
@@ -443,13 +506,11 @@ var getOne = function(Model, item_id, params) {
 };
 
 function parseFilter(filter) {
-	if (typeof(filter) == "object") {
+	if (typeof filter == "object") {
 		Object.keys(filter).forEach(function(key) {
 			var val = filter[key];
-			if (filter[key] === "false")
-				filter[key] = false;
-			if (filter[key] === "true")
-				filter[key] = true;
+			if (filter[key] === "false") filter[key] = false;
+			if (filter[key] === "true") filter[key] = true;
 			if (val.indexOf) {
 				try {
 					if (val.indexOf(":") !== -1) {
@@ -457,15 +518,16 @@ function parseFilter(filter) {
 						filter[key] = {};
 						filter[key][tmp[0]] = tmp[1];
 					}
-					if (typeof(val) == "object") {
+					if (typeof val == "object") {
 						result = parseFilter(val);
 						filter[key] = {};
-						for(var x = 0; x < result.length; x++) {
-							filter[key][Object.keys(result[x])[0]]=result[x][Object.keys(result[x])[0]];
+						for (var x = 0; x < result.length; x++) {
+							filter[key][Object.keys(result[x])[0]] =
+								result[x][Object.keys(result[x])[0]];
 						}
 					}
-				} catch(err) {
-					throw(err);
+				} catch (err) {
+					throw err;
 				}
 			}
 		});
@@ -475,17 +537,16 @@ function parseFilter(filter) {
 
 var _deSerialize = function(data) {
 	function assign(obj, keyPath, value) {
-	// http://stackoverflow.com/questions/5484673/javascript-how-to-dynamically-create-nested-objects-using-object-names-given-by
+		// http://stackoverflow.com/questions/5484673/javascript-how-to-dynamically-create-nested-objects-using-object-names-given-by
 		lastKeyIndex = keyPath.length - 1;
-		for (var i = 0; i < lastKeyIndex; ++ i) {
+		for (var i = 0; i < lastKeyIndex; ++i) {
 			key = keyPath[i];
-			if (!(key in obj))
-				obj[key] = {};
+			if (!(key in obj)) obj[key] = {};
 			obj = obj[key];
 		}
 		obj[keyPath[lastKeyIndex]] = value;
 	}
-	for(var datum in data) {
+	for (var datum in data) {
 		var matches = datum.match(/\[(.+?)\]/g);
 		if (matches) {
 			var params = matches.map(function(match) {
@@ -501,7 +562,7 @@ var _deSerialize = function(data) {
 
 var _populateItem = function(item, data) {
 	_deSerialize(data);
-	for(var prop in item) {
+	for (var prop in item) {
 		if (typeof data[prop] != "undefined") {
 			item[prop] = data[prop];
 			// Unset any blank values - essentially 'deleting' values on editing
@@ -513,7 +574,7 @@ var _populateItem = function(item, data) {
 		if (data[prop + "[0]"]) {
 			var x = 0;
 			var tmp = [];
-			while(data[prop + "[" + x + "]"]) {
+			while (data[prop + "[" + x + "]"]) {
 				tmp.push(data[prop + "[" + x + "]"]);
 				x++;
 			}
@@ -532,7 +593,7 @@ var _versionItem = function(item) {
 
 var _fixArrays = function(req, res, next) {
 	if (req.params) {
-		for(var i in req.params) {
+		for (var i in req.params) {
 			if (i.search(/\[\d+\]/) > -1) {
 				var parts = i.match(/(^[A-Za-z]+)(\[)/);
 				var el = parts[1];
@@ -558,11 +619,10 @@ var JExpress = function(options) {
 
 	//Set up config with default
 	var config = {
-
-		model_dir: path.join(path.dirname(process.argv[1]), '../models'),
+		model_dir: path.join(path.dirname(process.argv[1]), "../models"),
 		mongo: {
 			server: "localhost",
-			db: "openmembers",
+			db: "openmembers"
 		},
 		url: "http://localhost:3001",
 		callbacks: {
@@ -570,7 +630,7 @@ var JExpress = function(options) {
 			post: function() {},
 			delete: function() {},
 			get: function() {},
-			getOne: function() {},
+			getOne: function() {}
 		},
 		log: "access.log",
 		pre_hooks: {
@@ -588,45 +648,52 @@ var JExpress = function(options) {
 			},
 			delete: (req, res, next) => {
 				next();
-			},
+			}
 		},
 		post_hooks: {
 			get: (modelname, result) => {},
 			getOne: (modelname, id, result) => {},
 			post: (modelname, id, data, result) => {},
 			put: (modelname, id, data, result) => {},
-			delete: (modelname, id, data, result) => {},
+			delete: (modelname, id, data, result) => {}
 		}
 	};
 
 	//Override config with passed in options
-	
-	for(var i in options) {
-		if (typeof config[i] === 'object' && !Array.isArray(config[i])) {
+
+	for (var i in options) {
+		if (typeof config[i] === "object" && !Array.isArray(config[i])) {
 			if (typeof options[i] === "object" && !Array.isArray(options[i])) {
-				for(var j in options[i]) {
+				for (var j in options[i]) {
 					config[i][j] = options[i][j]; // Second level object copy
 				}
 			}
 		} else {
 			config[i] = options[i];
 		}
-		if ((i === "model_dir") || (i === "log")) {
+		if (i === "model_dir" || i === "log") {
 			// Decide whether it's absolute or relative
 			if (config.model_dir.charAt(0) === "/") {
 				config[i] = options[i];
-			}  else {
-				config[i] = path.join(path.dirname(process.argv[1]), options[i]);
+			} else {
+				config[i] = path.join(
+					path.dirname(process.argv[1]),
+					options[i]
+				);
 			}
 		}
 	}
-	
+
 	//DB connection
-	mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
-		if (err) {
-			console.error("Connection error", err);
-		}
-	}, { db: { safe:true } }); // connect to our database
+	mongoose.connect(
+		"mongodb://" + config.mongo.server + "/" + config.mongo.db,
+		function(err) {
+			if (err) {
+				console.error("Connection error", err);
+			}
+		},
+		{ db: { safe: true } }
+	); // connect to our database
 
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);
@@ -647,19 +714,23 @@ var JExpress = function(options) {
 	// Logging
 	console.log("Logging to", config.log);
 
-	var accessLogStream = fs.createWriteStream(config.log, {flags: 'a'});
+	var accessLogStream = fs.createWriteStream(config.log, { flags: "a" });
 	server.use(morgan("combined", { stream: accessLogStream }));
 
 	// CORS
-	server.use(
-		function crossOrigin(req,res,next){
-			res.header("Access-Control-Allow-Origin", "*");
-			res.header("Access-Control-Allow-Headers", "X-Requested-With,Authorization");
-			res.header("Access-Control-Allow-Methods", "OPTIONS,GET,POST,PUT,DELETE");
-			res.header('Access-Control-Allow-Credentials', true);
-			return next();
-		}
-	);
+	server.use(function crossOrigin(req, res, next) {
+		res.header("Access-Control-Allow-Origin", "*");
+		res.header(
+			"Access-Control-Allow-Headers",
+			"X-Requested-With,Authorization"
+		);
+		res.header(
+			"Access-Control-Allow-Methods",
+			"OPTIONS,GET,POST,PUT,DELETE"
+		);
+		res.header("Access-Control-Allow-Credentials", true);
+		return next();
+	});
 
 	// Parse data
 	server.use(restify.queryParser());
@@ -674,19 +745,75 @@ var JExpress = function(options) {
 	// Define our endpoints
 
 	/* Our API endpoints */
-	server.get('/api/:modelname', middlewareModel, security.login, security.auth, config.pre_hooks.get, actionGet);
-	server.get('/api/:modelname/:item_id', middlewareModel, security.login, security.auth, config.pre_hooks.getOne, actionGetOne);
-	server.post('/api/:modelname', middlewareModel, security.login, security.auth, middlewarePasswords, config.pre_hooks.post, actionPost);
-	server.put('/api/:modelname/:item_id', middlewareModel, security.login, security.auth, middlewarePasswords, middlewareCheckAdmin, config.pre_hooks.put, actionPut);
-	server.del('/api/:modelname/:item_id', middlewareModel, security.login, security.auth, config.pre_hooks.delete, actionDelete);
+	server.get(
+		"/api/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.get,
+		actionGet
+	);
+	server.get(
+		"/api/:modelname/:item_id",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.getOne,
+		actionGetOne
+	);
+	server.post(
+		"/api/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		middlewarePasswords,
+		config.pre_hooks.post,
+		actionPost
+	);
+	server.put(
+		"/api/:modelname/:item_id",
+		middlewareModel,
+		security.login,
+		security.auth,
+		middlewarePasswords,
+		middlewareCheckAdmin,
+		config.pre_hooks.put,
+		actionPut
+	);
+	server.del(
+		"/api/:modelname/:item_id",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.delete,
+		actionDelete
+	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
 	// server.post('/batch/create/:modelname', middlewareModel, security.login, security.auth, actionBatch);
 
 	/* Call Methods in our models */
-	server.get('/call/:modelname/:method_name', middlewareModel, security.login, security.auth, actionCall);
-	server.post('/call/:modelname/:method_name', middlewareModel, security.login, security.auth, actionCall);
-	server.get('/call/:modelname/:item_id/:method_name', middlewareModel, security.login, security.auth, actionCallItem);
+	server.get(
+		"/call/:modelname/:method_name",
+		middlewareModel,
+		security.login,
+		security.auth,
+		actionCall
+	);
+	server.post(
+		"/call/:modelname/:method_name",
+		middlewareModel,
+		security.login,
+		security.auth,
+		actionCall
+	);
+	server.get(
+		"/call/:modelname/:item_id/:method_name",
+		middlewareModel,
+		security.login,
+		security.auth,
+		actionCallItem
+	);
 
 	/* Login and authentication */
 	server.post("/login/recover", login.recover);
@@ -698,14 +825,28 @@ var JExpress = function(options) {
 	server.post("/login", login.login);
 
 	/* Groups */
-	server.put("/groups/:user_id", security.login, _fixArrays, groups.actionPut);
-	server.post("/groups/:user_id", security.login, _fixArrays, groups.actionPost);
+	server.put(
+		"/groups/:user_id",
+		security.login,
+		_fixArrays,
+		groups.actionPut
+	);
+	server.post(
+		"/groups/:user_id",
+		security.login,
+		_fixArrays,
+		groups.actionPost
+	);
 	server.get("/groups/:user_id", security.login, groups.actionGet);
 	server.del("/groups/:user_id", security.login, groups.actionDelete);
 
 	/* Meta */
-	server.get('/model/:modelname', middlewareModel, metaModel);
+	server.get("/model/:modelname", middlewareModel, metaModel);
 	server.get("/model", metaModels);
+
+	/* Setup */
+	server.get("/setup", security.checkUserDoesNotExist, security.setup);
+
 	return server;
 };
 
