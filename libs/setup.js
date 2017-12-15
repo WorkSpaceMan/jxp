@@ -2,6 +2,7 @@ const config = require("config");
 const bcrypt = require("bcrypt");
 const rand_token = require("rand-token");
 const mongoose = require("mongoose");
+const User = require(path.join(config.model_dir, "user_model"));
 
 var checkUserDoesNotExist = (req, res, next) => {
 	config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
