@@ -183,7 +183,7 @@ var actionPost = function(req, res, next) {
 	console.time("POST " + req.modelname);
 	try {
 		var item = new req.Model();
-		_populateItem(item, datamunging.deserialize(req.params));
+		_populateItem(item, datamunging.deserialize(req.body));
 		if (req.user) {
 			item._owner_id = req.user._id;
 			item.__user = req.user;
@@ -227,7 +227,7 @@ var actionPut = function(req, res) {
 				res.send(500, { status: "error", message: err.toString() });
 			} else {
 				if (item) {
-					_populateItem(item, datamunging.deserialize(req.params));
+					_populateItem(item, datamunging.deserialize(req.body));
 					_versionItem(item);
 					try {
 						if (req.user) {
@@ -507,6 +507,8 @@ var getOne = function(Model, item_id, params) {
 };
 
 function parseFilter(filter) {
+	if (!filter)
+		return {};
 	if (typeof filter == "object") {
 		Object.keys(filter).forEach(function(key) {
 			var val = filter[key];
@@ -734,8 +736,8 @@ var JExpress = function(options) {
 	});
 
 	// Parse data
-	server.use(restify.queryParser());
-	server.use(restify.bodyParser());
+	server.use(restify.plugins.queryParser());
+	server.use(restify.plugins.bodyParser());
 
 	// Bind our config to req.config
 	server.use(function(req, res, next) {
