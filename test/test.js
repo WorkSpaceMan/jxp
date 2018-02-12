@@ -13,28 +13,31 @@ var server = require("../bin/server");
 chai.use(chaiHttp);
 
 describe('Test', () => {
-	bofore = init.init;
+	before = init.init;
 
-	beforeEach(done => {
-		Test.remove({}, err => {
-			done();
-		});
-	});
+	// beforeEach(done => {
+	// 	Test.remove({}, err => {
+	// 		done();
+	// 	});
+	// });
 
 	describe("/GET test", () => {
 		it("it should GET all the tests", (done) => {
-			chai.request(server)
-			.get("/api/test")
-			// .auth(init.email, init.password)
-			.end((err, res) => {
-				res.should.have.status(200);
-				res.body.data.should.be.a('array');
-				res.body.data.length.should.be.eql(0);
-				done();
+			Test.remove(d => {
+				chai.request(server)
+				.get("/api/test")
+				// .auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.a('array');
+					res.body.data.length.should.be.eql(0);
+					done();
+				});
 			});
 		});
 	});
 
+	var post_id = null;
 	describe("/POST test", () => {
 		it("it should POST a new test", (done) => {
 			var test = {
@@ -61,10 +64,29 @@ describe('Test', () => {
 				res.body.data.bar.should.be.a("string");
 				res.body.data.foo.length.should.be.eql(3);
 				res.body.data.foo.length.should.not.be.eql("password");
+				post_id = res.body.data._id;
 				done();
 			});
 		});
 	});
 
-
+	describe("/PUT test", () => {
+		it("it should PUT a new test", (done) => {
+			var test = {
+				foo: "Foo1",
+			};
+			chai.request(server)
+			.put("/api/test/" + post_id)
+			.send(test)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("_id");
+				res.body.data.should.have.property("foo")
+				res.body.data.foo.should.eql("Foo1");
+				done();
+			});
+		});
+	});
 });
