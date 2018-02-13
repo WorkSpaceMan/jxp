@@ -50,8 +50,9 @@ function recover(req, res, next) {
 			}));
 			var text = "Someone (hopefully you) requested a password reset. Please click on the following url to recover your password. If you did not request a password reset, you can ignore this message. \n" + req.config.password_recovery_url + "/" + token;
 			var html = text;
-			if (req.params.mail_format) {
-				html = req.params.mail_format;
+			var mail_format = req.params.mail_format || req.body.mail_format;
+			if (mail_format) {
+				html = mail_format;
 				html = html.replace(/\{\{recover_url\}\}/i, req.config.password_recovery_url + "/" + token);
 			}
 			transporter.sendMail({
@@ -182,8 +183,8 @@ function oauth_callback(req, res, next) {
 }
 
 function login(req, res, next) {
-	var email = req.params.email || req.params.email;
-	var password = req.params.password || req.params.password;
+	var email = req.params.email || req.body.email;
+	var password = req.params.password || req.body.password;
 	var user = security.basicAuthData(req);
 	if (user) {
 		email = user[0];
@@ -231,7 +232,7 @@ function getJWT(req, res, next) {
 		res.send(403, { status: "fail", message: "Unauthorized" });
 		return;
 	}
-	var email = req.params.email;
+	var email = req.params.email || req.body.email;
 	if (!email) {
 		res.send(400, { status: "fail", message: "Email required" });
 		return;
