@@ -13,7 +13,7 @@ var init = function(config) {
 };
 
 function recover(req, res, next) {
-	var email = req.params.email;
+	var email = req.body.email;
 	if (!email) {
 		console.error("Missing email parameter");
 		res.send(400, { status: "fail", message: "Missing email parameter" });
