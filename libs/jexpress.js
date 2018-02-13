@@ -519,7 +519,8 @@ function parseFilter(filter) {
 					if (val.indexOf(":") !== -1) {
 						var tmp = val.split(":");
 						filter[key] = {};
-						filter[key][tmp[0]] = tmp[1];
+						var tmpkey = tmp.shift();
+						filter[key][tmpkey] = tmp.join(":");
 					}
 					if (typeof val == "object") {
 						result = parseFilter(val);
