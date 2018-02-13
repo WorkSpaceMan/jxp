@@ -31,7 +31,7 @@
     "config": "^1.29.4",
     "jsonwebtoken": "^8.1.1",
     "mkdirp": "^0.5.1",
-    "mongoose": "4.13.11",
+    "mongoose": "5.0.4",
     "mongoose-friendly": "^0.1.4",
     "morgan": "^1.9.0",
     "nodemailer": "^4.4.2",

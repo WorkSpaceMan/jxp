@@ -229,11 +229,13 @@ config.pre_hooks = {
 config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
 
 //DB connection
-mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
-	if (err) {
-		console.error("MongoDB connection error", err);
-	}
-}, { db: { safe:true } }); // connect to our database
+// ES6 promises
+mongoose.Promise = Promise;
+
+// mongodb connection
+mongoose.connect(`mongodb://${ config.mongo.server }/${ config.mongo.db }`, {
+	promiseLibrary: global.Promise
+});
 
 var server = new JExpress(config);
 
