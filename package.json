@@ -42,6 +42,7 @@
     "rand-token": "^0.4.0",
     "readline-sync": "^1.4.8",
     "restify": "^6.3.4",
+    "restify-cors-middleware": "^1.1.0",
     "restler-q": "^0.1.1",
     "underscore": "^1.8.3"
   },

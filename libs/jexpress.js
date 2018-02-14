@@ -722,19 +722,31 @@ var JExpress = function(options) {
 	server.use(morgan("combined", { stream: accessLogStream }));
 
 	// CORS
-	server.use(function crossOrigin(req, res, next) {
-		res.header("Access-Control-Allow-Origin", "*");
-		res.header(
-			"Access-Control-Allow-Headers",
-			"X-Requested-With,Authorization"
-		);
-		res.header(
-			"Access-Control-Allow-Methods",
-			"OPTIONS,GET,POST,PUT,DELETE"
-		);
-		res.header("Access-Control-Allow-Credentials", true);
-		return next();
+	const corsMiddleware = require('restify-cors-middleware');
+
+	const cors = corsMiddleware({
+		preflightMaxAge: 5, //Optional
+		origins: ['*'],
+		allowHeaders: ['X-Requested-With','Authorization'],
+		exposeHeaders: ['Authorization']
 	});
+
+	server.pre(cors.preflight);
+	server.use(cors.actual);
+
+	// server.use(function crossOrigin(req, res, next) {
+	// 	res.header("Access-Control-Allow-Origin", "*");
+	// 	res.header(
+	// 		"Access-Control-Allow-Headers",
+	// 		"X-Requested-With,Authorization"
+	// 	);
+	// 	res.header(
+	// 		"Access-Control-Allow-Methods",
+	// 		"OPTIONS,GET,POST,PUT,DELETE"
+	// 	);
+	// 	res.header("Access-Control-Allow-Credentials", true);
+	// 	return next();
+	// });
 
 	// Parse data
 	server.use(restify.plugins.queryParser());
