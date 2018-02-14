@@ -28,8 +28,8 @@ var middlewareModel = function(req, res, next) {
 };
 
 var middlewarePasswords = function(req, res, next) {
-	if (req.params.password && !req.query.password_override) {
-		req.params.password = security.encPassword(req.body.password);
+	if (req.body.password && !req.query.password_override) {
+		req.body.password = security.encPassword(req.body.password);
 		// console.log("Password encrypted");
 	}
 	next();
