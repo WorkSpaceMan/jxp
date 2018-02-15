@@ -1,5 +1,7 @@
 # JExpress 2
 
+v1.0.0
+
 JExpress is an opinionated RESTful API framework that lets you make an API just by defining you models.
 
 It was initially built on Express and Mongoose (hence the name), but now it uses Restify.
@@ -274,3 +276,9 @@ config.callbacks = {
 ```
 
 To suppress a callback, pass `_silence=true` as a parameter. This helps avoid infinite loops, for instance when your PUT updates the same model.
+
+# Changelog
+
+## v1.0.0
+
+- Mongoose v5
