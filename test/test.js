@@ -45,7 +45,8 @@ describe('Test', () => {
 				bar: "Bar",
 				yack: { yack: "yack", shmack: 1 },
 				shmack: [ "do", "ray", "me" ],
-				password: "password"
+				password: "password",
+				fulltext: "In Xanadu did Kulba Khan a stately pleasure dome decree",
 			};
 			chai.request(server)
 			.post("/api/test")
@@ -85,6 +86,22 @@ describe('Test', () => {
 				res.body.data.should.have.property("_id");
 				res.body.data.should.have.property("foo")
 				res.body.data.foo.should.eql("Foo1");
+				done();
+			});
+		});
+	});
+
+	describe("Search test", () => {
+		it("it should search all the tests", (done) => {
+			chai.request(server)
+			.get("/api/test?search=Xanadu")
+			// .auth(init.email, init.password)
+			.end((err, res) => {
+				console.log(res.body);
+				res.should.have.status(200);
+				res.body.data.should.be.a('array');
+				res.body.data.length.should.be.eql(1);
+				res.body.data[0].score.should.be.a("number");
 				done();
 			});
 		});

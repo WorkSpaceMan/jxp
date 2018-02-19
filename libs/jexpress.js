@@ -58,6 +58,7 @@ var filterLogUser = function(user) {
 // Actions (verbs)
 var actionGet = function(req, res) {
 	console.time("GET " + req.modelname);
+
 	var parseSearch = function(search) {
 		var result = {};
 		for (var i in search) {
@@ -84,6 +85,11 @@ var actionGet = function(req, res) {
 	if (!req.query.showDeleted) {
 		qcount.or(checkDeleted);
 		q.or(checkDeleted);
+	}
+	if (req.query.search) {
+		// console.log({ search: req.query.search });
+		q = req.Model.find({ $text: { $search: req.query.search }}, { score : { $meta: "textScore" } }).sort( { score: { $meta : "textScore" } } );
+		qcount = req.Model.find({ $text: { $search: req.query.search }});
 	}
 	qcount.count({}, function(err, count) {
 		if (err) {
@@ -140,6 +146,9 @@ var actionGet = function(req, res) {
 				select[field] = 1;
 			});
 			q.select(select);
+		}
+		if (req.query.search) {
+			result.search = req.query.search;
 		}
 		try {
 			q.exec(function(err, items) {

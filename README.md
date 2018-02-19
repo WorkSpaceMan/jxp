@@ -232,13 +232,28 @@ This works like filtering, but it's a case-insensitive search:
 
 `search[email]=jason`
 
+### Full-text searching
+
+You can perform a search against a full-text index by using `search`.
+
+`search=Test`
+
+To ensure a full-text index across all fields on your model, add this to your schema:
+
+`MySchema.index( { "$**": "text" } );`
+
+See [https://docs.mongodb.com/manual/core/index-text/](MongoDB Text Indexes) for more options, such as weighted indexing.
+
+Note that you can only declare one index per collection (and hence schema).
+
 ### POST
 
 POST always saves a new item, so the endpoint is always `/api/{modelname}`. For instance, POST `/api/test` would create a new test item.
 
 ### PUT
 
-PUT updates an existing item, so the endpoint needs to include the _id, as in `/api/{modelname}/{_id}`. Eg. PUT `/api/test/5731a48b7571ff6248bd6d9c`.
+PUT updates an existing item, so the endpoint needs to include the _id, as in 
+`/api/{modelname}/{_id}`. Eg. PUT `/api/test/5731a48b7571ff6248bd6d9c`.
 
 ### DELETE
 

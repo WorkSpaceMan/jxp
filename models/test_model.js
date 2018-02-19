@@ -11,8 +11,13 @@ var TestSchema   = new Schema({
     yack: Mixed, // We can put anything in here, including objects
     shmack: [String], // We can store arrays
     password: String, // Test password encryption
+    fulltext: { type: String, index: { text: true } },
+    fulltext: String,
     _owner_id: ObjectId // This is one of the magic fields that will be populated by the API
 });
+
+// Full text index
+TestSchema.index( { "$**": "text" } );
 
 // We can set permissions for different user types and user groups
 TestSchema.set("_perms", {
