@@ -57,7 +57,7 @@ function main() {
 		return mkdir(path.join(destinationPath, "models"));
 	})
 	.then(function() {
-		cp_replace("../config_sample.js", path.join(destinationPath, "config.js"), opts, "{", "}");
+		cp_replace("../config_sample.json", path.join(destinationPath, "config/default.json"), opts, "{", "}");
 		cp_replace("./server.js", path.join(destinationPath, "bin/server.js"), { "../libs/jexpress": "jexpress" });
 		models.forEach(function(model) {
 			cp("../models/" + model + "_model.js", path.join(destinationPath, "models/" + model + "_model.js"));
