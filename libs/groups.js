@@ -7,7 +7,7 @@ var init = function(config) {
 
 var actionPut = function(req, res, next) {
 	var user_id = req.params.user_id;
-	var group = req.params.group;
+	var group = req.body.group;
 	if (!group) {
 		console.error("Group required");
 		res.send(400, "Group required");
@@ -48,7 +48,7 @@ var actionPut = function(req, res, next) {
 
 var actionPost = function(req, res, next) {
 	var user_id = req.params.user_id;
-	var group = req.params.group;
+	var group = req.body.group;
 	if (!group) {
 		group = [];
 	}
@@ -94,7 +94,7 @@ var actionGet = function(req, res, next) {
 
 var actionDelete = function(req, res, next) {
 	var user_id = req.params.user_id;
-	var group = req.params.group;
+	var group = req.body.group;
 	if (!group) {
 		res.send(400, "Group required");
 		return;
