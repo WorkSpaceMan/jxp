@@ -1,5 +1,7 @@
 {
 	"port": {port},
-	"mongo_server": "{mongo_server}",
-	"mongo_db": "{mongo_db}"
+	"mongo" : {
+		"server": "{mongo_server}",
+		"mongo_db": "{mongo_db}"
+	}
 }
