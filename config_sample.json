@@ -2,6 +2,6 @@
 	"port": {port},
 	"mongo" : {
 		"server": "{mongo_server}",
-		"mongo_db": "{mongo_db}"
+		"db": "{mongo_db}"
 	}
 }
