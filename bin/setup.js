@@ -57,6 +57,12 @@ function main() {
 		return mkdir(path.join(destinationPath, "models"));
 	})
 	.then(function() {
+		return mkdir(path.join(destinationPath, "config"));
+	})
+	.then(function() {
+		return mkdir(path.join(destinationPath, "logs"));
+	})
+	.then(function() {
 		cp_replace("../config_sample.json", path.join(destinationPath, "config/default.json"), opts, "{", "}");
 		cp_replace("./server.js", path.join(destinationPath, "bin/server.js"), { "../libs/jexpress": "jexpress" });
 		models.forEach(function(model) {
