@@ -360,8 +360,8 @@ var actionDelete = function(req, res) {
 
 var actionCall = function(req, res) {
 	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
-	req.params.__user = req.user || null;
-	req.Model[req.params.method_name](req.params).then(
+	req.body.__user = req.user || null;
+	req.Model[req.params.method_name](req.body).then(
 		function(result) {
 			res.json(result);
 		},
@@ -605,15 +605,15 @@ var _versionItem = function(item) {
 };
 
 var _fixArrays = function(req, res, next) {
-	if (req.params) {
-		for (var i in req.params) {
+	if (req.body) {
+		for (var i in req.body) {
 			if (i.search(/\[\d+\]/) > -1) {
 				var parts = i.match(/(^[A-Za-z]+)(\[)/);
 				var el = parts[1];
-				if (!req.params[el]) {
-					req.params[el] = [];
+				if (!req.body[el]) {
+					req.body[el] = [];
 				}
-				req.params[el].push(req.params[i]);
+				req.body[el].push(req.body[i]);
 			}
 		}
 	}
