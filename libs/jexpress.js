@@ -360,6 +360,7 @@ var actionDelete = function(req, res) {
 
 var actionCall = function(req, res) {
 	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
+	req.body = req.body || {};
 	req.body.__user = req.user || null;
 	req.Model[req.params.method_name](req.body).then(
 		function(result) {
