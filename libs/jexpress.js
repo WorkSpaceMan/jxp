@@ -251,7 +251,7 @@ var actionPut = function(req, res) {
 								});
 							} else {
 								// console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
-								if (!req.params._silence)
+								if (!req.params._silence && !req.body._silence)
 									req.config.callbacks.put.call(
 										null,
 										req.modelname,
@@ -318,7 +318,7 @@ var actionDelete = function(req, res) {
 					res.send(500, { status: "error", message: err.toString() });
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
-					if (!req.params._silence)
+					if (!req.params._silence && !req.body._silence)
 						req.config.callbacks.delete.call(
 							null,
 							req.modelname,
@@ -340,7 +340,7 @@ var actionDelete = function(req, res) {
 					res.send(500, { status: "error", message: err.toString() });
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
-					if (!req.params._silence)
+					if (!req.params._silence && !req.body._silence)
 						req.config.callbacks.delete.call(
 							null,
 							req.modelname,
