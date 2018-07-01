@@ -204,7 +204,7 @@ var actionPost = function(req, res, next) {
 				return;
 			} else {
 				// console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
-				if (!req.params._silence)
+				if (!req.params._silence && !req.body._silence)
 					req.config.callbacks.post.call(
 						null,
 						req.modelname,
