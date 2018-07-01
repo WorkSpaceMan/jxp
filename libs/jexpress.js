@@ -204,7 +204,9 @@ var actionPost = function(req, res, next) {
 				return;
 			} else {
 				// console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
-				if (!req.params._silence && !req.body._silence)
+				var silence = req.params._silence;
+				if (req.body && req.body._silence) silence = true;
+				if (!silence)
 					req.config.callbacks.post.call(
 						null,
 						req.modelname,
@@ -251,7 +253,9 @@ var actionPut = function(req, res) {
 								});
 							} else {
 								// console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
-								if (!req.params._silence && !req.body._silence)
+								var silence = req.params._silence;
+								if (req.body && req.body._silence) silence = true;
+								if (!silence)
 									req.config.callbacks.put.call(
 										null,
 										req.modelname,
@@ -294,6 +298,8 @@ var actionPut = function(req, res) {
 };
 
 var actionDelete = function(req, res) {
+	var silence = req.params._silence;
+	if (req.body && req.body._silence) silence = true;
 	req.Model.findById(req.params.item_id, function(err, item) {
 		if (!item) {
 			console.error("Couldn't find item for delete");
@@ -318,7 +324,7 @@ var actionDelete = function(req, res) {
 					res.send(500, { status: "error", message: err.toString() });
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
-					if (!req.params._silence && !req.body._silence)
+					if (!silence)
 						req.config.callbacks.delete.call(
 							null,
 							req.modelname,
@@ -340,7 +346,7 @@ var actionDelete = function(req, res) {
 					res.send(500, { status: "error", message: err.toString() });
 				} else {
 					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
-					if (!req.params._silence && !req.body._silence)
+					if (!silence)
 						req.config.callbacks.delete.call(
 							null,
 							req.modelname,
