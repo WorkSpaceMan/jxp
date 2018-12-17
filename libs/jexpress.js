@@ -508,7 +508,7 @@ var getOne = async (Model, item_id, params) => {
 		item = item.toObject();
 		//Don't ever return passwords
 		delete item.password;
-		deferred.resolve(item);
+		return item;
 	} catch(err) {
 		console.error(err);
 		return Promise.reject({ code: 500, msg: err });
