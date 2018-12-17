@@ -1,6 +1,5 @@
 var restify = require("restify");
 var mongoose = require("mongoose");
-var Q = require("q");
 var path = require("path");
 var security = require("../libs/security");
 var datamunging = require("../libs/datamunging");
@@ -483,8 +482,7 @@ var metaModel = function(req, res) {
 
 // Utitlities
 
-var getOne = function(Model, item_id, params) {
-	var deferred = Q.defer();
+var getOne = async (Model, item_id, params) => {
 	var query = Model.findById(item_id);
 	if (params.populate) {
 		query.populate(params.populate);
@@ -497,29 +495,24 @@ var getOne = function(Model, item_id, params) {
 			}
 		}
 	}
-	query.exec(function(err, item) {
-		if (err) {
-			console.error(err);
-			deferred.reject({ code: 500, msg: err });
-			return;
-		} else {
-			if (!item) {
-				console.error("Could not find document");
-				deferred.reject({ code: 404, msg: "Could not find document" });
-				return;
-			}
-			if (item._deleted && !params.showDeleted) {
-				console.error("Document is deleted");
-				deferred.reject({ code: 404, msg: "Document is deleted" });
-				return;
-			}
-			//Don't ever return passwords
-			item = item.toObject();
-			delete item.password;
-			deferred.resolve(item);
+	try {
+		var item = await query.exec();
+		if (!item) {
+			console.error("Could not find document");
+			return Promise.reject({ code: 404, msg: "Could not find document" });
 		}
-	});
-	return deferred.promise;
+		if (item._deleted && !params.showDeleted) {
+			console.error("Document is deleted");
+			return Promise.reject({ code: 404, msg: "Document is deleted" });
+		}
+		item = item.toObject();
+		//Don't ever return passwords
+		delete item.password;
+		deferred.resolve(item);
+	} catch(err) {
+		console.error(err);
+		return Promise.reject({ code: 500, msg: err });
+	}
 };
 
 function parseFilter(filter) {
