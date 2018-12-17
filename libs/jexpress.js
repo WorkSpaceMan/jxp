@@ -90,7 +90,7 @@ var actionGet = function(req, res) {
 		q = req.Model.find({ $text: { $search: req.query.search }}, { score : { $meta: "textScore" } }).sort( { score: { $meta : "textScore" } } );
 		qcount = req.Model.find({ $text: { $search: req.query.search }});
 	}
-	qcount.count({}, function(err, count) {
+	qcount.countDocuments({}, function(err, count) {
 		if (err) {
 			console.trace(err);
 			res.send(500, { status: "error", message: err.toString() });
@@ -339,7 +339,7 @@ var actionDelete = function(req, res) {
 			});
 		} else {
 			// console.log("Hard deleting");
-			item.remove(function(err) {
+			item.deleteOne(function(err) {
 				if (err) {
 					console.trace(err);
 					res.send(500, { status: "error", message: err.toString() });
@@ -696,17 +696,6 @@ var JExpress = function(options) {
 			}
 		}
 	}
-
-	//DB connection
-	mongoose.connect(
-		"mongodb://" + config.mongo.server + "/" + config.mongo.db,
-		function(err) {
-			if (err) {
-				console.error("Connection error", err);
-			}
-		},
-		{ db: { safe: true } }
-	); // connect to our database
 
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);

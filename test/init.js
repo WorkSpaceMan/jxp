@@ -16,7 +16,7 @@ chai.use(chaiHttp);
 
 var empty = (model) => {
 	return new Promise((resolve, reject) => {
-		model.remove({}, err => {
+		model.deleteMany({}, err => {
 			if (err)
 				return reject(err);
 			return resolve();

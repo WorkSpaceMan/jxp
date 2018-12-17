@@ -1,6 +1,5 @@
 const bcrypt = require("bcryptjs");
 const rand_token = require("rand-token");
-const mongoose = require("mongoose");
 const path = require("path");
 const security = require("./security");
 
@@ -9,7 +8,7 @@ var init = config => {
 };
 
 var checkUserDoesNotExist = (req, res, next) => {
-	User.count((err, result) => {
+	User.countDocuments((err, result) => {
 		if (err) {
 			console.log("Error:", err.message);
 			return res.send({ status: "failed", error: err.message });

@@ -15,15 +15,9 @@ chai.use(chaiHttp);
 describe('Test', () => {
 	before = init.init;
 
-	// beforeEach(done => {
-	// 	Test.remove({}, err => {
-	// 		done();
-	// 	});
-	// });
-
 	describe("/GET test", () => {
 		it("it should GET all the tests", (done) => {
-			Test.remove(d => {
+			Test.deleteMany(d => {
 				chai.request(server)
 				.get("/api/test")
 				// .auth(init.email, init.password)

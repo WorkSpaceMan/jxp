@@ -19,7 +19,7 @@ var basicAuthData = function(req) {
 	} catch (err) {
 		return false;
 	}
-	decoded = new Buffer(auth, "base64").toString();
+	decoded = new Buffer.from(auth, "base64").toString();
 	return decoded.split(":");
 };
 

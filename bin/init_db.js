@@ -34,7 +34,13 @@ function main() {
 		if (err) {
 			console.log("Database connection error", err);
 		}
-	}, { db: { safe:true } }); // connect to our database
+	}, {
+		db: {
+			safe:true
+		},
+		useCreateIndex: true,
+		useNewUrlParser: true,
+	}); // connect to our database
 	var user = new User();
 	user.email = email;
 	user.password = security.encPassword(password);

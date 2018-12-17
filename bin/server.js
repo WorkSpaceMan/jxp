@@ -1,12 +1,12 @@
-/* 
+/*
 ===============
-API Engineroom 
+API Engineroom
 ===============
 */
 
-/* 
+/*
 
-This Express route supports CRUD operations without having to define controllers for each type. 
+This Express route supports CRUD operations without having to define controllers for each type.
 
 You do still have to define Mongoose models, which we expect to find at ../models.
 
@@ -62,13 +62,13 @@ TestSchema.set("_perms", {
 ```
 
 If you want to use the owner property, you need to have _owner_id in your model.
-Eg. 
+Eg.
 ```
 _owner_id: mongoose.Schema.Types.ObjectId;
 ```
 
 Possible permission keys are:
-"admin" | anyone with "admin" set to true 
+"admin" | anyone with "admin" set to true
 "owner" | on a per-record basis, the person who originally wrote the record
 "user"  | any registered user
 "all"   | the w0rld
@@ -102,13 +102,13 @@ not through the API. If you do want to access it through the API, feel free
 to add a _perm section, but make sure you lock down permissions.
 
 To set a user's groups, call the API as follows:
-Type: POST 
-End-point: /_groups/:user_id 
+Type: POST
+End-point: /_groups/:user_id
 Data: { group: "group_name" }
 
 To add a user to a group, call the API as follows:
-Type: PUT 
-End-point: /_groups/:user_id 
+Type: PUT
+End-point: /_groups/:user_id
 Data: { group: "group_name" }
 
 * For POST and PUT, you can send multiple groups at once.
@@ -119,8 +119,8 @@ End-point: /_groups/:user_id
 Data: { group: "group_name" }
 
 To check a user's groups:
-Type: GET 
-End-point: /_groups/:user_id 
+Type: GET
+End-point: /_groups/:user_id
 
 Only Admins can use the /_groups endpoint.
 
@@ -147,7 +147,7 @@ If you want a model to soft delete, add a _deleted property as follows:
 _deleted: { type: Boolean, default: false, index: true },
 ```
 
-If _deleted equals true, the document will not show up when you get the list of 
+If _deleted equals true, the document will not show up when you get the list of
 documents, and calling it directly will result in a 404.
 
 To show deleted documents when you get a list, add showDeleted=true to your query.
@@ -161,12 +161,12 @@ TestSchema.statics.test = function() {
 }
 ```
 
-Then to call that method through the API, use `https://my.api/api/_call/test`. 
+Then to call that method through the API, use `https://my.api/api/_call/test`.
 If you POST, all variables will be passed through to the method.
 
 ###Adding custom permission logic
 
-Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch 
+Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch
 the user object in your model as a virtual attribute. (I suppose you could use a real Mixed attribute too.)
 
 Eg.
@@ -234,7 +234,9 @@ mongoose.Promise = Promise;
 
 // mongodb connection
 mongoose.connect(`mongodb://${ config.mongo.server }/${ config.mongo.db }`, {
-	promiseLibrary: global.Promise
+	promiseLibrary: global.Promise,
+	useNewUrlParser: true,
+	useCreateIndex: true,
 });
 
 var server = new JExpress(config);
