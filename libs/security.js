@@ -1,4 +1,3 @@
-var Q = require("q");
 var bcrypt = require("bcryptjs");
 var APIKey = null;
 var Groups = null;
