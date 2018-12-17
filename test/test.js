@@ -106,4 +106,23 @@ describe('Test', () => {
 			});
 		});
 	});
+
+	describe("/GET test", () => {
+		it("it should GET a single test", (done) => {
+			var test = {
+				foo: "Foo1",
+			};
+			chai.request(server)
+			.get("/api/test/" + post_id)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.should.be.an('object');
+				res.body.should.have.property("_id");
+				res.body.should.have.property("foo")
+				res.body.foo.should.eql("Foo1");
+				done();
+			});
+		});
+	});
 });
