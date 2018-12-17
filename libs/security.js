@@ -1,5 +1,5 @@
 var Q = require("q");
-var bcrypt = require("bcrypt");
+var bcrypt = require("bcryptjs");
 var APIKey = null;
 var Groups = null;
 var User = null;

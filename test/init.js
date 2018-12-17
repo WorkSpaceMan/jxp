@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 var User = require("../models/user_model");
 var Apikey = require('../models/apikey_model');
 
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcryptjs');
 
 var chai = require('chai');
 var chaiHttp = require('chai-http');

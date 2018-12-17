@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const rand_token = require("rand-token");
 const mongoose = require("mongoose");
 const path = require("path");

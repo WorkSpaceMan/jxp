@@ -1,6 +1,6 @@
 var rest = require("restler-q");
 var jwt = require("jsonwebtoken");
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcryptjs');
 var security = require("../libs/security");
 var User = null;
 var APIKey = null;
@@ -20,7 +20,7 @@ function recover(req, res, next) {
 		return;
 	}
 	User.findOne({ email: email }, function(err, user) {
-		if (err) { 
+		if (err) {
 			console.error(err);
 			res.send(500, { status: "error", message: err });
 			return;
@@ -75,7 +75,7 @@ function recover(req, res, next) {
 function logout(req, res, next) {
 	var apikey = req.query.apikey || req.params.apikey;
 	APIKey.findOne({ apikey: apikey }, function(err, apikey) {
-		if (err) { 
+		if (err) {
 			console.error(err);
 			res.send(500, { status: "error", error: err });
 			return;
@@ -86,7 +86,7 @@ function logout(req, res, next) {
 			return;
 		}
 		apikey.remove(function(err, item) {
-			if (err) { 
+			if (err) {
 				console.error(err);
 				res.send(500, { status: "error", error: err });
 				return;
@@ -199,7 +199,7 @@ function login(req, res, next) {
 		if (err) {
 			console.error(err);
 			res.send(500, { status: "error", error: err });
-			return; 
+			return;
 		}
 		if (!user) {
 			console.error("Incorrect username");
