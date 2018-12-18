@@ -1,5 +1,4 @@
 var restify = require("restify");
-var mongoose = require("mongoose");
 var path = require("path");
 var security = require("../libs/security");
 var datamunging = require("../libs/datamunging");
