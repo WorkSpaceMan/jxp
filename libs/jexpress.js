@@ -1,18 +1,20 @@
-var restify = require("restify");
-var path = require("path");
-var security = require("../libs/security");
-var datamunging = require("../libs/datamunging");
-var login = require("../libs/login");
-var groups = require("../libs/groups");
-var setup = require("../libs/setup");
-var querystring = require("querystring");
-var fs = require("fs");
-var morgan = require("morgan");
+const restify = require("restify");
+const path = require("path");
+const security = require("../libs/security");
+const datamunging = require("../libs/datamunging");
+const login = require("../libs/login");
+const groups = require("../libs/groups");
+const setup = require("../libs/setup");
+const querystring = require("querystring");
+const fs = require("fs");
+const morgan = require("morgan");
+const Cache = require("../libs/cache");
 
+var cache = new Cache();
 var models = {};
 
 // Middleware
-var middlewareModel = function(req, res, next) {
+var middlewareModel = (req, res, next) => {
 	var modelname = req.params.modelname;
 	req.modelname = modelname;
 	// console.log("Model", modelname);
@@ -25,7 +27,7 @@ var middlewareModel = function(req, res, next) {
 	}
 };
 
-var middlewarePasswords = function(req, res, next) {
+var middlewarePasswords = (req, res, next) => {
 	if (req.body && req.body.password && !req.query.password_override) {
 		req.body.password = security.encPassword(req.body.password);
 		// console.log("Password encrypted");
@@ -33,7 +35,7 @@ var middlewarePasswords = function(req, res, next) {
 	next();
 };
 
-var middlewareCheckAdmin = function(req, res, next) {
+var middlewareCheckAdmin = (req, res, next) => {
 	//We don't want users to pump up their own permissions
 	if (req.modelname !== "user") return next();
 	if (req.user.admin) return next();
@@ -186,7 +188,7 @@ var actionGetOne = function(req, res) {
 	);
 };
 
-var actionPost = function(req, res, next) {
+var actionPost = (req, res, next) => {
 	console.time("POST " + req.modelname);
 	try {
 		var item = new req.Model();
@@ -402,7 +404,7 @@ var actionCallItem = function(req, res) {
 	});
 };
 
-// var actionBatch = function(req, res, next) {
+// var actionBatch = (req, res, next) => {
 // 	console.time("BATCH " + req.modelname);
 // 	var items = [];
 // 	data = JSON.parse(req.params.json);
@@ -434,7 +436,7 @@ var actionCallItem = function(req, res) {
 
 // Meta
 
-var metaModels = function(req, res, next) {
+var metaModels = (req, res, next) => {
 	var fs = require("fs");
 	var path = require("path");
 	model_dir = path.join(process.argv[1], "/../../models");
@@ -603,7 +605,7 @@ var _versionItem = function(item) {
 	}
 };
 
-var _fixArrays = function(req, res, next) {
+var _fixArrays = (req, res, next) => {
 	if (req.body) {
 		for (var i in req.body) {
 			if (i.search(/\[\d+\]/) > -1) {
@@ -731,26 +733,12 @@ var JExpress = function(options) {
 	server.pre(cors.preflight);
 	server.use(cors.actual);
 
-	// server.use(function crossOrigin(req, res, next) {
-	// 	res.header("Access-Control-Allow-Origin", "*");
-	// 	res.header(
-	// 		"Access-Control-Allow-Headers",
-	// 		"X-Requested-With,Authorization"
-	// 	);
-	// 	res.header(
-	// 		"Access-Control-Allow-Methods",
-	// 		"OPTIONS,GET,POST,PUT,DELETE"
-	// 	);
-	// 	res.header("Access-Control-Allow-Credentials", true);
-	// 	return next();
-	// });
-
 	// Parse data
 	server.use(restify.plugins.queryParser());
 	server.use(restify.plugins.bodyParser());
 
 	// Bind our config to req.config
-	server.use(function(req, res, next) {
+	server.use((req, res, next) => {
 		req.config = config;
 		next();
 	});
@@ -764,6 +752,7 @@ var JExpress = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
+		cache.read.bind(cache),
 		actionGet
 	);
 	server.get(
@@ -772,6 +761,7 @@ var JExpress = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.getOne,
+		cache.read.bind(cache),
 		actionGetOne
 	);
 	server.post(
@@ -781,7 +771,8 @@ var JExpress = function(options) {
 		security.auth,
 		middlewarePasswords,
 		config.pre_hooks.post,
-		actionPost
+		actionPost,
+		cache.clear.bind(cache)
 	);
 	server.put(
 		"/api/:modelname/:item_id",
@@ -791,7 +782,8 @@ var JExpress = function(options) {
 		middlewarePasswords,
 		middlewareCheckAdmin,
 		config.pre_hooks.put,
-		actionPut
+		actionPut,
+		cache.clear.bind(cache)
 	);
 	server.del(
 		"/api/:modelname/:item_id",
@@ -799,7 +791,8 @@ var JExpress = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.delete,
-		actionDelete
+		actionDelete,
+		cache.clear.bind(cache)
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
@@ -842,16 +835,18 @@ var JExpress = function(options) {
 		"/groups/:user_id",
 		security.login,
 		_fixArrays,
-		groups.actionPut
+		groups.actionPut,
+		cache.clear.bind(cache)
 	);
 	server.post(
 		"/groups/:user_id",
 		security.login,
 		_fixArrays,
-		groups.actionPost
+		groups.actionPost,
+		cache.clear.bind(cache)
 	);
 	server.get("/groups/:user_id", security.login, groups.actionGet);
-	server.del("/groups/:user_id", security.login, groups.actionDelete);
+	server.del("/groups/:user_id", security.login, groups.actionDelete, cache.clear.bind(cache));
 
 	/* Meta */
 	server.get("/model/:modelname", middlewareModel, metaModel);
@@ -859,7 +854,7 @@ var JExpress = function(options) {
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
-	server.post("/setup", setup.checkUserDoesNotExist, setup.setup);
+	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, cache.clear.bind(cache));
 
 	return server;
 };

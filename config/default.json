@@ -1,5 +1,9 @@
 {
 	"port": 4001,
 	"mongo_server": "localhost",
-	"mongo_db": "jexpress"
+	"mongo_db": "jexpress",
+	"memcached": {
+		"server": "localhost:11211",
+		"lifetime": 604800
+	}
 }

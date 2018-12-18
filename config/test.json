@@ -3,5 +3,6 @@
 	"mongo_server": "localhost",
 	"mongo_db": "test",
 	"model_dir": "../../../models/",
-	"log": "./logs/test.log"
+	"log": "./logs/test.log",
+	"memcached": "localhost:11211"
 }
