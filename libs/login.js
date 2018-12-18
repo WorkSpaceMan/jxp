@@ -85,7 +85,7 @@ function logout(req, res, next) {
 			res.send(404, { status: "fail", message: "API Key not found" });
 			return;
 		}
-		apikey.deleteOne(function(err, item) {
+		apikey.delete(function(err, item) {
 			if (err) {
 				console.error(err);
 				res.send(500, { status: "error", error: err });
