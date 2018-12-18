@@ -4,18 +4,18 @@ const crypto = require('crypto');
 console.log("Cache", config.memcached);
 
 if (!config.memcached) {
-    module.exports = {
-        read: (req, res, next) => {
+    class Cache {
+        read(req, res, next) {
             next();
-        },
-        write: (req, res, next) => {
+        }
+        write(req, res, next) {
             next();
-        },
-        clear: (req, res, next) => {
+        }
+        clear(req, res, next) {
             next();
         }
     }
-    return;
+    return module.exports = Cache;
 }
 
 const Memcached = require("memcached");
