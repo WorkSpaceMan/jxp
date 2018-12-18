@@ -772,7 +772,7 @@ var JExpress = function(options) {
 		middlewarePasswords,
 		config.pre_hooks.post,
 		actionPost,
-		cache.clear.bind(cache)
+		cache.flush.bind(cache)
 	);
 	server.put(
 		"/api/:modelname/:item_id",
@@ -783,7 +783,7 @@ var JExpress = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.put,
 		actionPut,
-		cache.clear.bind(cache)
+		cache.flush.bind(cache)
 	);
 	server.del(
 		"/api/:modelname/:item_id",
@@ -792,7 +792,7 @@ var JExpress = function(options) {
 		security.auth,
 		config.pre_hooks.delete,
 		actionDelete,
-		cache.clear.bind(cache)
+		cache.flush.bind(cache)
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
@@ -836,17 +836,17 @@ var JExpress = function(options) {
 		security.login,
 		_fixArrays,
 		groups.actionPut,
-		cache.clear.bind(cache)
+		cache.flush.bind(cache)
 	);
 	server.post(
 		"/groups/:user_id",
 		security.login,
 		_fixArrays,
 		groups.actionPost,
-		cache.clear.bind(cache)
+		cache.flush.bind(cache)
 	);
 	server.get("/groups/:user_id", security.login, groups.actionGet);
-	server.del("/groups/:user_id", security.login, groups.actionDelete, cache.clear.bind(cache));
+	server.del("/groups/:user_id", security.login, groups.actionDelete, cache.flush.bind(cache));
 
 	/* Meta */
 	server.get("/model/:modelname", middlewareModel, metaModel);
@@ -854,7 +854,7 @@ var JExpress = function(options) {
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
-	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, cache.clear.bind(cache));
+	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, cache.flush.bind(cache));
 
 	return server;
 };
