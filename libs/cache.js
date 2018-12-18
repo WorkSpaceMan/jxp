@@ -30,14 +30,11 @@ class Cache {
         const key = this.generateKey(req);
         try {
             const data = await this.mget(key);
-            console.log({ data });
             if (data)
                 return res.send(data);
 
             const oldSend = res.send;
             res.send = function(data) {
-                console.log("Override", arguments);
-
                 oldSend.apply(this, arguments);
             }
 
@@ -67,7 +64,6 @@ class Cache {
     }
 
     mget(key) {
-        console.log("mget", key);
         return new Promise((resolve, reject) => {
             memcached.get(key, (err, data) => {
                 if (err)
@@ -80,7 +76,6 @@ class Cache {
     }
 
     msave(key, data) {
-        console.log("msave", key);
         return new Promise((resolve, reject) => {
             memcached.set(key, data, config.memcached.lifetime, (err) => {
                 if (err)
