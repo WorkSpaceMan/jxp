@@ -94,7 +94,7 @@ var actionGet = function(req, res, next) {
 
 var actionDelete = function(req, res, next) {
 	var user_id = req.params.user_id;
-	var group = req.body.group;
+	var group = req.query.group;
 	if (!group) {
 		res.send(400, "Group required");
 		return;
