@@ -1,8 +1,8 @@
-# JExpress 2
+# JXP
 
-v1.0.0
+v1.0.1
 
-JExpress is an opinionated RESTful API framework that lets you make an API just by defining you models.
+JXP is an opinionated RESTful API framework that lets you make an API just by defining you models.
 
 It was initially built on Express and Mongoose (hence the name), but now it uses Restify.
 
@@ -19,7 +19,7 @@ It was initially built on Express and Mongoose (hence the name), but now it uses
 
 Models are expected to be found in `./models`. They should be named `{modelname}_model.js`.
 
-There are example models that come packaged with JExpress. You should really use the `group_model.js`, `user_model.js`, `apikey_model.js` and `token_model.js` since they are required for full functionality. In addition, `test_model.js` is used for the tests.
+There are example models that come packaged with JXP. You should really use the `group_model.js`, `user_model.js`, `apikey_model.js` and `token_model.js` since they are required for full functionality. In addition, `test_model.js` is used for the tests.
 
 ### Sample Model
 
@@ -79,7 +79,7 @@ TestSchema.statics.test = function(data) {
 };
 ```
 
-You can GET your static, or POST data to it. 
+You can GET your static, or POST data to it.
 
 You can even prepopulate the function with an item:
 
@@ -111,7 +111,7 @@ Once you have an API key, you can append `?apikey=MyAPIKey` to the end of any re
 
 ### Basic Auth
 
-Basic auth encodes (NOTE: ***NOT*** encrypts) your username and password and sends it as part of the header. You can use Basic Auth to authenticate yourself at any time. 
+Basic auth encodes (NOTE: ***NOT*** encrypts) your username and password and sends it as part of the header. You can use Basic Auth to authenticate yourself at any time.
 
 ***NOTE:*** You should only use basic auth over SSL, since it is trivial to decode the username and password. In fact, you should use SSL for everything, anway.
 
@@ -173,7 +173,7 @@ curl -X PUT -F "group[0]=test0" -F "group[1]=test1" "http://localhost:3001/group
 
 ### Adding custom permission logic
 
-Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch 
+Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch
 the user object in your model as a virtual attribute. (I suppose you could use a real Mixed attribute too.)
 
 Eg.
@@ -196,7 +196,7 @@ And then later, say in your pre- or post-save...
 
 ## API
 
-The API lets us read, create, update and delete items. Generally, our `endpoint` (API-speak for URL) decides which collection or item we're referring to, and the HTTP `verb` describes whether we want to read (GET), create (POST), update (PUT) or delete (DELETE). Strict RESTful APIs also have PATCH and OPTIONS. JExpress doesn't. A PUT is a PATCH. Deal with it.
+The API lets us read, create, update and delete items. Generally, our `endpoint` (API-speak for URL) decides which collection or item we're referring to, and the HTTP `verb` describes whether we want to read (GET), create (POST), update (PUT) or delete (DELETE). Strict RESTful APIs also have PATCH and OPTIONS. JXP doesn't. A PUT is a PATCH. Deal with it.
 
 ### GET
 
@@ -208,7 +208,7 @@ For an individual item, we just add the `_id` to the endpoint, as in `/api/{mode
 
 ### Populating
 
-This is one of the most useful features of this API. You can automatically populate the results with linked objects. 
+This is one of the most useful features of this API. You can automatically populate the results with linked objects.
 
 To autopopulate all the fields, use the parameter `autopopulate=1`
 
@@ -220,7 +220,7 @@ Add the parameter `limit=x` to limit the results by x. You'll see the results no
 
 ### Filtering
 
-Use `filter[fieldname]=blah` to filter. 
+Use `filter[fieldname]=blah` to filter.
 
 You can also filter for greater than, less than, greater than or equals and less than or equals for stuff like dates and numbers.
 
@@ -252,7 +252,7 @@ POST always saves a new item, so the endpoint is always `/api/{modelname}`. For 
 
 ### PUT
 
-PUT updates an existing item, so the endpoint needs to include the _id, as in 
+PUT updates an existing item, so the endpoint needs to include the _id, as in
 `/api/{modelname}/{_id}`. Eg. PUT `/api/test/5731a48b7571ff6248bd6d9c`.
 
 ### DELETE
@@ -267,7 +267,7 @@ You should note that if you send through anything called "password", it will aut
 
 The endpoint `/model` shows us all available models.
 
-The endpoint `/model/modelname` gives us a description of a model. 
+The endpoint `/model/modelname` gives us a description of a model.
 
 ### Callbacks
 
@@ -297,3 +297,7 @@ To suppress a callback, pass `_silence=true` as a parameter. This helps avoid in
 ## v1.0.0
 
 - Mongoose v5
+
+## v1.0.1
+
+- Closed bad security hole in groups - now only admins can set groups. (Will probably change this in future so that only those defined in the usergroup model can change groups.)
