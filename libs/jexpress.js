@@ -834,6 +834,7 @@ var JExpress = function(options) {
 	server.put(
 		"/groups/:user_id",
 		security.login,
+		security.admin_only,
 		_fixArrays,
 		groups.actionPut,
 		cache.flush.bind(cache)
@@ -841,12 +842,13 @@ var JExpress = function(options) {
 	server.post(
 		"/groups/:user_id",
 		security.login,
+		security.admin_only,
 		_fixArrays,
 		groups.actionPost,
 		cache.flush.bind(cache)
 	);
 	server.get("/groups/:user_id", security.login, groups.actionGet);
-	server.del("/groups/:user_id", security.login, groups.actionDelete, cache.flush.bind(cache));
+	server.del("/groups/:user_id", security.login, security.admin_only, groups.actionDelete, cache.flush.bind(cache));
 
 	/* Meta */
 	server.get("/model/:modelname", middlewareModel, metaModel);

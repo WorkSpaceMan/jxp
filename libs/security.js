@@ -147,10 +147,10 @@ var login = (req, res, next) => {
 	}
 };
 
-var auth = (req, res, next) => {
+const auth = (req, res, next) => {
 	// console.log("Started Auth");
 	// Check against model as to whether we're allowed to edit this model
-	var perms = req.Model.schema.get("_perms");
+	const perms = req.Model.schema.get("_perms");
 	var passed = {
 		admin: false,
 		owner: false,
@@ -243,13 +243,24 @@ var auth = (req, res, next) => {
 	});
 };
 
-var Security = {
+const admin_only = (req, res, next) => { // Chain after login
+	if (!req.user) {
+		return fail(res, 403, "Unauthorized");
+	}
+	if (!req.user.admin) {
+		return fail(res, 403, "Unauthorized");
+	}
+	next();
+}
+
+const Security = {
 	init,
 	basicAuthData,
 	encPassword,
 	generateApiKey,
 	login,
-	auth
+	auth,
+	admin_only
 };
 
 module.exports = Security;
