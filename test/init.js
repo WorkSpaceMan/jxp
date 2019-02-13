@@ -3,7 +3,7 @@ process.env.NODE_ENV = 'test';
 var User = require("../models/user_model");
 var Apikey = require('../models/apikey_model');
 
-var bcrypt = require('bcryptjs');
+var security = require("../libs/security");
 
 var chai = require('chai');
 var chaiHttp = require('chai-http');
@@ -36,25 +36,20 @@ var post = (model, data) => {
 	});
 };
 
-var encPassword = (password) => {
-	hash = bcrypt.hashSync(password, 4);
-	return hash;
-};
-
 var email = "test@freespeechpub.co.za";
 var password = "test";
 
-var init = () => {
+var init = async () => {
 	var location = null;
 	var organisation = null;
-	return empty(User)
-	.then(() => {
-		return empty(Apikey);
-	})
-	.then(() => {
-		return post(User, { name: "Test User", email, password: encPassword(password), urlid: "test-user" });
-	})
-	;
+	try {
+		await empty(User);
+		await empty(Apikey);
+		return await post(User, { name: "Test User", email, password: security.encPassword(password), urlid: "test-user" });
+	} catch(err) {
+		console.error(err);
+		throw(err);
+	}
 };
 
 describe('Init', () => {

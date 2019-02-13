@@ -43,9 +43,9 @@ describe('Test', () => {
 				fulltext: "In Xanadu did Kulba Khan a stately pleasure dome decree",
 			};
 			chai.request(server)
+			.auth(init.email, init.password)
 			.post("/api/test")
 			.send(test)
-			.auth(init.email, init.password)
 			.end((err, res) => {
 				res.should.have.status(200);
 				res.body.data.should.be.an('object');
