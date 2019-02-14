@@ -1,9 +1,9 @@
-var bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");
 var APIKey = null;
 var Groups = null;
 var User = null;
 
-var init = function(config) {
+const init = function(config) {
 	var path = require("path");
 	APIKey = require(path.join(config.model_dir, "apikey_model"));
 	Groups = require(path.join(config.model_dir, "usergroups_model.js"));
@@ -15,19 +15,19 @@ var basicAuthData = function(req) {
 		return false;
 	}
 	try {
-		auth = req.headers.authorization.split(" ")[1];
+		authorization = req.headers.authorization.split(" ")[1];
 	} catch (err) {
 		return false;
 	}
-	decoded = new Buffer.from(auth, "base64").toString();
+	decoded = new Buffer.from(authorization, "base64").toString();
 	return decoded.split(":");
 };
 
-var fail = function(res, code, message) {
+const fail = function(res, code, message) {
 	res.send(code, { status: "error", message: message });
 };
 
-var basicAuth = ba => {
+const basicAuth = ba => {
 	return new Promise((resolve, reject) => {
 		if (!Array.isArray(ba) || ba.length !== 2) {
 			return reject("Basic Auth incorrectly formatted");
@@ -57,7 +57,7 @@ var basicAuth = ba => {
 	});
 };
 
-var apiKeyAuth = apikey => {
+const apiKeyAuth = apikey => {
 	return new Promise((resolve, reject) => {
 		if (!apikey) return reject("Missing apikey");
 		APIKey.findOne({ apikey }, function(err, result) {
@@ -73,7 +73,7 @@ var apiKeyAuth = apikey => {
 	});
 };
 
-var getGroups = user_id => {
+const getGroups = user_id => {
 	return new Promise((resolve, reject) => {
 		Groups.findOne({ user_id }, (err, userGroup) => {
 			if (err) {
@@ -86,12 +86,12 @@ var getGroups = user_id => {
 	});
 };
 
-var encPassword = password => {
+const encPassword = password => {
 	hash = bcrypt.hashSync(password, 4);
 	return hash;
 };
 
-var generateApiKey = user => {
+const generateApiKey = user => {
 	return new Promise((resolve, reject) => {
 		var apikey = new APIKey();
 		apikey.user_id = user._id;
@@ -107,7 +107,7 @@ var generateApiKey = user => {
 	});
 };
 
-var login = (req, res, next) => {
+const login = (req, res, next) => {
 	if (req.headers.authorization) {
 		// Basic Auth
 		var ba = basicAuthData(req);
