@@ -1,10 +1,6 @@
 # JXP
 
-v1.0.1
-
-JXP is an opinionated RESTful API framework that lets you make an API just by defining you models.
-
-It was initially built on Express and Mongoose (hence the name), but now it uses Restify.
+JXP is an opinionated RESTful API framework that lets you make an API just by defining models.
 
 ## Quick Start
 
@@ -291,6 +287,10 @@ config.callbacks = {
 ```
 
 To suppress a callback, pass `_silence=true` as a parameter. This helps avoid infinite loops, for instance when your PUT updates the same model.
+
+### Outputting CSV
+
+CSV can be outputted by using the /csv/:modelname endpoint. The usual limits, filtering etc will work, but will not be presented in the output as we dump raw data.
 
 # Changelog
 

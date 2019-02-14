@@ -14,7 +14,7 @@ var cache = new Cache();
 var models = {};
 
 // Middleware
-var middlewareModel = (req, res, next) => {
+const middlewareModel = (req, res, next) => {
 	var modelname = req.params.modelname;
 	req.modelname = modelname;
 	// console.log("Model", modelname);
@@ -27,7 +27,7 @@ var middlewareModel = (req, res, next) => {
 	}
 };
 
-var middlewarePasswords = (req, res, next) => {
+const middlewarePasswords = (req, res, next) => {
 	if (req.body && req.body.password && !req.query.password_override) {
 		req.body.password = security.encPassword(req.body.password);
 		// console.log("Password encrypted");
@@ -35,7 +35,7 @@ var middlewarePasswords = (req, res, next) => {
 	next();
 };
 
-var middlewareCheckAdmin = (req, res, next) => {
+const middlewareCheckAdmin = (req, res, next) => {
 	//We don't want users to pump up their own permissions
 	if (req.modelname !== "user") return next();
 	if (req.user.admin) return next();
@@ -44,7 +44,7 @@ var middlewareCheckAdmin = (req, res, next) => {
 };
 
 // Just log the most NB user fields
-var filterLogUser = function(user) {
+const filterLogUser = function(user) {
 	if (user && user._id) {
 		return {
 			_id: user._id,
@@ -55,8 +55,33 @@ var filterLogUser = function(user) {
 	return null;
 };
 
+// Outputs whatever is in res.result as JSON
+const outputJSON = (req, res, next) => {
+	res.send(res.result);
+}
+
+// Outputs whatever is in res.result as CSV
+const outputCSV = (req, res, next) => {
+	const json2csv = require('json2csv').parse;
+	const opts = { "flatten": true };
+	if (!res.result.data) {
+		res.send(500, "Not CSVable data");
+	}
+	res.writeHead(200, {
+		'Content-Type': 'text/csv',
+		'Content-Disposition': 'attachment; filename=export.csv'
+	});
+	try {
+		const csv = json2csv(res.result.data[0]._doc, opts);
+		res.end(csv);
+	} catch (err) {
+		console.error(err);
+		res.send(500, err);
+	}
+}
+
 // Actions (verbs)
-var actionGet = function(req, res) {
+const actionGet = (req, res, next) => {
 	console.time("GET " + req.modelname);
 
 	var parseSearch = function(search) {
@@ -131,10 +156,10 @@ var actionGet = function(req, res) {
 			}
 		}
 		if (req.query.autopopulate) {
-			for (var key in req.Model.schema.paths) {
-				var path = req.Model.schema.paths[key];
-				if (path.instance == "ObjectID" && path.options.ref) {
-					q.populate(path.path);
+			for (let key in req.Model.schema.paths) {
+				var dirpath = req.Model.schema.paths[key];
+				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
+					q.populate(dirpath.path);
 				}
 			}
 			result.autopopulate = true;
@@ -158,8 +183,10 @@ var actionGet = function(req, res) {
 				} else {
 					// console.log({ action_id: 3, action: "Fetched documents", type: req.modelname, count: result.count, autopopulate: result.autopopulate, limit: result.limit, page: result.page, filters: filters, user: filterLogUser(req.user) });
 					result.data = items;
-					res.send(result);
+					// res.send(result);
+					res.result = result;
 					console.timeEnd("GET " + req.modelname);
+					next();
 				}
 			});
 		} catch (err) {
@@ -170,7 +197,7 @@ var actionGet = function(req, res) {
 	});
 };
 
-var actionGetOne = function(req, res) {
+const actionGetOne = (req, res) => {
 	console.time("GET " + req.modelname + "/" + req.params.item_id);
 	getOne(req.Model, req.params.item_id, req.query).then(
 		function(item) {
@@ -188,7 +215,7 @@ var actionGetOne = function(req, res) {
 	);
 };
 
-var actionPost = (req, res, next) => {
+const actionPost = (req, res, next) => {
 	console.time("POST " + req.modelname);
 	try {
 		var item = new req.Model();
@@ -229,7 +256,7 @@ var actionPost = (req, res, next) => {
 	}
 };
 
-var actionPut = function(req, res) {
+const actionPut = (req, res) => {
 	console.time("PUT " + req.modelname + "/" + req.params.item_id);
 	try {
 		req.Model.findById(req.params.item_id, function(err, item) {
@@ -297,7 +324,7 @@ var actionPut = function(req, res) {
 	}
 };
 
-var actionDelete = function(req, res) {
+const actionDelete = (req, res) => {
 	var silence = req.params._silence;
 	if (req.body && req.body._silence) silence = true;
 	req.Model.findById(req.params.item_id, function(err, item) {
@@ -364,7 +391,7 @@ var actionDelete = function(req, res) {
 	});
 };
 
-var actionCall = function(req, res) {
+const actionCall = (req, res) => {
 	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
 	req.body = req.body || {};
 	req.body.__user = req.user || null;
@@ -379,7 +406,7 @@ var actionCall = function(req, res) {
 	);
 };
 
-var actionCallItem = function(req, res) {
+const actionCallItem = (req, res) => {
 	req.Model.findById(req.params.item_id, function(err, item) {
 		if (!item) {
 			res.send(404, "Document not found for " + req.params.method_name);
@@ -436,9 +463,7 @@ var actionCallItem = function(req, res) {
 
 // Meta
 
-var metaModels = (req, res, next) => {
-	var fs = require("fs");
-	var path = require("path");
+const metaModels = (req, res, next) => {
 	model_dir = path.join(process.argv[1], "/../../models");
 	fs.readdir(model_dir, function(err, files) {
 		if (err) {
@@ -477,22 +502,22 @@ var metaModels = (req, res, next) => {
 	});
 };
 
-var metaModel = function(req, res) {
+const metaModel = (req, res) => {
 	res.send(req.Model.schema.paths);
 };
 
 // Utitlities
 
-var getOne = async (Model, item_id, params) => {
-	var query = Model.findById(item_id);
+const getOne = async (Model, item_id, params) => {
+	const query = Model.findById(item_id);
 	if (params.populate) {
 		query.populate(params.populate);
 	}
 	if (params.autopopulate) {
-		for (var key in Model.schema.paths) {
-			var path = Model.schema.paths[key];
-			if (path.instance == "ObjectID" && path.options.ref) {
-				query.populate(path.path);
+		for (let key in Model.schema.paths) {
+			var dirpath = Model.schema.paths[key];
+			if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
+				query.populate(dirpath.path);
 			}
 		}
 	}
@@ -516,7 +541,7 @@ var getOne = async (Model, item_id, params) => {
 	}
 };
 
-function parseFilter(filter) {
+const parseFilter = (filter) => {
 	if (!filter)
 		return {};
 	if (typeof filter == "object") {
@@ -549,7 +574,7 @@ function parseFilter(filter) {
 	return filter;
 }
 
-var _deSerialize = function(data) {
+const _deSerialize = (data) => {
 	function assign(obj, keyPath, value) {
 		// http://stackoverflow.com/questions/5484673/javascript-how-to-dynamically-create-nested-objects-using-object-names-given-by
 		lastKeyIndex = keyPath.length - 1;
@@ -574,9 +599,9 @@ var _deSerialize = function(data) {
 	}
 };
 
-var _populateItem = function(item, data) {
+const _populateItem = (item, data) => {
 	_deSerialize(data);
-	for (var prop in item) {
+	for (let prop in item) {
 		if (typeof data[prop] != "undefined") {
 			item[prop] = data[prop];
 			// Unset any blank values - essentially 'deleting' values on editing
@@ -597,7 +622,7 @@ var _populateItem = function(item, data) {
 	}
 };
 
-var _versionItem = function(item) {
+const _versionItem = (item) => {
 	if (item._version || item._version === 0) {
 		item._version++;
 	} else {
@@ -605,7 +630,7 @@ var _versionItem = function(item) {
 	}
 };
 
-var _fixArrays = (req, res, next) => {
+const _fixArrays = (req, res, next) => {
 	if (req.body) {
 		for (var i in req.body) {
 			if (i.search(/\[\d+\]/) > -1) {
@@ -621,15 +646,15 @@ var _fixArrays = (req, res, next) => {
 	next();
 };
 
-var changeUrlParams = function(req, key, val) {
+const changeUrlParams = (req, key, val) => {
 	var q = req.query;
 	q[key] = val;
 	var pathname = require("url").parse(req.url).pathname;
 	return req.config.url + req.path() + "?" + querystring.stringify(q);
 };
 
-var JExpress = function(options) {
-	var server = restify.createServer();
+const JExpress = function(options) {
+	const server = restify.createServer();
 
 	//Set up config with default
 	var config = {
@@ -675,10 +700,10 @@ var JExpress = function(options) {
 
 	//Override config with passed in options
 
-	for (var i in options) {
+	for (let i in options) {
 		if (typeof config[i] === "object" && !Array.isArray(config[i])) {
 			if (typeof options[i] === "object" && !Array.isArray(options[i])) {
-				for (var j in options[i]) {
+				for (let j in options[i]) {
 					config[i][j] = options[i][j]; // Second level object copy
 				}
 			}
@@ -753,7 +778,8 @@ var JExpress = function(options) {
 		security.auth,
 		config.pre_hooks.get,
 		cache.read.bind(cache),
-		actionGet
+		actionGet,
+		outputJSON
 	);
 	server.get(
 		"/api/:modelname/:item_id",
@@ -793,6 +819,18 @@ var JExpress = function(options) {
 		config.pre_hooks.delete,
 		actionDelete,
 		cache.flush.bind(cache)
+	);
+
+	// CSV endpoints
+	server.get(
+		"/csv/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.get,
+		cache.read.bind(cache),
+		actionGet,
+		outputCSV
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
