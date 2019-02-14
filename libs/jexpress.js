@@ -67,12 +67,15 @@ const outputCSV = (req, res, next) => {
 	if (!res.result.data) {
 		res.send(500, "Not CSVable data");
 	}
-	res.writeHead(200, {
-		'Content-Type': 'text/csv',
-		'Content-Disposition': 'attachment; filename=export.csv'
-	});
 	try {
 		const data = res.result.data.map(row => row._doc);
+		if (!data.length) {
+			throw("")
+		}
+		res.writeHead(200, {
+			'Content-Type': 'text/csv',
+			'Content-Disposition': 'attachment; filename=export.csv'
+		});
 		const csv = json2csv(data, opts);
 		res.end(csv);
 	} catch (err) {
