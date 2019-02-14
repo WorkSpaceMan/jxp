@@ -72,7 +72,8 @@ const outputCSV = (req, res, next) => {
 		'Content-Disposition': 'attachment; filename=export.csv'
 	});
 	try {
-		const csv = json2csv(res.result.data[0]._doc, opts);
+		const data = res.result.data.map(row => row._doc);
+		const csv = json2csv(data, opts);
 		res.end(csv);
 	} catch (err) {
 		console.error(err);
