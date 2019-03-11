@@ -10,7 +10,7 @@ const fs = require("fs");
 const morgan = require("morgan");
 const Cache = require("../libs/cache");
 
-var cache = new Cache();
+const cache = new Cache();
 var models = {};
 
 // Middleware

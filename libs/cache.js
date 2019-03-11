@@ -11,6 +11,9 @@ if (!config.memcached) {
         clear(req, res, next) {
             next();
         }
+        flush(req, res, next) {
+            next();
+        }
     }
     module.exports = Cache;
 } else {
