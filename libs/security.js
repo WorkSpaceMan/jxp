@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const randToken = require("rand-token");
 var APIKey = null;
 var Groups = null;
 var User = null;
@@ -15,135 +16,105 @@ var basicAuthData = function(req) {
 		return false;
 	}
 	try {
-		authorization = req.headers.authorization.split(" ")[1];
+		const authorization = req.headers.authorization.split(" ")[1];
+		const decoded = new Buffer.from(authorization, "base64").toString();
+		return decoded.split(":");
 	} catch (err) {
 		return false;
 	}
-	decoded = new Buffer.from(authorization, "base64").toString();
-	return decoded.split(":");
 };
 
 const fail = function(res, code, message) {
-	res.send(code, { status: "error", message: message });
+	res.send(code, { status: "error", message });
 };
 
-const basicAuth = ba => {
-	return new Promise((resolve, reject) => {
+const basicAuth = async ba => {
+	try {
 		if (!Array.isArray(ba) || ba.length !== 2) {
-			return reject("Basic Auth incorrectly formatted");
+			console.log("Oops");
+			throw("Basic Auth incorrectly formatted");
 		}
 		var email = ba[0];
 		var password = ba[1];
-		User.findOne({ email }, function(err, user) {
-			if (err) {
-				console.error(err);
-				return reject(err);
-			}
-			if (!user) {
-				console.error("Incorrect username");
-				return reject("Incorrect username or password");
-			}
-			try {
-				if (!bcrypt.compareSync(password, user.password)) {
-					console.error("Incorrect password");
-					return reject("Incorrect username or password");
-				}
-			} catch (e) {
-				console.error(e);
-				return reject(e);
-			}
-			return resolve(user);
-		});
-	});
+		const user = await User.findOne({ email }).exec();
+		if (!user) {
+			console.error("Incorrect username");
+			throw("Incorrect username or password");
+		}
+		if (!await bcrypt.compare(password, user.password)) {
+			console.error("Incorrect password");
+			throw("Incorrect username or password");
+		}
+		return user;
+	} catch(err) {
+		console.error(new Date(), err);
+		return Promise.reject(err);
+	}
 };
 
-const apiKeyAuth = apikey => {
-	return new Promise((resolve, reject) => {
-		if (!apikey) return reject("Missing apikey");
-		APIKey.findOne({ apikey }, function(err, result) {
-			if (err) return reject(err);
-			if (!result) return reject("Could not find apikey");
-			User.findOne({ _id: result.user_id }, function(err, user) {
-				if (err) return reject(err);
-				if (!user)
-					return reject("Could not find user associated to apikey");
-				return resolve(user);
-			});
-		});
-	});
+const apiKeyAuth = async apikey => {
+	try {
+		if (!apikey) throw("Missing apikey");
+		const result = await APIKey.findOne({ apikey });
+		if (!result) throw("Could not find apikey");
+		const user = User.findOne({ _id: result.user_id });
+		if (!user) throw("Could not find user associated to apikey");
+		return user;
+	} catch(err) {
+		console.error(new Date(), err);
+		return Promise.reject(err);
+	}
 };
 
-const getGroups = user_id => {
-	return new Promise((resolve, reject) => {
-		Groups.findOne({ user_id }, (err, userGroup) => {
-			if (err) {
-				console.error(err);
-				return reject(err);
-			}
-			var groups = userGroup && userGroup.groups ? userGroup.groups : [];
-			return resolve(groups);
-		});
-	});
+const getGroups = async user_id => {
+	try {
+		const userGroup = await Groups.findOne({ user_id });
+		var groups = userGroup && userGroup.groups ? userGroup.groups : [];
+		return groups;
+	} catch(err) {
+		console.error(new Date(), err);
+		return Promise.reject(err);
+	}
 };
 
 const encPassword = password => {
-	hash = bcrypt.hashSync(password, 4);
-	return hash;
+	return bcrypt.hashSync(password, 4);
 };
 
-const generateApiKey = user => {
-	return new Promise((resolve, reject) => {
+const generateApiKey = async user => {
+	try {
 		var apikey = new APIKey();
 		apikey.user_id = user._id;
-		apikey.apikey = require("rand-token").generate(16);
-
-		apikey.save(function(err) {
-			if (err) {
-				console.error(err);
-				return reject(err);
-			}
-			return resolve(apikey);
-		});
-	});
+		apikey.apikey = randToken.generate(16);
+		await apikey.save();
+		return apikey;
+	} catch(err) {
+		console.error(new Date(), err);
+		return Promise.reject(err);
+	}
 };
 
-const login = (req, res, next) => {
-	if (req.headers.authorization) {
-		// Basic Auth
-		var ba = basicAuthData(req);
-		basicAuth(ba)
-			.then(user => {
-				req.user = user;
-				return getGroups(user._id);
-			})
-			.then(groups => {
-				req.groups = groups;
-				next();
-			})
-			.catch(err => {
-				console.error(err);
-				return fail(res, 403, err);
-			});
-	} else if (req.query.apikey) {
-		// APIKey
-		apiKeyAuth(req.query.apikey)
-			.then(user => {
-				req.user = user;
-				return getGroups(user._id);
-			})
-			.then(groups => {
-				req.groups = groups;
-				next();
-			})
-			.catch(err => {
-				console.error(err);
-				return fail(res, 403, err);
-			});
-	} else {
-		// No login details
+const login = async (req, res, next) => {
+	if (!req.query.apikey && !req.headers.authorization) {
+		// Anonymous user
 		req.user = null;
 		req.groups = [];
-		next();
+		return next();
+	}
+	try {
+		if (req.headers.authorization) {
+			// Basic Auth
+			req.user = await basicAuth(basicAuthData(req));
+		} else {
+			// API Key
+			req.user = await apiKeyAuth(req.query.apikey)
+		}
+		const groups = await getGroups(req.user._id);
+		req.groups = groups;
+		return next();
+	} catch(err) {
+		console.error(new Date(), err);
+		return fail(res, 403, err);
 	}
 };
 
@@ -218,7 +189,6 @@ const auth = (req, res, next) => {
 		}
 	});
 	//Owner check
-	var owner_id = false;
 	req.Model.findById(req.params.item_id, function(err, item) {
 		if (err) {
 			console.error(err);
