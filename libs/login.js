@@ -12,7 +12,7 @@ var init = function(config) {
 	security.init(config);
 };
 
-function recover(req, res, next) {
+function recover(req, res) {
 	var email = req.body.email;
 	if (!email) {
 		console.error("Missing email parameter");
@@ -66,13 +66,13 @@ function recover(req, res, next) {
 				console.log({ msg: "Mailer result", result: result });
 			});
 			res.send({ status: "ok", message: "Sent recovery email" });
-		}, function(err) {
-			deny(req, res, next);
+		}, function() {
+			res.send(403, { status: "fail", message: "Unauthorized" });
 		});
 	});
 }
 
-function logout(req, res, next) {
+function logout(req, res) {
 	var apikey = req.query.apikey || req.params.apikey;
 	APIKey.findOne({ apikey: apikey }, function(err, apikey) {
 		if (err) {
@@ -85,7 +85,7 @@ function logout(req, res, next) {
 			res.send(404, { status: "fail", message: "API Key not found" });
 			return;
 		}
-		apikey.delete(function(err, item) {
+		apikey.delete(function(err) {
 			if (err) {
 				console.error(err);
 				res.send(500, { status: "error", error: err });
@@ -139,7 +139,7 @@ function oauth_callback(req, res, next) {
 		}
 		if (!result.email) {
 			res.redirect(req.config.oauth.fail_uri + "?error=missing_data&provider=" + provider, next);
-			return;
+			return; // TODO: this should be some kind of break, not a return
 		}
 		var search = {};
 		search[provider + ".id"] = result.id;
@@ -156,7 +156,7 @@ function oauth_callback(req, res, next) {
 		user[provider] = data;
 		return user.save();
 	})
-	.then(function(result) {
+	.then(function() {
 		//Generate new API key
 		var apikey = new APIKey();
 		apikey.user_id = user._id;
@@ -182,7 +182,7 @@ function oauth_callback(req, res, next) {
 	});
 }
 
-function login(req, res, next) {
+function login(req, res) {
 	var email = req.params.email || req.body.email;
 	var password = req.params.password || req.body.password;
 	var user = security.basicAuthData(req);
@@ -220,13 +220,13 @@ function login(req, res, next) {
 		security.generateApiKey(user)
 		.then(function(result) {
 			res.send(result);
-		}, function(err) {
+		}, function() {
 			res.send(401, { status: "fail", message: "Authentication failed" });
 		});
 	});
 }
 
-function getJWT(req, res, next) {
+function getJWT(req, res) {
 	var user = null;
 	if (!req.user.admin) {
 		res.send(403, { status: "fail", message: "Unauthorized" });
@@ -253,8 +253,8 @@ function getJWT(req, res, next) {
 				expiresIn: "2d"
 			});
 			res.send({ email: user.email, token: token });
-		}, function(err) {
-			deny(req, res, next);
+		}, function() {
+			res.send(403, { status: "fail", message: "Unauthorized" });
 		});
 	});
 	return;
