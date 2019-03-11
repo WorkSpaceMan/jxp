@@ -107,7 +107,7 @@ const actionGet = async (req, res, next) => {
 		qcount = req.Model.find({ $text: { $search: req.query.search }});
 	}
 	try {
-		const count = await qcount.countDocuments({});
+		const count = await qcount.count();
 		const result = { count };
 		const limit = parseInt(req.query.limit);
 		if (limit) {
