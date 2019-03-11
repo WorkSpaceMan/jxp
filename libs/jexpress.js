@@ -22,15 +22,14 @@ const middlewareModel = (req, res, next) => {
 		req.Model = models[modelname];
 		return next();
 	} catch (err) {
-		console.error(err);
-		return res.send(404, "Model " + modelname + " not found");
+		console.error(new Date, err);
+		return res.send(404, { status: "error", error: err, message: `Model ${modelname} not found` });
 	}
 };
 
 const middlewarePasswords = (req, res, next) => {
 	if (req.body && req.body.password && !req.query.password_override) {
 		req.body.password = security.encPassword(req.body.password);
-		// console.log("Password encrypted");
 	}
 	next();
 };
@@ -43,29 +42,17 @@ const middlewareCheckAdmin = (req, res, next) => {
 	next();
 };
 
-// Just log the most NB user fields
-const filterLogUser = function(user) {
-	if (user && user._id) {
-		return {
-			_id: user._id,
-			email: user.email,
-			name: user.name
-		};
-	}
-	return null;
-};
-
 // Outputs whatever is in res.result as JSON
-const outputJSON = (req, res, next) => {
+const outputJSON = (req, res) => {
 	res.send(res.result);
 }
 
 // Outputs whatever is in res.result as CSV
-const outputCSV = (req, res, next) => {
+const outputCSV = (req, res) => {
 	const json2csv = require('json2csv').parse;
 	const opts = { "flatten": true };
 	if (!res.result.data) {
-		res.send(500, "Not CSVable data");
+		return res.send(500, "Not CSVable data");
 	}
 	try {
 		const data = res.result.data.map(row => row._doc);
@@ -85,12 +72,11 @@ const outputCSV = (req, res, next) => {
 }
 
 // Actions (verbs)
-const actionGet = (req, res, next) => {
+const actionGet = async (req, res, next) => {
 	console.time("GET " + req.modelname);
-
-	var parseSearch = function(search) {
-		var result = {};
-		for (var i in search) {
+	const parseSearch = function(search) {
+		let result = {};
+		for (let i in search) {
 			result[i] = new RegExp(search[i], "i");
 		}
 		return result;
@@ -100,8 +86,8 @@ const actionGet = (req, res, next) => {
 	try {
 		filters = parseFilter(req.query.filter);
 	} catch (err) {
-		console.trace(err);
-		res.send(500, { status: "error", message: err.toString() });
+		console.trace(new Date(), err);
+		res.send(500, { status: "error", error: err, message: err.toString() });
 		return;
 	}
 	var search = parseSearch(req.query.search);
@@ -120,21 +106,16 @@ const actionGet = (req, res, next) => {
 		q = req.Model.find({ $text: { $search: req.query.search }}, { score : { $meta: "textScore" } }).sort( { score: { $meta : "textScore" } } );
 		qcount = req.Model.find({ $text: { $search: req.query.search }});
 	}
-	qcount.countDocuments({}, function(err, count) {
-		if (err) {
-			console.trace(err);
-			res.send(500, { status: "error", message: err.toString() });
-			return;
-		}
-		var result = {};
-		result.count = count;
-		var limit = parseInt(req.query.limit);
+	try {
+		const count = await qcount.countDocuments({});
+		const result = { count };
+		const limit = parseInt(req.query.limit);
 		if (limit) {
 			q.limit(limit);
 			result.limit = limit;
-			var page_count = Math.ceil(count / limit);
+			let page_count = Math.ceil(count / limit);
 			result.page_count = page_count;
-			var page = parseInt(req.query.page);
+			let page = parseInt(req.query.page);
 			page = page ? page : 1;
 			result.page = page;
 			if (page < page_count) {
@@ -150,18 +131,12 @@ const actionGet = (req, res, next) => {
 			result.sort = req.query.sort;
 		}
 		if (req.query.populate) {
-			try {
-				q.populate(req.query.populate);
-				result.populate = req.query.populate;
-			} catch (err) {
-				console.trace(err);
-				res.send(500, { status: "error", message: err.toString() });
-				return;
-			}
+			q.populate(req.query.populate);
+			result.populate = req.query.populate;	
 		}
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
-				var dirpath = req.Model.schema.paths[key];
+				const dirpath = req.Model.schema.paths[key];
 				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
 					q.populate(dirpath.path);
 				}
@@ -169,8 +144,8 @@ const actionGet = (req, res, next) => {
 			result.autopopulate = true;
 		}
 		if (req.query.fields) {
-			var fields = req.query.fields.split(",");
-			var select = {};
+			const fields = req.query.fields.split(",");
+			const select = {};
 			fields.forEach(field => {
 				select[field] = 1;
 			});
@@ -179,47 +154,35 @@ const actionGet = (req, res, next) => {
 		if (req.query.search) {
 			result.search = req.query.search;
 		}
-		try {
-			q.exec(function(err, items) {
-				if (err) {
-					console.error(err);
-					res.send(500, err);
-				} else {
-					// console.log({ action_id: 3, action: "Fetched documents", type: req.modelname, count: result.count, autopopulate: result.autopopulate, limit: result.limit, page: result.page, filters: filters, user: filterLogUser(req.user) });
-					result.data = items;
-					// res.send(result);
-					res.result = result;
-					console.timeEnd("GET " + req.modelname);
-					next();
-				}
-			});
-		} catch (err) {
-			console.trace(err);
-			res.send(500, { status: "error", message: err.toString() });
-			return;
-		}
-	});
+		result.data = await q.exec();
+		res.result = result;
+		console.timeEnd("GET " + req.modelname);
+		next();
+	} catch(err) {
+		console.error(new Date(), err);
+		console.timeEnd("GET " + req.modelname);
+		res.send(500, { status: "error", message: err.toString() });
+	}
 };
 
-const actionGetOne = (req, res) => {
+const actionGetOne = async (req, res) => {
 	console.time("GET " + req.modelname + "/" + req.params.item_id);
-	getOne(req.Model, req.params.item_id, req.query).then(
-		function(item) {
-			res.send(item);
-			console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
-		},
-		function(err) {
-			console.trace(err);
-			if (err.code) {
-				res.send(500, { status: "error", message: err.msg });
-			} else {
-				res.send(500, { status: "error", message: err.toString() });
-			}
+	try {
+		const item = await getOne(req.Model, req.params.item_id, req.query);
+		res.send(item);
+		console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
+	} catch(err) {
+		console.error(new Date(), err);
+		console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
+		if (err.msg) {
+			res.send(500, { status: "error", message: err.msg });
+		} else {
+			res.send(500, { status: "error", message: err.toString() });
 		}
-	);
+	}
 };
 
-const actionPost = (req, res, next) => {
+const actionPost = async (req, res) => {
 	console.time("POST " + req.modelname);
 	try {
 		var item = new req.Model();
@@ -228,186 +191,114 @@ const actionPost = (req, res, next) => {
 			item._owner_id = req.user._id;
 			item.__user = req.user;
 		}
-		item.save(function(err, result) {
-			if (err) {
-				console.trace(err);
-				res.send(500, { status: "error", message: err.toString() });
-				return;
-			} else {
-				// console.log({ action_id: 4, action: "Post", type: req.modelname, id: result._id, user: filterLogUser(req.user), params: req.params });
-				var silence = req.params._silence;
-				if (req.body && req.body._silence) silence = true;
-				if (!silence)
-					req.config.callbacks.post.call(
-						null,
-						req.modelname,
-						result,
-						req.user
-					);
-				res.json({
-					status: "ok",
-					message: req.modelname + " created",
-					data: item
-				});
-				console.timeEnd("POST " + req.modelname);
-				return;
-			}
+		const result = await item.save();
+		var silence = req.params._silence;
+		if (req.body && req.body._silence) silence = true;
+		if (!silence) {
+			req.config.callbacks.post.call(null, req.modelname, result, req.user);
+		}
+		res.json({
+			status: "ok",
+			message: req.modelname + " created",
+			data: item
 		});
+		console.timeEnd("POST " + req.modelname);
 	} catch (err) {
-		console.trace(err);
+		console.error(new Date(), err);
+		console.timeEnd("POST " + req.modelname);
 		res.send(500, { status: "error", message: err.toString() });
-		return;
 	}
 };
 
-const actionPut = (req, res) => {
+const actionPut = async (req, res) => {
 	console.time("PUT " + req.modelname + "/" + req.params.item_id);
 	try {
-		req.Model.findById(req.params.item_id, function(err, item) {
-			if (err) {
-				console.trace(err);
-				res.send(500, { status: "error", message: err.toString() });
-			} else {
-				if (item) {
-					_populateItem(item, datamunging.deserialize(req.body));
-					_versionItem(item);
-					try {
-						if (req.user) {
-							item.__user = req.user;
-						}
-						item.save(function(err, data) {
-							if (err) {
-								console.trace(err);
-								res.send(500, {
-									status: "error",
-									message: err.toString()
-								});
-							} else {
-								// console.log({ action_id: 5, action: "Put", type: req.modelname, id: item._id, user: filterLogUser(req.user), params: req.params });
-								var silence = req.params._silence;
-								if (req.body && req.body._silence) silence = true;
-								if (!silence)
-									req.config.callbacks.put.call(
-										null,
-										req.modelname,
-										item,
-										req.user
-									);
-								res.json({
-									status: "ok",
-									message: req.modelname + " updated",
-									data: data
-								});
-								console.timeEnd(
-									"PUT " +
-										req.modelname +
-										"/" +
-										req.params.item_id
-								);
-							}
-						});
-					} catch (err) {
-						console.trace(err);
-						res.send(500, {
-							status: "error",
-							message: err.toString()
-						});
-						return;
-					}
-				} else {
-					console.error("Document not found");
-					res.send(404, "Document not found");
-					return;
-				}
-			}
+		let item = await req.Model.findById(req.params.item_id);
+		if (!item) {
+			console.error(new Date(), "Document not found");
+			res.send(404, { status: "error", message: "Document not found" });
+			return;
+		}
+		_populateItem(item, datamunging.deserialize(req.body));
+		_versionItem(item);
+		if (req.user) {
+			item.__user = req.user;
+		}
+		const data = await item.save();
+		var silence = req.params._silence;
+		if (req.body && req.body._silence) silence = true;
+		if (!silence) {
+			req.config.callbacks.put.call(null, req.modelname, item, req.user );
+		}
+		res.json({
+			status: "ok",
+			message: req.modelname + " updated",
+			data: data
 		});
+		console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
 	} catch (err) {
-		console.trace(err);
+		console.error(new Date(), err);
+		console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
 };
 
-const actionDelete = (req, res) => {
+const actionDelete = async (req, res) => {
 	var silence = req.params._silence;
 	if (req.body && req.body._silence) silence = true;
-	req.Model.findById(req.params.item_id, function(err, item) {
+	console.time("DEL " + req.modelname + "/" + req.params.item_id);
+	try {
+		let item = await req.Model.findById(req.params.item_id);
 		if (!item) {
-			console.error("Couldn't find item for delete");
+			console.error(new Date(), "Couldn't find item for delete");
 			res.send(404, "Could not find document");
-			return;
-		}
-		if (err) {
-			console.trace(err);
-			res.send(500, { status: "error", message: err.toString() });
 			return;
 		}
 		if (req.user) {
 			item.__user = req.user;
 		}
 		if (req.Model.schema.paths.hasOwnProperty("_deleted")) {
-			// console.log("Soft deleting");
 			item._deleted = true;
 			_versionItem(item);
-			item.save(function(err) {
-				if (err) {
-					console.trace(err);
-					res.send(500, { status: "error", message: err.toString() });
-				} else {
-					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: true, id: item._id, user: filterLogUser(req.user), params: req.params });
-					if (!silence)
-						req.config.callbacks.delete.call(
-							null,
-							req.modelname,
-							item,
-							req.user,
-							{ soft: true }
-						);
-					res.json({
-						status: "ok",
-						message: req.modelname + " deleted"
-					});
-				}
-			});
+			await item.save();
 		} else {
 			// console.log("Hard deleting");
-			item.deleteOne(function(err) {
-				if (err) {
-					console.trace(err);
-					res.send(500, { status: "error", message: err.toString() });
-				} else {
-					// console.log({ action_id: 6, action: "Delete", type: req.modelname, softDelete: false, id: item._id, user: filterLogUser(req.user), params: req.params });
-					if (!silence)
-						req.config.callbacks.delete.call(
-							null,
-							req.modelname,
-							item,
-							req.user,
-							{ soft: false }
-						);
-					res.json({
-						status: "ok",
-						message: req.modelname + " deleted"
-					});
-				}
-			});
+			item.deleteOne();
 		}
-	});
+		if (!silence) {
+			req.config.callbacks.delete.call(
+				null,
+				req.modelname,
+				item,
+				req.user,
+				{ soft: false }
+			);
+		}
+		res.json({
+			status: "ok",
+			message: `${req.modelname}/${ req.params.item_id } deleted`
+		});
+		console.timeEnd("DEL " + req.modelname + "/" + req.params.item_id);
+	} catch(err) {
+		console.error(new Date(), err);
+		console.timeEnd("DEL " + req.modelname + "/" + req.params.item_id);
+		res.send(500, { status: "error", message: err.toString() });
+		return;
+	}
 };
 
-const actionCall = (req, res) => {
+const actionCall = async (req, res) => {
 	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
 	req.body = req.body || {};
 	req.body.__user = req.user || null;
-	req.Model[req.params.method_name](req.body).then(
-		function(result) {
-			res.json(result);
-		},
-		function(err) {
-			console.trace(err);
-			res.send(500, { status: "error", message: err.toString() });
-		}
-	);
+	try {
+		const result = await req.Model[req.params.method_name](req.body);
+		res.json(result);
+	} catch(err) {
+		console.error(new Date(), err);
+		res.send(500, { status: "error", message: err.toString() });
+	}
 };
 
 const actionCallItem = (req, res) => {
@@ -467,8 +358,8 @@ const actionCallItem = (req, res) => {
 
 // Meta
 
-const metaModels = (req, res, next) => {
-	model_dir = path.join(process.argv[1], "/../../models");
+const metaModels = (req, res) => {
+	const model_dir = path.join(process.argv[1], "/../../models");
 	fs.readdir(model_dir, function(err, files) {
 		if (err) {
 			console.trace(err);
@@ -562,7 +453,7 @@ const parseFilter = (filter) => {
 						filter[key][tmpkey] = tmp.join(":");
 					}
 					if (typeof val == "object") {
-						result = parseFilter(val);
+						let result = parseFilter(val);
 						filter[key] = {};
 						for (var x = 0; x < result.length; x++) {
 							filter[key][Object.keys(result[x])[0]] =
@@ -581,9 +472,9 @@ const parseFilter = (filter) => {
 const _deSerialize = (data) => {
 	function assign(obj, keyPath, value) {
 		// http://stackoverflow.com/questions/5484673/javascript-how-to-dynamically-create-nested-objects-using-object-names-given-by
-		lastKeyIndex = keyPath.length - 1;
-		for (var i = 0; i < lastKeyIndex; ++i) {
-			key = keyPath[i];
+		const lastKeyIndex = keyPath.length - 1;
+		for (let i = 0; i < lastKeyIndex; ++i) {
+			let key = keyPath[i];
 			if (!(key in obj)) obj[key] = {};
 			obj = obj[key];
 		}
@@ -593,7 +484,7 @@ const _deSerialize = (data) => {
 		var matches = datum.match(/\[(.+?)\]/g);
 		if (matches) {
 			var params = matches.map(function(match) {
-				return match.replace(/[\[\]]/g, "");
+				return match.replace(/[[\]]/g, "");
 			});
 			if (isNaN(params[0])) {
 				params.unshift(datum.match(/(.+?)\[/)[1]);
@@ -653,11 +544,10 @@ const _fixArrays = (req, res, next) => {
 const changeUrlParams = (req, key, val) => {
 	var q = req.query;
 	q[key] = val;
-	var pathname = require("url").parse(req.url).pathname;
 	return req.config.url + req.path() + "?" + querystring.stringify(q);
 };
 
-const JExpress = function(options) {
+const JXP = function(options) {
 	const server = restify.createServer();
 
 	//Set up config with default
@@ -694,10 +584,15 @@ const JExpress = function(options) {
 			}
 		},
 		post_hooks: {
+			// eslint-disable-next-line no-unused-vars
 			get: (modelname, result) => {},
+			// eslint-disable-next-line no-unused-vars
 			getOne: (modelname, id, result) => {},
+			// eslint-disable-next-line no-unused-vars
 			post: (modelname, id, data, result) => {},
+			// eslint-disable-next-line no-unused-vars
 			put: (modelname, id, data, result) => {},
+			// eslint-disable-next-line no-unused-vars
 			delete: (modelname, id, data, result) => {}
 		}
 	};
@@ -729,7 +624,7 @@ const JExpress = function(options) {
 
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);
-	modelnames = files.filter(function(fname) {
+	let modelnames = files.filter(function(fname) {
 		return fname.indexOf("_model.js") !== -1;
 	});
 	modelnames.forEach(function(fname) {
@@ -903,4 +798,4 @@ const JExpress = function(options) {
 	return server;
 };
 
-module.exports = JExpress;
+module.exports = JXP;
