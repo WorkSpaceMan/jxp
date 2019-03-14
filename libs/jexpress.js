@@ -264,7 +264,7 @@ const actionDelete = async (req, res) => {
 			await item.save();
 		} else {
 			// console.log("Hard deleting");
-			item.deleteOne();
+			await item.deleteOne();
 		}
 		if (!silence) {
 			req.config.callbacks.delete.call(
