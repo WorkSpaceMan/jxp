@@ -17,7 +17,7 @@ describe('Test', () => {
 
 	describe("/GET test", () => {
 		it("it should GET all the tests", (done) => {
-			Test.deleteMany(d => {
+			Test.deleteMany(() => {
 				chai.request(server)
 				.get("/api/test")
 				// .auth(init.email, init.password)
@@ -103,9 +103,6 @@ describe('Test', () => {
 
 	describe("/GET test", () => {
 		it("it should GET a single test", (done) => {
-			var test = {
-				foo: "Foo1",
-			};
 			chai.request(server)
 			.get("/api/test/" + post_id)
 			.auth(init.email, init.password)

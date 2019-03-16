@@ -40,8 +40,6 @@ var email = "test@freespeechpub.co.za";
 var password = "test";
 
 var init = async () => {
-	var location = null;
-	var organisation = null;
 	try {
 		await empty(User);
 		await empty(Apikey);
