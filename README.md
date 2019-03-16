@@ -292,6 +292,21 @@ To suppress a callback, pass `_silence=true` as a parameter. This helps avoid in
 
 CSV can be outputted by using the /csv/:modelname endpoint. The usual limits, filtering etc will work, but will not be presented in the output as we dump raw data.
 
+### Caching
+
+You can use Memcached to caching. Simply add the following config entry to enable it:
+
+```
+"memcached": {
+    "server": "localhost:11211",
+    "lifetime": 604800
+}
+```
+
+You can see the status of the cache at the endpoint `/cache`. 
+
+The caching mechanism is pretty dumb at this point. We simply flush the cache completely in the case of a write or delete. 
+
 # Changelog
 
 ## v1.0.0
