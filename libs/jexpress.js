@@ -795,6 +795,10 @@ const JXP = function(options) {
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
 	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, cache.flush.bind(cache));
 
+	/* Cache */
+	server.get("/cache", (req, res) => {
+		res.send(cache.status());
+	})
 	return server;
 };
 

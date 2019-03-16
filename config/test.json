@@ -4,5 +4,8 @@
 	"mongo_db": "test",
 	"model_dir": "../../../models/",
 	"log": "./logs/test.log",
-	"memcached": "localhost:11211"
+	"memcached": {
+		"server": "localhost:11211",
+		"lifetime": 604800
+	}
 }

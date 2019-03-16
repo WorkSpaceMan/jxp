@@ -2,6 +2,12 @@ const config = require("config");
 
 if (!config.memcached) {
     class Cache {
+        constructor() {
+            this.cachHits = 0;
+            this.cacheMisses = 0;
+            this.cacheEnabled = false;
+        }
+
         read(req, res, next) {
             next();
         }
@@ -14,6 +20,9 @@ if (!config.memcached) {
         flush(req, res, next) {
             next();
         }
+        status() {
+            return { cachHits: null, cacheMisses: null, ratio: null, cacheEnabled: this.cacheEnabled };
+        }
     }
     module.exports = Cache;
 } else {
@@ -21,23 +30,31 @@ if (!config.memcached) {
     const crypto = require('crypto');
     const Memcached = require("memcached");
     const memcached = new Memcached(config.memcached.server);
-
+    // Flush cache on startup/restart
+    memcached.flush(err => {
+        if (err)
+            console.error(err);
+    });
     class Cache {
         constructor() {
+            this.cachHits = 0;
+            this.cacheMisses = 0;
+            this.cacheEnabled = true;
         }
 
         async read(req, res, next) {
             const key = this.generateKey(req);
             try {
                 const data = await this.mget(key);
-                if (data)
+                if (data) {
+                    this.cachHits++;
                     return res.send(data);
-
+                }
                 const oldSend = res.send;
                 res.send = function() {
                     oldSend.apply(this, arguments);
                 }
-
+                this.cacheMisses++;
                 return next();
             } catch(err) {
                 console.error(err);
@@ -85,6 +102,10 @@ if (!config.memcached) {
                     return resolve(null);
                 })
             });
+        }
+
+        status() {
+            return { cachHits: this.cachHits, cacheMisses: this.cacheMisses, ratio: this.cacheHits / this.cacheMisses, cacheEnabled: this.cacheEnabled };
         }
     }
 
