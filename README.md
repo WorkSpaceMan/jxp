@@ -190,7 +190,7 @@ And then later, say in your pre- or post-save...
 }
 ```
 
-## API
+## RESTful API
 
 The API lets us read, create, update and delete items. Generally, our `endpoint` (API-speak for URL) decides which collection or item we're referring to, and the HTTP `verb` describes whether we want to read (GET), create (POST), update (PUT) or delete (DELETE). Strict RESTful APIs also have PATCH and OPTIONS. JXP doesn't. A PUT is a PATCH. Deal with it.
 
@@ -209,6 +209,8 @@ This is one of the most useful features of this API. You can automatically popul
 To autopopulate all the fields, use the parameter `autopopulate=1`
 
 To populate just one field, use `populate=field`
+
+To populate just certain fields from the foreign record, use the format `populate[foreignkey]=foreignfield1,foreignfield2`.
 
 ### Limiting results
 
@@ -265,7 +267,7 @@ The endpoint `/model` shows us all available models.
 
 The endpoint `/model/modelname` gives us a description of a model.
 
-### Callbacks
+## Callbacks
 
 You can code callbacks by passing them as a config.
 
@@ -316,3 +318,7 @@ The caching mechanism is pretty dumb at this point. We simply flush the cache co
 ## v1.0.1
 
 - Closed bad security hole in groups - now only admins can set groups. (Will probably change this in future so that only those defined in the usergroup model can change groups.)
+
+## v1.0.12
+
+- Select individual fields in populate joins

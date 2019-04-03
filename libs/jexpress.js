@@ -131,7 +131,13 @@ const actionGet = async (req, res, next) => {
 			result.sort = req.query.sort;
 		}
 		if (req.query.populate) {
-			q.populate(req.query.populate);
+			if (typeof req.query.populate === "object") {
+				for (let i in req.query.populate) {
+					q.populate(i, req.query.populate[i].replace(",", " "));
+				}
+			} else {
+				q.populate(req.query.populate);
+			}
 			result.populate = req.query.populate;	
 		}
 		if (req.query.autopopulate) {
@@ -406,7 +412,13 @@ const metaModel = (req, res) => {
 const getOne = async (Model, item_id, params) => {
 	const query = Model.findById(item_id);
 	if (params.populate) {
-		query.populate(params.populate);
+		if (typeof params.populate === "object") {
+			for (let i in params.populate) {
+				query.populate(i, params.populate[i].replace(",", " "));
+			}
+		} else {
+			query.populate(params.populate);
+		}
 	}
 	if (params.autopopulate) {
 		for (let key in Model.schema.paths) {

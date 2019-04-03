@@ -1,18 +1,21 @@
-var mongoose     = require('mongoose');
-var Schema       = mongoose.Schema;
+const mongoose     = require('mongoose');
+const Schema       = mongoose.Schema;
 
 // This is just a shortcut for us
-var ObjectId = mongoose.Schema.Types.ObjectId;
-var Mixed = mongoose.Schema.Types.Mixed;
+const ObjectId     = mongoose.Schema.Types.ObjectId;
+const Mixed        = mongoose.Schema.Types.Mixed;
 
-var TestSchema   = new Schema({
+// Link an external model
+const Link         = require("./link_model");
+
+const TestSchema   = new Schema({
     foo: String, // A normal string
     bar: { type: String, unique: true, index: true }, // Ah! Some business logic!
     yack: Mixed, // We can put anything in here, including objects
     shmack: [String], // We can store arrays
     password: String, // Test password encryption
     fulltext: { type: String, index: { text: true } },
-    fulltext: String,
+    link_id: { type: ObjectId, ref: "Link" },
     _owner_id: ObjectId // This is one of the magic fields that will be populated by the API
 });
 

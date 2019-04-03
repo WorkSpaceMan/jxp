@@ -116,4 +116,142 @@ describe('Test', () => {
 			});
 		});
 	});
+
+	describe("Link test", () => {
+		var link_id = null;
+		it("should add a LINK item", done => {
+			let data = {
+				name: "name1",
+				val: "val1"
+			}
+			chai.request(server)
+			.post("/api/link")
+			.auth(init.email, init.password)
+			.send(data)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("_id");
+				res.body.data.should.have.property("name")
+				res.body.data.name.should.eql("name1");
+				link_id = res.body.data._id;
+				done();
+			});
+		});
+		it("should link a LINK item to a TEST", done => {
+			chai.request(server)
+			.put("/api/test/" + post_id)
+			.auth(init.email, init.password)
+			.send({link_id})
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("link_id")
+				res.body.data.link_id.should.eql(link_id);
+				done();
+			});
+		});
+		it("should autopopulate on a single record", done => {
+			chai.request(server)
+			.get(`/api/test/${post_id}?autopopulate=true`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.should.have.property("link_id")
+				res.body.link_id.should.be.an('object');
+				res.body.link_id.name.should.eql("name1");
+				res.body.link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should autopopulate on all records", done => {
+			chai.request(server)
+			.get(`/api/test?autopopulate=true`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data[0].should.have.property("link_id")
+				res.body.data[0].link_id.should.be.an('object');
+				res.body.data[0].link_id.name.should.eql("name1");
+				res.body.data[0].link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate link_id on a single record", done => {
+			chai.request(server)
+			.get(`/api/test/${post_id}?populate=link_id`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.should.have.property("link_id")
+				res.body.link_id.should.be.an('object');
+				res.body.link_id.name.should.eql("name1");
+				res.body.link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate link_id on all records", done => {
+			chai.request(server)
+			.get(`/api/test?populate=link_id`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data[0].should.have.property("link_id")
+				res.body.data[0].link_id.should.be.an('object');
+				res.body.data[0].link_id.name.should.eql("name1");
+				res.body.data[0].link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate just val from link_id on a single record", done => {
+			chai.request(server)
+			.get(`/api/test/${post_id}?populate[link_id]=val`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.link_id.should.have.property("val")
+				res.body.link_id.should.not.have.property("name")
+				res.body.link_id.should.be.an('object');
+				res.body.link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate just val from link_id on all records", done => {
+			chai.request(server)
+			.get(`/api/test?populate[link_id]=val`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data[0].link_id.should.have.property("val")
+				res.body.data[0].link_id.should.not.have.property("name")
+				res.body.data[0].link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate name and val from link_id on a single record", done => {
+			chai.request(server)
+			.get(`/api/test/${post_id}?populate[link_id]=val,name`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.link_id.should.have.property("val")
+				res.body.link_id.should.have.property("name")
+				res.body.link_id.should.be.an('object');
+				res.body.link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate name and val from link_id on all records", done => {
+			chai.request(server)
+			.get(`/api/test?populate[link_id]=val,name`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data[0].link_id.should.have.property("val")
+				res.body.data[0].link_id.should.have.property("name")
+				res.body.data[0].link_id.val.should.eql("val1");
+				done();
+			});
+		});
+	});
 });
