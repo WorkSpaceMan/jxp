@@ -462,7 +462,12 @@ const parseFilter = (filter) => {
 						var tmp = val.split(":");
 						filter[key] = {};
 						var tmpkey = tmp.shift();
-						filter[key][tmpkey] = tmp.join(":");
+						let tmpval = tmp.join(":");
+						if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) { // Could be an array for a $in or similar
+							let arr = tmpval.slice(1, tmpval.length - 1).split(",");
+							tmpval = arr;
+						}
+						filter[key][tmpkey] = tmpval;
 					}
 					if (typeof val == "object") {
 						let result = parseFilter(val);
