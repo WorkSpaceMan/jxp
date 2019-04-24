@@ -151,6 +151,39 @@ describe('Test', () => {
 				done();
 			});
 		});
+		var other_link_id = null;
+		it("should add another LINK item", done => {
+			let data = {
+				name: "name2",
+				val: "val2"
+			}
+			chai.request(server)
+			.post("/api/link")
+			.auth(init.email, init.password)
+			.send(data)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("_id");
+				res.body.data.should.have.property("name")
+				res.body.data.name.should.eql("name2");
+				other_link_id = res.body.data._id;
+				done();
+			});
+		});
+		it("should link another LINK item to a TEST", done => {
+			chai.request(server)
+			.put("/api/test/" + post_id)
+			.auth(init.email, init.password)
+			.send({other_link_id})
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("other_link_id")
+				res.body.data.other_link_id.should.eql(other_link_id);
+				done();
+			});
+		});
 		it("should autopopulate on a single record", done => {
 			chai.request(server)
 			.get(`/api/test/${post_id}?autopopulate=true`)
@@ -250,6 +283,21 @@ describe('Test', () => {
 				res.body.data[0].link_id.should.have.property("val")
 				res.body.data[0].link_id.should.have.property("name")
 				res.body.data[0].link_id.val.should.eql("val1");
+				done();
+			});
+		});
+		it("should populate link_id and other_link_id on all records", done => {
+			chai.request(server)
+			.get(`/api/test?populate[]=link_id&populate[]=other_link_id`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data[0].link_id.should.have.property("val")
+				res.body.data[0].link_id.should.have.property("name")
+				res.body.data[0].link_id.val.should.eql("val1");
+				res.body.data[0].other_link_id.should.have.property("val")
+				res.body.data[0].other_link_id.should.have.property("name")
+				res.body.data[0].other_link_id.val.should.eql("val2");
 				done();
 			});
 		});

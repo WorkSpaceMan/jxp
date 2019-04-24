@@ -16,6 +16,7 @@ const TestSchema   = new Schema({
     password: String, // Test password encryption
     fulltext: { type: String, index: { text: true } },
     link_id: { type: ObjectId, ref: "Link" },
+    other_link_id: { type: ObjectId, ref: "Link" },
     _owner_id: ObjectId // This is one of the magic fields that will be populated by the API
 });
 
