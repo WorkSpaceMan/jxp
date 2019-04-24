@@ -412,7 +412,7 @@ const metaModel = (req, res) => {
 const getOne = async (Model, item_id, params) => {
 	const query = Model.findById(item_id);
 	if (params.populate) {
-		if (typeof params.populate === "object") {
+		if ((typeof params.populate === "object")  && !Array.isArray(params.populate)) {
 			for (let i in params.populate) {
 				query.populate(i, params.populate[i].replace(",", " "));
 			}

@@ -286,6 +286,24 @@ describe('Test', () => {
 				done();
 			});
 		});
+		it("should populate link_id and other_link_id on a single record", done => {
+			chai.request(server)
+			.get(`/api/test/${post_id}?populate[]=link_id&populate[]=other_link_id`)
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				console.log(res.body);
+				res.body.should.have.property("link_id")
+				res.body.link_id.should.be.an('object');
+				res.body.link_id.name.should.eql("name1");
+				res.body.link_id.val.should.eql("val1");
+				res.body.should.have.property("other_link_id");
+				res.body.other_link_id.should.be.an('object');
+				res.body.other_link_id.name.should.eql("name2");
+				res.body.other_link_id.val.should.eql("val2");
+				done();
+			});
+		});
 		it("should populate link_id and other_link_id on all records", done => {
 			chai.request(server)
 			.get(`/api/test?populate[]=link_id&populate[]=other_link_id`)
