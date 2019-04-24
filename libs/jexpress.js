@@ -131,7 +131,7 @@ const actionGet = async (req, res, next) => {
 			result.sort = req.query.sort;
 		}
 		if (req.query.populate) {
-			if (typeof req.query.populate === "object") {
+			if ((typeof req.query.populate === "object") && !Array.isArray(req.query.populate)) {
 				for (let i in req.query.populate) {
 					q.populate(i, req.query.populate[i].replace(",", " "));
 				}
