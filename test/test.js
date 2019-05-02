@@ -319,5 +319,41 @@ describe('Test', () => {
 				done();
 			});
 		});
+		describe("/POST query", () => {
+			it("it should POST a complex query", (done) => {
+				var query = {
+					"$and": [
+						{ 
+							"foo": {
+								"$regex": "foo",
+								"$options": "i"
+							}
+						},
+						{	
+							"bar": "Bar"
+						}
+					]
+				};
+				chai.request(server)
+				.post("/query/test")
+				.auth(init.email, init.password)
+				.send({query})
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("foo");
+					res.body.data[0].should.have.property("bar");
+					res.body.data[0].should.have.property("yack").which.should.be.an("object");
+					res.body.data[0].should.have.property("shmack");
+					res.body.data[0].shmack.should.be.an("array");
+					res.body.data[0].foo.should.be.a("string");
+					res.body.data[0].bar.should.be.a("string");
+					res.body.data[0].foo.should.eql("Foo1");
+					res.body.data[0].bar.should.eql("Bar");
+					done();
+				});
+			});
+		});
 	});
 });

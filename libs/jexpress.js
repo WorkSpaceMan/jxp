@@ -332,6 +332,82 @@ const actionCallItem = (req, res) => {
 	});
 };
 
+// Actions (verbs)
+const actionQuery = async (req, res, next) => {
+	if (!req.body.query || typeof req.body.query !== "object") {
+		console.error("query missing or not of type object")
+		return res.send(500, { status: "error", message: "query missing or not of type object" });
+	}
+	console.time("QUERY " + req.modelname);
+	var qcount = req.Model.find(req.body.query);
+	var q = req.Model.find(req.body.query);
+	var checkDeleted = [{ _deleted: false }, { _deleted: null }];
+	if (!req.query.showDeleted) {
+		qcount.or(checkDeleted);
+		q.or(checkDeleted);
+	}
+	try {
+		const count = await qcount.count();
+		const result = { count };
+		const limit = parseInt(req.query.limit);
+		if (limit) {
+			q.limit(limit);
+			result.limit = limit;
+			let page_count = Math.ceil(count / limit);
+			result.page_count = page_count;
+			let page = parseInt(req.query.page);
+			page = page ? page : 1;
+			result.page = page;
+			if (page < page_count) {
+				result.next = changeUrlParams(req, "page", page + 1);
+			}
+			if (page > 1) {
+				result.prev = changeUrlParams(req, "page", page - 1);
+				q.skip(limit * (page - 1));
+			}
+		}
+		if (req.query.sort) {
+			q.sort(req.query.sort);
+			result.sort = req.query.sort;
+		}
+		if (req.query.populate) {
+			if ((typeof req.query.populate === "object") && !Array.isArray(req.query.populate)) {
+				for (let i in req.query.populate) {
+					q.populate(i, req.query.populate[i].replace(",", " "));
+				}
+			} else {
+				q.populate(req.query.populate);
+			}
+			result.populate = req.query.populate;	
+		}
+		if (req.query.autopopulate) {
+			for (let key in req.Model.schema.paths) {
+				const dirpath = req.Model.schema.paths[key];
+				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
+					q.populate(dirpath.path);
+				}
+			}
+			result.autopopulate = true;
+		}
+		if (req.query.fields) {
+			const fields = req.query.fields.split(",");
+			const select = {};
+			fields.forEach(field => {
+				select[field] = 1;
+			});
+			q.select(select);
+		}
+		result.data = await q.exec();
+		res.result = result;
+		console.timeEnd("QUERY " + req.modelname);
+		res.json(result);
+	} catch(err) {
+		console.error(new Date(), err);
+		console.timeEnd("QUERY " + req.modelname);
+		res.send(500, { status: "error", message: err.toString() });
+	}
+};
+
 // var actionBatch = (req, res, next) => {
 // 	console.time("BATCH " + req.modelname);
 // 	var items = [];
@@ -747,6 +823,17 @@ const JXP = function(options) {
 		cache.read.bind(cache),
 		actionGet,
 		outputCSV
+	);
+
+	// Query endpoints
+	server.post(
+		"/query/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.get,
+		cache.read.bind(cache),
+		actionQuery,
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */

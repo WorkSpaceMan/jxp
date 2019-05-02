@@ -257,6 +257,27 @@ PUT updates an existing item, so the endpoint needs to include the _id, as in
 
 As with PUT, we need to reference a specific item, so the endpoint needs to include the _id, as in `/api/{modelname}/{_id}`. Eg. DELETE `/api/test/5731a48b7571ff6248bd6d9c`.
 
+### Advanced queries
+
+If you need to send an advanced query, such as a combined $and/$or, you can _POST_ a `{query}` variable to the `/query/{modelname}` endpoint. Most of the other features you'd use for `/get/{modelname}` (except for _search_ since it's a query) will still work.
+
+Eg.
+```
+query = {
+    "$and": [
+        { 
+            "foo": {
+                "$regex": "foo",
+                "$options": "i"
+            }
+        },
+        {	
+            "bar": "Bar"
+        }
+    ]
+}
+```
+
 ### An important note about Passwords
 
 You should note that if you send through anything called "password", it will automagically encrypt using bcrypt, unless you send the parameter `password_override=1`.
@@ -322,3 +343,7 @@ The caching mechanism is pretty dumb at this point. We simply flush the cache co
 ## v1.0.12
 
 - Select individual fields in populate joins
+
+## v1.0.16
+
+- Add a /query endpoint, that allows you to POST { query } for advanced queries
