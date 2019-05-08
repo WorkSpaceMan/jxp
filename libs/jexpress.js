@@ -333,19 +333,19 @@ const actionCallItem = (req, res) => {
 };
 
 // Actions (verbs)
-const actionQuery = async (req, res, next) => {
-	if (!req.body.query || typeof req.body.query !== "object") {
+const actionQuery = async (req, res) => {
+	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
 		console.error("query missing or not of type object")
 		return res.send(500, { status: "error", message: "query missing or not of type object" });
 	}
 	console.time("QUERY " + req.modelname);
-	var qcount = req.Model.find(req.body.query);
-	var q = req.Model.find(req.body.query);
-	var checkDeleted = [{ _deleted: false }, { _deleted: null }];
+	let query = [req.body.query];
+	let checkDeleted = { "$or": [{ _deleted: false }, { _deleted: null }] };
 	if (!req.query.showDeleted) {
-		qcount.or(checkDeleted);
-		q.or(checkDeleted);
+		query.push(checkDeleted);
 	}
+	var qcount = req.Model.find({ "$and": query });
+	var q = req.Model.find({ "$and": query });
 	try {
 		const count = await qcount.count();
 		const result = { count };
