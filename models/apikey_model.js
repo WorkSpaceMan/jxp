@@ -1,13 +1,12 @@
 var mongoose     = require('mongoose');
 var Schema       = mongoose.Schema;
-var config		 = require("config");
 
-var Objectid = mongoose.Schema.Types.ObjectId;
+var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var APIKeySchema   = new Schema({
-	user_id: Objectid,
+	user_id: ObjectId,
 	apikey: String,
-	created: { type: Date, default: Date.now, expires: config.apikey_lifespan || 86400 },
+	created: { type: Date, default: Date.now },
 });
 
 APIKeySchema.set("_perms", {
