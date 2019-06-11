@@ -1,14 +1,16 @@
 const bcrypt = require("bcryptjs");
 const randToken = require("rand-token");
+const path = require("path");
 var APIKey = null;
+var Token = null;
 var Groups = null;
 var User = null;
 
 const init = function(config) {
-	var path = require("path");
 	APIKey = require(path.join(config.model_dir, "apikey_model"));
 	Groups = require(path.join(config.model_dir, "usergroups_model.js"));
 	User = require(path.join(config.model_dir, "user_model"));
+	Token = require(path.join(config.model_dir, "token_model"));
 };
 
 var basicAuthData = function(req) {
@@ -31,19 +33,16 @@ const fail = function(res, code, message) {
 const basicAuth = async ba => {
 	try {
 		if (!Array.isArray(ba) || ba.length !== 2) {
-			console.log("Oops");
 			throw("Basic Auth incorrectly formatted");
 		}
 		var email = ba[0];
 		var password = ba[1];
 		const user = await User.findOne({ email }).exec();
 		if (!user) {
-			console.error("Incorrect username");
-			throw("Incorrect username or password");
+			throw(new Date(), `Incorrect username or password for ${email}`);
 		}
 		if (!await bcrypt.compare(password, user.password)) {
-			console.error("Incorrect password");
-			throw("Incorrect username or password");
+			throw(`Incorrect username or password for ${email}`);
 		}
 		return user;
 	} catch(err) {
@@ -94,6 +93,19 @@ const generateApiKey = async user => {
 	}
 };
 
+const generateToken = async user => {
+	try {
+		var token = new Token();
+		token.user_id = user._id;
+		token.access_token = randToken.generate(16);
+		await token.save();
+		return token;
+	} catch(err) {
+		console.error(new Date(), err);
+		return Promise.reject(err);
+	}
+};
+
 const login = async (req, res, next) => {
 	if (!req.query.apikey && !req.headers.authorization) {
 		// Anonymous user
@@ -109,8 +121,7 @@ const login = async (req, res, next) => {
 			// API Key
 			req.user = await apiKeyAuth(req.query.apikey)
 		}
-		const groups = await getGroups(req.user._id);
-		req.groups = groups;
+		req.groups = await getGroups(req.user._id);
 		return next();
 	} catch(err) {
 		console.error(new Date(), err);
@@ -158,12 +169,10 @@ const auth = (req, res, next) => {
 			return;
 		}
 	}
-
 	//This isn't an 'all' situation, so let's bail if the user isn't logged in
 	if (!req.user) {
 		return fail(res, 403, "Unauthorized");
 	}
-
 	//Let's check perms in this order - admin, user, group, owner
 	//Admin check
 	if (req.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
@@ -200,12 +209,10 @@ const auth = (req, res, next) => {
 			item._owner_id.toString() == req.user._id.toString() &&
 			(perms.owner && perms.owner.indexOf(method) !== -1)
 		) {
-			// console.log("Matched permission 'owner':" + method);
 			req.authorized = true;
 			next();
 			return;
 		} else {
-			// console.error("All authorizations failed");
 			if (!req.authorized) {
 				return fail(res, 403, "Authorization failed");
 			}
@@ -228,6 +235,7 @@ const Security = {
 	basicAuthData,
 	encPassword,
 	generateApiKey,
+	generateToken,
 	login,
 	auth,
 	admin_only
