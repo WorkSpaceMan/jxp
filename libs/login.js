@@ -1,7 +1,9 @@
-var rest = require("restler-q");
-var jwt = require("jsonwebtoken");
-var bcrypt = require('bcryptjs');
-var security = require("../libs/security");
+const rest = require("restler-q");
+const jwt = require("jsonwebtoken");
+const bcrypt = require('bcryptjs');
+const security = require("../libs/security");
+const nodemailer = require('nodemailer');
+const smtpTransport = require('nodemailer-smtp-transport');
 var User = null;
 var APIKey = null;
 
@@ -12,69 +14,56 @@ var init = function(config) {
 	security.init(config);
 };
 
-function recover(req, res) {
-	var email = req.body.email;
-	if (!email) {
-		console.error("Missing email parameter");
-		res.send(400, { status: "fail", message: "Missing email parameter" });
-		return;
-	}
-	User.findOne({ email: email }, function(err, user) {
-		if (err) {
-			console.error(err);
-			res.send(500, { status: "error", message: err });
-			return;
-		}
-		if (!user) {
-			console.error("Could not find email");
-			res.send(404, { status: "fail", message: "Could not find email" });
-			return;
-		}
-		security.generateApiKey(user)
-		.then(function(result) {
-			var token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, {
-				expiresIn: "2d"
-			});
-			var nodemailer = require('nodemailer');
-			var smtpTransport = require('nodemailer-smtp-transport');
-			// create reusable transporter object using SMTP transport
-			var transporter = nodemailer.createTransport(smtpTransport({
-				host: req.config.smtp_server,
-				port: 25,
-				auth: {
-					user: req.config.smtp_username,
-					pass: req.config.smtp_password,
-				},
-				// secure: true,
-				tls: { rejectUnauthorized: false }
-			}));
-			var text = "Someone (hopefully you) requested a password reset. Please click on the following url to recover your password. If you did not request a password reset, you can ignore this message. \n" + req.config.password_recovery_url + "/" + token;
-			var html = text;
-			var mail_format = req.params.mail_format || req.body.mail_format;
-			if (mail_format) {
-				html = mail_format;
-				html = html.replace(/\{\{recover_url\}\}/i, req.config.password_recovery_url + "/" + token);
-			}
-			transporter.sendMail({
-				from: req.config.smtp_from,
-				to: user.email,
-				subject: "Password Recovery",
-				text: text,
-				html: html
+const recover = async (req, res) => {
+	try {
+		// create reusable transporter object using SMTP transport
+		const transporter = nodemailer.createTransport(smtpTransport({
+			host: req.config.smtp_server,
+			port: 25,
+			auth: {
+				user: req.config.smtp_username,
+				pass: req.config.smtp_password,
 			},
-			function(result) {
-				console.log({ msg: "Mailer result", result: result });
-			});
-			res.send({ status: "ok", message: "Sent recovery email" });
-		}, function() {
-			res.send(403, { status: "fail", message: "Unauthorized" });
+			// secure: true,
+			tls: { rejectUnauthorized: false }
+		}));
+		const email = req.body.email;
+		if (!email) {
+			console.error("Missing email parameter");
+			res.send(400, { status: "fail", message: "Missing email parameter" });
+			return;
+		}
+		const user = await User.findOne({ email });
+		if (!user) {
+			throw("Could not find email");
+		}
+		const result = await security.generateApiKey(user);
+		const token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, { expiresIn: "2d" });
+		var text = `Someone (hopefully you) requested a password reset. Please click on the following url to recover your password. If you did not request a password reset, you can ignore this message. \n${ req.config.password_recovery_url }/${ token }`;
+		var html = text;
+		var mail_format = req.params.mail_format || req.body.mail_format;
+		if (mail_format) {
+			html = mail_format;
+			html = html.replace(/\{\{recover_url\}\}/i, req.config.password_recovery_url + "/" + token);
+		}
+		transporter.sendMail({
+			from: req.config.smtp_from,
+			to: user.email,
+			subject: "Password Recovery",
+			text: text,
+			html: html
+		}, function(result) {
+			console.log({ msg: "Mailer result", result });
 		});
-	});
+		res.send({ status: "ok", message: "Sent recovery email" });
+	} catch(err) {
+		res.send(403, { status: "fail", message: "Unauthorized", err });
+	}
 }
 
 function logout(req, res) {
 	var apikey = req.query.apikey || req.params.apikey;
-	APIKey.findOne({ apikey: apikey }, function(err, apikey) {
+	APIKey.findOne({ apikey }, function(err, apikey) {
 		if (err) {
 			console.error(err);
 			res.send(500, { status: "error", error: err });
@@ -182,48 +171,30 @@ function oauth_callback(req, res, next) {
 	});
 }
 
-function login(req, res) {
-	var email = req.params.email || req.body.email;
-	var password = req.params.password || req.body.password;
-	var user = security.basicAuthData(req);
-	if (user) {
-		email = user[0];
-		password = user[1];
+const login = async (req, res) => {
+	let email = req.params.email || req.body.email;
+	let password = req.params.password || req.body.password;
+	const userpass = security.basicAuthData(req);
+	if (userpass) {
+		email = userpass[0];
+		password = userpass[1];
 	}
 	if ((!password) || (!email)) {
-		console.error("Missing email or password parameters");
+		console.error(new Date(), "Missing email or password parameters");
 		res.send(404, { status: "fail", message: "Missing email or password parameters" });
 		return;
 	}
-	User.findOne({ email: email }, function(err, user) {
-		if (err) {
-			console.error(err);
-			res.send(500, { status: "error", error: err });
-			return;
+	try {
+		const user = await User.findOne({ email });
+		if (!user) throw("Incorrect username");
+		if (!bcrypt.compareSync(password, user.password)) {
+			throw("Incorrect password");
 		}
-		if (!user) {
-			console.error("Incorrect username");
-			res.send(401, { status: "fail", message: "Incorrect username" });
-			return;
-		}
-		try {
-			if (!bcrypt.compareSync(password, user.password)) {
-				console.error("Incorrect password");
-				res.send(401, { status: "fail", message: "Incorrect password" });
-				return;
-			}
-		} catch (err) { // jshint ignore:line
-			console.error(err);
-			res.send(500, { status: "error", error: err });
-			return;
-		}
-		security.generateApiKey(user)
-		.then(function(result) {
-			res.send(result);
-		}, function() {
-			res.send(401, { status: "fail", message: "Authentication failed" });
-		});
-	});
+		res.send(await security.generateApiKey(user));
+	} catch(err) {
+		res.send(401, { status: "fail", message: "Authentication failed", err });
+		return;
+	}
 }
 
 function getJWT(req, res) {
