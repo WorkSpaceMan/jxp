@@ -187,15 +187,15 @@ const login = async (req, res) => {
 	}
 	try {
 		const user = await User.findOne({ email });
-		if (!user) throw(`Incorrect username; username: ${ email } IP: ${ ip }`);
+		if (!user) throw(`Incorrect username; username: ${ email }`);
 
 		if (!(await bcrypt.compare(password, user.password))) {
-			throw(`Incorrect password; username: ${ email } IP: ${ ip }`);
+			throw(`Incorrect password; username: ${ email }`);
 		}
 		res.send(await security.generateApiKey(user));
 	} catch(err) {
 		res.send(401, { status: "fail", message: "Authentication failed", err });
-		console.error(new Date(), `User/Password failed`, err);
+		console.error(new Date(), `Authentication failed`, ip, err);
 		return;
 	}
 }
