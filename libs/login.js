@@ -172,6 +172,7 @@ function oauth_callback(req, res, next) {
 }
 
 const login = async (req, res) => {
+	const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 	let email = req.params.email || req.body.email;
 	let password = req.params.password || req.body.password;
 	const userpass = security.basicAuthData(req);
@@ -186,10 +187,10 @@ const login = async (req, res) => {
 	}
 	try {
 		const user = await User.findOne({ email });
-		if (!user) throw(`Incorrect username ${ email }`);
+		if (!user) throw(`Incorrect username; username: ${ email } IP: ${ ip }`);
 
 		if (!(await bcrypt.compare(password, user.password))) {
-			throw("Incorrect password");
+			throw(`Incorrect password; username: ${ email } IP: ${ ip }`);
 		}
 		res.send(await security.generateApiKey(user));
 	} catch(err) {
