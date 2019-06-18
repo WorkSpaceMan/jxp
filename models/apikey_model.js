@@ -4,8 +4,8 @@ var Schema       = mongoose.Schema;
 var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var APIKeySchema   = new Schema({
-	user_id: ObjectId,
-	apikey: String,
+	user_id: { type: ObjectId, index: true },
+	apikey: { type: String, index: true, unique: true },
 	created: { type: Date, default: Date.now },
 });
 
