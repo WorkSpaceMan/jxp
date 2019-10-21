@@ -1,7 +1,7 @@
 {
   "name": "jxp",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "private": false,
   "main": "libs/jexpress.js",
   "scripts": {
@@ -27,31 +27,31 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "commander": "^2.19.0",
-    "config": "^3.0.1",
-    "json2csv": "^4.3.4",
-    "jsonwebtoken": "^8.4.0",
+    "commander": "^2.20.3",
+    "config": "^3.2.3",
+    "json2csv": "^4.5.4",
+    "jsonwebtoken": "^8.5.1",
     "memcached": "^2.2.2",
     "mkdirp": "^0.5.1",
-    "mongoose": "5.4.0",
+    "mongoose": "5.6.7",
     "mongoose-friendly": "^0.1.4",
     "morgan": "^1.9.1",
-    "nodemailer": "^5.1.1",
+    "nodemailer": "^6.3.1",
     "nodemailer-smtp-transport": "^2.7.4",
     "path": "^0.12.7",
     "q": "^2.0.3",
     "querystring": "^0.2.0",
     "rand-token": "^0.4.0",
-    "readline-sync": "^1.4.9",
-    "restify": "^7.7.0",
+    "readline-sync": "^1.4.10",
+    "restify": "^8.4.0",
     "restify-cors-middleware": "^1.1.1",
     "restler-q": "^0.1.1",
     "underscore": "^1.9.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "chai-http": "^4.2.1",
-    "mocha": "^5.2.0",
+    "chai-http": "^4.3.0",
+    "mocha": "^6.2.2",
     "should": "^13.2.3"
   }
 }
