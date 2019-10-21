@@ -9,6 +9,7 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
     cd my-app
     jexpress-setup
     jexpress-add-admin
+    npm install
     npm start
 
 ## Models
