@@ -264,7 +264,7 @@ const actionDelete = async (req, res) => {
 		if (req.user) {
 			item.__user = req.user;
 		}
-		if (req.Model.schema.paths.hasOwnProperty("_deleted")) {
+		if (Object.prototype.hasOwnProperty.call(req.Model.schema.paths, "_deleted")) {
 			item._deleted = true;
 			_versionItem(item);
 			await item.save();
@@ -441,7 +441,7 @@ const actionQuery = async (req, res) => {
 // Meta
 
 const metaModels = (req, res) => {
-	const model_dir = path.join(process.argv[1], "/../../models");
+	const model_dir = path.join(process.cwd, "../models");
 	fs.readdir(model_dir, function(err, files) {
 		if (err) {
 			console.trace(err);
@@ -533,28 +533,24 @@ const parseFilter = (filter) => {
 			if (filter[key] === "false") filter[key] = false;
 			if (filter[key] === "true") filter[key] = true;
 			if (val.indexOf) {
-				try {
-					if (val.indexOf(":") !== -1) {
-						var tmp = val.split(":");
-						filter[key] = {};
-						var tmpkey = tmp.shift();
-						let tmpval = tmp.join(":");
-						if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) { // Could be an array for a $in or similar
-							let arr = tmpval.slice(1, tmpval.length - 1).split(",");
-							tmpval = arr;
-						}
-						filter[key][tmpkey] = tmpval;
+				if (val.indexOf(":") !== -1) {
+					var tmp = val.split(":");
+					filter[key] = {};
+					var tmpkey = tmp.shift();
+					let tmpval = tmp.join(":");
+					if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) { // Could be an array for a $in or similar
+						let arr = tmpval.slice(1, tmpval.length - 1).split(",");
+						tmpval = arr;
 					}
-					if (typeof val == "object") {
-						let result = parseFilter(val);
-						filter[key] = {};
-						for (var x = 0; x < result.length; x++) {
-							filter[key][Object.keys(result[x])[0]] =
-								result[x][Object.keys(result[x])[0]];
-						}
+					filter[key][tmpkey] = tmpval;
+				}
+				if (typeof val == "object") {
+					let result = parseFilter(val);
+					filter[key] = {};
+					for (var x = 0; x < result.length; x++) {
+						filter[key][Object.keys(result[x])[0]] =
+							result[x][Object.keys(result[x])[0]];
 					}
-				} catch (err) {
-					throw err;
 				}
 			}
 		});

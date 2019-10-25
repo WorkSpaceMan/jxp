@@ -1,10 +1,9 @@
 const rand_token = require("rand-token");
 const path = require("path");
 const security = require("./security");
-
-var init = config => {
-	User = require(path.join(config.model_dir, "user_model"));
-};
+const config = require("config");
+config.model_dir = config.model_dir || path.join(process.cwd(), "./models");
+const User = require(path.join(config.model_dir, "user_model"));
 
 var checkUserDoesNotExist = (req, res, next) => {
 	User.countDocuments((err, result) => {
@@ -22,7 +21,7 @@ var checkUserDoesNotExist = (req, res, next) => {
 	});
 };
 
-var setup = (req, res, next) => {
+var setup = (req, res) => {
 	var user = new User();
 	var password =
 		req.body && req.body.password
@@ -33,7 +32,7 @@ var setup = (req, res, next) => {
 	user.password = security.encPassword(password);
 	user.name = req.body && req.body.name ? req.body.name : "admin";
 	user.admin = true;
-	user.save((err, result) => {
+	user.save((err) => {
 		if (err) {
 			console.log("Error:", err.message);
 			res.send({ status: "failed", error: err.message });
@@ -56,7 +55,6 @@ var setup = (req, res, next) => {
 };
 
 module.exports = {
-	init,
 	checkUserDoesNotExist,
 	setup
 };

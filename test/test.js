@@ -1,6 +1,9 @@
 process.env.NODE_ENV = 'test';
+const config = require("config");
+const path = require("path");
 
-var Test = require("../models/test_model");
+var model_dir = config.model_dir || path.join(process.cwd(), "./models");
+const Test = require(path.join(model_dir, "test_model"));
 
 var chai = require('chai');
 var chaiHttp = require('chai-http');

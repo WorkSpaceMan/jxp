@@ -192,9 +192,9 @@ And then later, say in your pre- or post-save...
 Add the parameter `_silence` to supress callbacks. Useful to avoid infinite loops.
 */
 
-var mongoose = require("mongoose");
-var JExpress = require("../libs/jexpress");
-var config = require("config");
+const mongoose = require("mongoose");
+const JExpress = require("../libs/jexpress");
+const config = require("config");
 
 config.callbacks = {
 	post: function(modelname, item, user) {

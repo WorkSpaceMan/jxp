@@ -1,7 +1,10 @@
 process.env.NODE_ENV = 'test';
+const path = require("path");
 
-var User = require("../models/user_model");
-var Apikey = require('../models/apikey_model');
+const model_dir = path.join(process.cwd(), "./models");
+
+var User = require(path.join(model_dir, "user_model"));
+var Apikey = require(path.join(model_dir, "apikey_model"));
 
 var security = require("../libs/security");
 
@@ -9,7 +12,7 @@ var chai = require('chai');
 var chaiHttp = require('chai-http');
 var should = chai.should();
 
-var server = require("../bin/server");
+var server = require(path.join(__dirname, "../bin/server.js"));
 
 chai.use(chaiHttp);
 

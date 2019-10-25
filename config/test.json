@@ -2,7 +2,6 @@
 	"port": 4005,
 	"mongo_server": "localhost",
 	"mongo_db": "test",
-	"model_dir": "../../../models/",
 	"log": "./logs/test.log",
 	"memcached": {
 		"server": "localhost:11211",
