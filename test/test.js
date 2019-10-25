@@ -18,6 +18,41 @@ chai.use(chaiHttp);
 describe('Test', () => {
 	before = init.init;
 
+	var apikey = null;
+	var last_accessed = null;
+
+	describe("login", () => {
+		it("it should login", (done) => {
+			chai.request(server)
+				.post("/login")
+				.send({ email: init.email, password: init.password })
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.have.property('apikey');
+					res.body.should.have.property('last_accessed');
+					apikey = res.body.apikey;
+					last_accessed = res.body.last_accessed;
+					done();
+				});
+		});
+	});
+
+	describe("login_again", () => {
+		it("it should login again with the same api key", (done) => {
+			chai.request(server)
+				.post("/login")
+				.send({ email: init.email, password: init.password })
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.have.property('apikey');
+					res.body.should.have.property('last_accessed');
+					res.body.apikey.should.be.eql(apikey);
+					// res.body.last_accessed.should.not.be.eql(last_accessed);
+					done();
+				});
+		});
+	});
+
 	describe("/GET test", () => {
 		it("it should GET all the tests", (done) => {
 			Test.deleteMany(() => {

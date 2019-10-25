@@ -72,6 +72,7 @@ describe('Init', () => {
 			});
 		});
 	});
+
 });
 
 module.exports = {

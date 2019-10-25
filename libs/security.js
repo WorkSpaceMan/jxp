@@ -82,12 +82,12 @@ const encPassword = password => {
 
 const generateApiKey = async user => {
 	try {
-		var apikey = new APIKey();
-		let existing = apikey.findOne({ user_id: user._id }).sort({ created: -1 });
+		let existing = await APIKey.findOne({ user_id: user._id }).sort({ last_accessed: -1 }).exec();
 		if (existing) {
-			existing.update({ last_accessed: new Date() });
+			await existing.updateOne({ last_accessed: new Date() });
 			return existing;
 		}
+		var apikey = new APIKey();
 		apikey.user_id = user._id;
 		apikey.apikey = randToken.generate(16);
 		await apikey.save();
