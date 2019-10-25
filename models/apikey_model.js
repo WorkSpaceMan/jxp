@@ -6,7 +6,8 @@ var ObjectId = mongoose.Schema.Types.ObjectId;
 var APIKeySchema   = new Schema({
 	user_id: { type: ObjectId, index: true },
 	apikey: { type: String, index: true, unique: true },
-	created: { type: Date, default: Date.now },
+	created: { type: Date, default: Date.now, index: true },
+	last_accessed: { type: Date, default: Date.now, index: true },
 });
 
 APIKeySchema.set("_perms", {
