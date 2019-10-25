@@ -202,7 +202,7 @@ const login = async (req, res) => {
 
 function getJWT(req, res) {
 	var user = null;
-	if (!req.user.admin) {
+	if (!res.user.admin) {
 		res.send(403, { status: "fail", message: "Unauthorized" });
 		return;
 	}

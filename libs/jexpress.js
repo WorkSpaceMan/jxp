@@ -37,7 +37,7 @@ const middlewarePasswords = (req, res, next) => {
 const middlewareCheckAdmin = (req, res, next) => {
 	//We don't want users to pump up their own permissions
 	if (req.modelname !== "user") return next();
-	if (req.user.admin) return next();
+	if (res.user.admin) return next();
 	req.params.admin = false;
 	next();
 };
@@ -193,15 +193,15 @@ const actionPost = async (req, res) => {
 	try {
 		var item = new req.Model();
 		_populateItem(item, datamunging.deserialize(req.body));
-		if (req.user) {
-			item._owner_id = req.user._id;
-			item.__user = req.user;
+		if (res.user) {
+			item._owner_id = res.user._id;
+			item.__user = res.user;
 		}
 		const result = await item.save();
 		var silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
-			req.config.callbacks.post.call(null, req.modelname, result, req.user);
+			req.config.callbacks.post.call(null, req.modelname, result, res.user);
 		}
 		res.json({
 			status: "ok",
@@ -227,14 +227,14 @@ const actionPut = async (req, res) => {
 		}
 		_populateItem(item, datamunging.deserialize(req.body));
 		_versionItem(item);
-		if (req.user) {
-			item.__user = req.user;
+		if (res.user) {
+			item.__user = res.user;
 		}
 		const data = await item.save();
 		var silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
-			req.config.callbacks.put.call(null, req.modelname, item, req.user );
+			req.config.callbacks.put.call(null, req.modelname, item, res.user );
 		}
 		res.json({
 			status: "ok",
@@ -261,8 +261,8 @@ const actionDelete = async (req, res) => {
 			res.send(404, "Could not find document");
 			return;
 		}
-		if (req.user) {
-			item.__user = req.user;
+		if (res.user) {
+			item.__user = res.user;
 		}
 		if (Object.prototype.hasOwnProperty.call(req.Model.schema.paths, "_deleted")) {
 			item._deleted = true;
@@ -277,7 +277,7 @@ const actionDelete = async (req, res) => {
 				null,
 				req.modelname,
 				item,
-				req.user,
+				res.user,
 				{ soft: false }
 			);
 		}
@@ -295,9 +295,9 @@ const actionDelete = async (req, res) => {
 };
 
 const actionCall = async (req, res) => {
-	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(req.user) });
+	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(res.user) });
 	req.body = req.body || {};
-	req.body.__user = req.user || null;
+	req.body.__user = res.user || null;
 	try {
 		const result = await req.Model[req.params.method_name](req.body);
 		res.json(result);
@@ -318,10 +318,10 @@ const actionCallItem = (req, res) => {
 			res.send(500, { status: "error", message: err.toString() });
 			return;
 		}
-		req.params.__user = req.user || null;
+		req.params.__user = res.user || null;
 		req.Model[req.params.method_name](item).then(
 			function(item) {
-				// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(req.user) });
+				// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(res.user) });
 				res.json(item);
 			},
 			function(err) {
@@ -414,13 +414,13 @@ const actionQuery = async (req, res) => {
 // 	data = JSON.parse(req.params.json);
 // 	data.forEach(function(data) {
 // 		var item = new req.Model();
-// 		if (req.user) {
-// 			item.__user = req.user;
+// 		if (res.user) {
+// 			item.__user = res.user;
 // 		}
 // 		_populateItem(item, data);
 // 		_versionItem(item);
-// 		if (req.user) {
-// 			item._owner_id = req.user._id;
+// 		if (res.user) {
+// 			item._owner_id = res.user._id;
 // 		}
 // 		items.push(item);
 // 	});
@@ -430,7 +430,7 @@ const actionQuery = async (req, res) => {
 // 			res.status(500).send(err.toString());
 // 		} else {
 // 			// websocket.emit(modelname, { method: "post", _id: result._id });
-// 			console.log({ action_id: 8, action: "Batch insert", type: req.modelname, count: items.length, user: filterLogUser(req.user) });
+// 			console.log({ action_id: 8, action: "Batch insert", type: req.modelname, count: items.length, user: filterLogUser(res.user) });
 // 			res.send({ message: req.modelname + " created ", data: items.length });
 // 			console.timeEnd("BATCH " + req.modelname);
 // 			return;

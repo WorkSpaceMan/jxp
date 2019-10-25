@@ -107,21 +107,24 @@ const generateToken = async user => {
 };
 
 const login = async (req, res, next) => {
+	let user = null;
 	if (!req.query.apikey && !req.headers.authorization) {
 		// Anonymous user
-		req.user = null;
-		req.groups = [];
+		res.user = null;
+		res.groups = [];
 		return next();
 	}
 	try {
 		if (req.headers.authorization) {
 			// Basic Auth
-			req.user = await basicAuth(basicAuthData(req));
+			user = await basicAuth(basicAuthData(req));
 		} else {
 			// API Key
-			req.user = await apiKeyAuth(req.query.apikey)
+			user = await apiKeyAuth(req.query.apikey)
 		}
-		req.groups = await getGroups(req.user._id);
+		let groups = await getGroups(user._id);
+		res.groups = groups;
+		res.user = user;
 		return next();
 	} catch(err) {
 		console.error(new Date(), err);
@@ -156,7 +159,7 @@ const auth = (req, res, next) => {
 		console.error("Unsupported operation", req.method);
 		return fail(res, 500, "Unsupported operation: " + req.method);
 	}
-	req.authorized = false;
+	res.authorized = false;
 	//If no perms are set, then this isn't an available model
 	if (!perms.admin) {
 		console.error("Model not available");
@@ -170,29 +173,29 @@ const auth = (req, res, next) => {
 		}
 	}
 	//This isn't an 'all' situation, so let's bail if the user isn't logged in
-	if (!req.user) {
+	if (!res.user) {
 		return fail(res, 403, "Unauthorized");
 	}
 	//Let's check perms in this order - admin, user, group, owner
 	//Admin check
-	if (req.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
+	if (res.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
 		// console.log("Matched permission 'admin':" + method);
-		req.authorized = true;
+		res.authorized = true;
 		next();
 		return;
 	}
 	//User check
 	if (perms.user && perms.user.indexOf(method) !== -1) {
 		// console.log("Matched permission 'user':" + method);
-		req.authorized = true;
+		res.authorized = true;
 		next();
 		return;
 	}
 	//Group check
-	req.groups.forEach(function(group) {
+	res.groups.forEach(function(group) {
 		if (perms[group] && perms[group].indexOf(method) !== -1) {
 			// console.log("Matched permission '" + group + "':" + method);
-			req.authorized = true;
+			res.authorized = true;
 			next();
 			return;
 		}
@@ -206,14 +209,14 @@ const auth = (req, res, next) => {
 		if (
 			item &&
 			item._owner_id &&
-			item._owner_id.toString() == req.user._id.toString() &&
+			item._owner_id.toString() == res.user._id.toString() &&
 			(perms.owner && perms.owner.indexOf(method) !== -1)
 		) {
-			req.authorized = true;
+			res.authorized = true;
 			next();
 			return;
 		} else {
-			if (!req.authorized) {
+			if (!res.authorized) {
 				return fail(res, 403, "Authorization failed");
 			}
 		}
@@ -221,10 +224,10 @@ const auth = (req, res, next) => {
 };
 
 const admin_only = (req, res, next) => { // Chain after login
-	if (!req.user) {
+	if (!res.user) {
 		return fail(res, 403, "Unauthorized");
 	}
-	if (!req.user.admin) {
+	if (!res.user.admin) {
 		return fail(res, 403, "Unauthorized");
 	}
 	next();
