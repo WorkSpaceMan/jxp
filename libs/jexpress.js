@@ -270,7 +270,7 @@ const actionDelete = async (req, res) => {
 			await item.save();
 		} else {
 			// console.log("Hard deleting");
-			await item.deleteOne();
+			await req.Model.deleteOne({ _id: item._id });
 		}
 		if (!silence) {
 			req.config.callbacks.delete.call(
