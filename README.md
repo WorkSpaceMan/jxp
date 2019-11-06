@@ -331,6 +331,26 @@ You can see the status of the cache at the endpoint `/cache`.
 
 The caching mechanism is pretty dumb at this point. We simply flush the cache completely in the case of a write or delete. 
 
+## Throttling
+
+ You can throttle the API by using a config item `throttle`. It follows Restify's throttle config.
+
+```
+{
+    "throttle": {
+        "burst": 100,
+        "rate": 50,
+        "ip": true,
+        "overrides": {
+            "192.168.1.1": {
+            	"rate": 0,
+				"burst": 0
+			}
+		}
+	}
+}
+```
+
 # Changelog
 
 ## v1.0.0
@@ -348,3 +368,7 @@ The caching mechanism is pretty dumb at this point. We simply flush the cache co
 ## v1.0.16
 
 - Add a /query endpoint, that allows you to POST { query } for advanced queries
+
+## v1.2.3
+
+- Throttling

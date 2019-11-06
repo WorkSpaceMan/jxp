@@ -727,6 +727,11 @@ const JXP = function(options) {
 
 	// Set up our API server
 
+	// Rate limitting
+	if (config.throttle) {
+		server.use(restify.plugins.throttle(config.throttle));
+	}
+
 	// Logging
 	console.log("Logging to", config.log);
 
