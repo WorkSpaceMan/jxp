@@ -13,6 +13,8 @@ const Cache = require("../libs/cache");
 const cache = new Cache();
 var models = {};
 
+var ops = 0;
+
 // Middleware
 const middlewareModel = (req, res, next) => {
 	var modelname = req.params.modelname;
@@ -73,7 +75,8 @@ const outputCSV = (req, res) => {
 
 // Actions (verbs)
 const actionGet = async (req, res, next) => {
-	console.time("GET " + req.modelname);
+	const opname = `get ${req.modelname} ${ops++}`;
+	console.time(opname);
 	const parseSearch = function(search) {
 		let result = {};
 		for (let i in search) {
@@ -162,24 +165,25 @@ const actionGet = async (req, res, next) => {
 		}
 		result.data = await q.exec();
 		res.result = result;
-		console.timeEnd("GET " + req.modelname);
+		console.timeEnd(opname);
 		next();
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd("GET " + req.modelname);
+		console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
 
 const actionGetOne = async (req, res) => {
-	console.time("GET " + req.modelname + "/" + req.params.item_id);
+	const opname = `getOne ${req.modelname}/${req.params.item_id} ${ops++}`;
+	console.time(opname);
 	try {
 		const item = await getOne(req.Model, req.params.item_id, req.query);
 		res.send(item);
-		console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
+		console.timeEnd(opname);
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd("GET " + req.modelname + "/" + req.params.item_id);
+		console.timeEnd(opname);
 		if (err.msg) {
 			res.send(500, { status: "error", message: err.msg });
 		} else {
@@ -189,7 +193,8 @@ const actionGetOne = async (req, res) => {
 };
 
 const actionPost = async (req, res) => {
-	console.time("POST " + req.modelname);
+	const opname = `post ${req.modelname} ${ops++}`;
+	console.time(opname);
 	try {
 		var item = new req.Model();
 		_populateItem(item, datamunging.deserialize(req.body));
@@ -208,16 +213,17 @@ const actionPost = async (req, res) => {
 			message: req.modelname + " created",
 			data: item
 		});
-		console.timeEnd("POST " + req.modelname);
+		console.timeEnd(opname);
 	} catch (err) {
 		console.error(new Date(), err);
-		console.timeEnd("POST " + req.modelname);
+		console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
 
 const actionPut = async (req, res) => {
-	console.time("PUT " + req.modelname + "/" + req.params.item_id);
+	const opname = `put ${req.modelname}/${req.params.item_id} ${ops++}`;
+	console.time(opname);
 	try {
 		let item = await req.Model.findById(req.params.item_id);
 		if (!item) {
@@ -241,10 +247,10 @@ const actionPut = async (req, res) => {
 			message: req.modelname + " updated",
 			data: data
 		});
-		console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
+		console.timeEnd(opname);
 	} catch (err) {
 		console.error(new Date(), err);
-		console.timeEnd("PUT " + req.modelname + "/" + req.params.item_id);
+		console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
@@ -253,7 +259,8 @@ const actionPut = async (req, res) => {
 const actionDelete = async (req, res) => {
 	var silence = req.params._silence;
 	if (req.body && req.body._silence) silence = true;
-	console.time("DEL " + req.modelname + "/" + req.params.item_id);
+	const opname = `del ${req.modelname}/${req.params.item_id} ${ops++}`;
+	console.time(opname);
 	try {
 		let item = await req.Model.findById(req.params.item_id);
 		if (!item) {
@@ -285,10 +292,10 @@ const actionDelete = async (req, res) => {
 			status: "ok",
 			message: `${req.modelname}/${ req.params.item_id } deleted`
 		});
-		console.timeEnd("DEL " + req.modelname + "/" + req.params.item_id);
+		console.timeEnd(opname);
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd("DEL " + req.modelname + "/" + req.params.item_id);
+		console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
@@ -338,7 +345,8 @@ const actionQuery = async (req, res) => {
 		console.error("query missing or not of type object")
 		return res.send(500, { status: "error", message: "query missing or not of type object" });
 	}
-	console.time("QUERY " + req.modelname);
+	const opname = `query ${req.modelname} ${ops++}`;
+	console.time(opname);
 	let query = [req.body.query];
 	let checkDeleted = { "$or": [{ _deleted: false }, { _deleted: null }] };
 	if (!req.query.showDeleted) {
@@ -399,11 +407,11 @@ const actionQuery = async (req, res) => {
 		}
 		result.data = await q.exec();
 		res.result = result;
-		console.timeEnd("QUERY " + req.modelname);
+		console.timeEnd(opname);
 		res.json(result);
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd("QUERY " + req.modelname);
+		console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };

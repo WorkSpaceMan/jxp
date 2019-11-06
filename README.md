@@ -372,3 +372,7 @@ The caching mechanism is pretty dumb at this point. We simply flush the cache co
 ## v1.2.3
 
 - Throttling
+
+## v1.2.4
+
+- Time log includes operation number
