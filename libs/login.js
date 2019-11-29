@@ -7,7 +7,7 @@ const smtpTransport = require('nodemailer-smtp-transport');
 var User = null;
 var APIKey = null;
 
-var init = function(config) {
+var init = function (config) {
 	var path = require("path");
 	APIKey = require(path.join(config.model_dir, 'apikey_model'));
 	User = require(path.join(config.model_dir, 'user_model'));
@@ -35,11 +35,11 @@ const recover = async (req, res) => {
 		}
 		const user = await User.findOne({ email });
 		if (!user) {
-			throw("Could not find email");
+			throw ("Could not find email");
 		}
 		const result = await security.generateApiKey(user);
 		const token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, { expiresIn: "2d" });
-		var text = `Someone (hopefully you) requested a password reset. Please click on the following url to recover your password. If you did not request a password reset, you can ignore this message. \n${ req.config.password_recovery_url }/${ token }`;
+		var text = `Someone (hopefully you) requested a password reset. Please click on the following url to recover your password. If you did not request a password reset, you can ignore this message. \n${req.config.password_recovery_url}/${token}`;
 		var html = text;
 		var mail_format = req.params.mail_format || req.body.mail_format;
 		if (mail_format) {
@@ -52,18 +52,18 @@ const recover = async (req, res) => {
 			subject: "Password Recovery",
 			text: text,
 			html: html
-		}, function(result) {
+		}, function (result) {
 			console.log({ msg: "Mailer result", result });
 		});
 		res.send({ status: "ok", message: "Sent recovery email" });
-	} catch(err) {
+	} catch (err) {
 		res.send(403, { status: "fail", message: "Unauthorized", err });
 	}
 }
 
 function logout(req, res) {
 	var apikey = req.query.apikey || req.params.apikey;
-	APIKey.findOne({ apikey }, function(err, apikey) {
+	APIKey.findOne({ apikey }, function (err, apikey) {
 		if (err) {
 			console.error(err);
 			res.send(500, { status: "error", error: err });
@@ -74,7 +74,7 @@ function logout(req, res) {
 			res.send(404, { status: "fail", message: "API Key not found" });
 			return;
 		}
-		apikey.delete(function(err) {
+		apikey.delete(function (err) {
 			if (err) {
 				console.error(err);
 				res.send(500, { status: "error", error: err });
@@ -85,90 +85,75 @@ function logout(req, res) {
 	});
 }
 
-function oauth(req, res, next) { // Log in through an OAuth2 provider, defined in config.js
-	var provider_config = req.config.oauth[req.params.provider];
+const oauth = (req, res, next) => { // Log in through an OAuth2 provider, defined in config.js
+	const provider_config = req.config.oauth[req.params.provider];
 	if (!provider_config) {
 		res.send(500, req.params.provider + " config not defined");
 		return;
 	}
-	var state = Math.random().toString(36).substring(7);
-	var uri = provider_config.auth_uri + "?client_id=" + provider_config.app_id + "&redirect_uri=" + req.config.url + "/login/oauth/callback/" + req.params.provider + "&scope=" + provider_config.scope + "&state=" + state + "&response_type=code";
-	// req.session.sender = req.query.sender;
+	const state = Math.random().toString(36).substring(7);
+	const uri = `${provider_config.auth_uri}?client_id=${provider_config.app_id}&redirect_uri=${req.config.url}/login/oauth/callback/${req.params.provider}&scope=${provider_config.scope}&state=${state}&response_type=code`;
 	res.redirect(uri, next);
 }
 
-function oauth_callback(req, res, next) {
-	var provider = req.params.provider;
-	var provider_config = req.config.oauth[provider];
-	var code = req.query.code;
-	var data = null;
-	var token = false;
-	var user = null;
-	if (req.query.error) {
-		res.redirect(req.config.oauth.fail_uri + "?error=" + req.query.error + "&provider=" + provider, next);
-		return;
-	}
-	if (!code) {
-		res.redirect(req.config.oauth.fail_uri + "?error=unknown&provider=" + provider, next);
-		return;
-	}
-	rest.post(provider_config.token_uri, { data: { client_id: provider_config.app_id, redirect_uri: req.config.url + "/login/oauth/callback/" + req.params.provider, client_secret: provider_config.app_secret, code: code, grant_type: "authorization_code" } })
-	.then(function(result) {
-		token = result;
-		if (!token.access_token) {
-			res.redirect(req.config.oauth.fail_uri + "?error=unknown&provider=" + provider, next);
-			return;
+const oauth_callback = async (req, res, next) => {
+	const provider = req.params.provider;
+	const provider_config = req.config.oauth[provider];
+	const code = req.query.code;
+	try {
+		if (req.query.error) {
+			throw (req.query.error);
 		}
-		return rest.get(provider_config.api_uri, { accessToken: token.access_token });
-	})
-	.then(function(result) {
-		data = result;
+		if (!code) {
+			throw ("missing_code");
+		}
+		const token = await rest.post(provider_config.token_uri, {
+			data: {
+				client_id: provider_config.app_id,
+				redirect_uri: `${req.config.url}/login/oauth/callback/${req.params.provider}`,
+				client_secret: provider_config.app_secret,
+				code: code,
+				grant_type: "authorization_code"
+			}
+		});
+		if (!token.access_token) {
+			throw ("missing_access_token");
+		}
+		const data = await rest.get(provider_config.api_uri, { accessToken: token.access_token });
 		if (data.emailAddress) {
 			data.email = data.emailAddress;
 		}
-		if (!result.email) {
-			res.redirect(req.config.oauth.fail_uri + "?error=missing_data&provider=" + provider, next);
-			return; // TODO: this should be some kind of break, not a return
+		if (data.elements && data.elements[0] && data.elements[0]["handle~"] && data.elements[0]["handle~"].emailAddress) { // LinkedIn
+			data.email = data.elements[0]["handle~"].emailAddress;
+		}
+		if (!data.email) {
+			throw ("missing_data");
 		}
 		var search = {};
-		search[provider + ".id"] = result.id;
-		console.log("Search", search);
-		return User.findOne(search);
-	})
-	.then(function(result) {
-		user = result;
-		console.log("User login", user);
+		search[provider + ".id"] = data.id;
+		const user = await User.findOne(search);
 		if (!user) {
-			res.redirect(req.config.oauth.fail_uri + "?error=no_user&provider=" + provider, next);
-			return;
+			throw ("no_user");
 		}
 		user[provider] = data;
-		return user.save();
-	})
-	.then(function() {
-		//Generate new API key
+		await user.save();
 		var apikey = new APIKey();
 		apikey.user_id = user._id;
 		apikey.apikey = require('rand-token').generate(16);
-		apikey.save(function(err) {
-			if (err) {
-				console.error(err);
-				res.redirect(req.config.oauth.fail_uri + "?error=unknown&provider=" + provider, next);
-				return;
-			}
-			console.log({ action_id: 1, action: "User logged on", user: user });
-			var token = jwt.sign({ apikey: apikey.apikey, user: user }, req.config.shared_secret, {
-				expiresIn: "1m"
-			});
-			res.redirect(req.config.oauth.success_uri + "?token=" + token, next);
-			return;
+		await apikey.save();
+		var jwt_token = jwt.sign({ apikey: apikey.apikey, user: user }, req.config.shared_secret, {
+			expiresIn: "1m"
 		});
-	})
-	.then(null, function(err) {
-		console.log("Err", err);
-		res.redirect(req.config.oauth.fail_uri + "?error=unknown&provider=" + provider, next);
+		res.redirect(`${req.config.oauth.success_uri}?token=${jwt_token}`, next);
+	} catch (err) {
+		console.error(err);
+		if (typeof err === 'string' || err instanceof String) {
+			res.redirect(`${req.config.oauth.fail_uri}?error=${err}&provider=${provider}`, next);
+		} else {
+			res.redirect(`${req.config.oauth.fail_uri}?error=unknown&provider=${provider}`, next);
+		}
 		return;
-	});
+	}
 }
 
 const login = async (req, res) => {
@@ -187,13 +172,13 @@ const login = async (req, res) => {
 	}
 	try {
 		const user = await User.findOne({ email });
-		if (!user) throw(`Incorrect username; username: ${ email }`);
+		if (!user) throw (`Incorrect username; username: ${email}`);
 
 		if (!(await bcrypt.compare(password, user.password))) {
-			throw(`Incorrect password; username: ${ email }`);
+			throw (`Incorrect password; username: ${email}`);
 		}
 		res.send(await security.generateApiKey(user));
-	} catch(err) {
+	} catch (err) {
 		res.send(401, { status: "fail", message: "Authentication failed", err });
 		console.error(new Date(), `Authentication failed`, ip, err);
 		return;
@@ -211,7 +196,7 @@ function getJWT(req, res) {
 		res.send(400, { status: "fail", message: "Email required" });
 		return;
 	}
-	User.findOne({ email: email }, function(err, result) {
+	User.findOne({ email: email }, function (err, result) {
 		if (err) {
 			res.send(500, { status: "error", error: err });
 			return;
@@ -222,14 +207,14 @@ function getJWT(req, res) {
 		}
 		user = result;
 		security.generateApiKey(user)
-		.then(function(result) {
-			var token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, {
-				expiresIn: "2d"
+			.then(function (result) {
+				var token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, {
+					expiresIn: "2d"
+				});
+				res.send({ email: user.email, token: token });
+			}, function () {
+				res.send(403, { status: "fail", message: "Unauthorized" });
 			});
-			res.send({ email: user.email, token: token });
-		}, function() {
-			res.send(403, { status: "fail", message: "Unauthorized" });
-		});
 	});
 	return;
 }
