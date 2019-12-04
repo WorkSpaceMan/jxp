@@ -152,7 +152,7 @@ const auth = (req, res, next) => {
 		passed[i] = false;
 	}
 	var method = null;
-	if (req.method == "GET") {
+	if (req.method == "GET" || req.route.name === "postquerymodelname") {
 		method = "r";
 	} else if (req.method == "POST") {
 		method = "c";
