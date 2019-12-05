@@ -13,6 +13,8 @@ const Cache = require("../libs/cache");
 const cache = new Cache();
 var models = {};
 
+var model_dir = "";
+
 var ops = 0;
 
 // Middleware
@@ -449,7 +451,6 @@ const actionQuery = async (req, res) => {
 // Meta
 
 const metaModels = (req, res) => {
-	const model_dir = path.join(process.cwd, "../models");
 	fs.readdir(model_dir, function(err, files) {
 		if (err) {
 			console.trace(err);
@@ -718,6 +719,8 @@ const JXP = function(options) {
 			}
 		}
 	}
+
+	model_dir = config.model_dir;
 
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);

@@ -129,7 +129,6 @@ describe('Test', () => {
 			.get("/api/test?search=Xanadu")
 			// .auth(init.email, init.password)
 			.end((err, res) => {
-				console.log(res.body);
 				res.should.have.status(200);
 				res.body.data.should.be.a('array');
 				res.body.data.length.should.be.eql(1);
@@ -330,7 +329,6 @@ describe('Test', () => {
 			.auth(init.email, init.password)
 			.end((err, res) => {
 				res.should.have.status(200);
-				console.log(res.body);
 				res.body.should.have.property("link_id")
 				res.body.link_id.should.be.an('object');
 				res.body.link_id.name.should.eql("name1");
@@ -392,6 +390,19 @@ describe('Test', () => {
 					done();
 				});
 			});
+		});
+	});
+
+	describe("Models", () => {
+		it("it should get all the model definitions", (done) => {
+			chai.request(server)
+				.get("/model")
+				// .auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.be.a('array');
+					done();
+				});
 		});
 	});
 });
