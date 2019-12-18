@@ -140,92 +140,101 @@ const login = async (req, res, next) => {
 const auth = (req, res, next) => {
 	// console.log("Started Auth");
 	// Check against model as to whether we're allowed to edit this model
-	const perms = req.Model.schema.get("_perms");
-	var passed = {
-		admin: false,
-		owner: false,
-		user: false,
-		all: false
-	};
-	for (var i in perms) {
-		// Add any user-defined perms to our passed table
-		passed[i] = false;
+	if (!req.Model) {
+		console.error("Model missing");
+		return fail(res, 500, "Model missing");
 	}
-	var method = null;
-	if (req.method == "GET" || req.route.name === "postquerymodelname") {
-		method = "r";
-	} else if (req.method == "POST") {
-		method = "c";
-	} else if (req.method == "PUT") {
-		method = "u";
-	} else if (req.method == "DELETE") {
-		method = "d";
-	} else {
-		console.error("Unsupported operation", req.method);
-		return fail(res, 500, "Unsupported operation: " + req.method);
-	}
-	res.authorized = false;
-	//If no perms are set, then this isn't an available model
-	if (!perms.admin) {
-		console.error("Model not available");
-		return fail(res, 500, "Model not available");
-	}
-	//First check if "all" is able to do this. If so, let's get on with it.
-	if (perms.all) {
-		if (perms.all.indexOf(method) !== -1) {
-			next();
-			return;
+	try {
+		const perms = req.Model.schema.get("_perms");
+		var passed = {
+			admin: false,
+			owner: false,
+			user: false,
+			all: false
+		};
+		for (var i in perms) {
+			// Add any user-defined perms to our passed table
+			passed[i] = false;
 		}
-	}
-	//This isn't an 'all' situation, so let's bail if the user isn't logged in
-	if (!res.user) {
-		return fail(res, 403, "Unauthorized");
-	}
-	//Let's check perms in this order - admin, user, group, owner
-	//Admin check
-	if (res.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
-		// console.log("Matched permission 'admin':" + method);
-		res.authorized = true;
-		next();
-		return;
-	}
-	//User check
-	if (perms.user && perms.user.indexOf(method) !== -1) {
-		// console.log("Matched permission 'user':" + method);
-		res.authorized = true;
-		next();
-		return;
-	}
-	//Group check
-	res.groups.forEach(function(group) {
-		if (perms[group] && perms[group].indexOf(method) !== -1) {
-			// console.log("Matched permission '" + group + "':" + method);
-			res.authorized = true;
-			next();
-			return;
-		}
-	});
-	//Owner check
-	req.Model.findById(req.params.item_id, function(err, item) {
-		if (err) {
-			console.error(err);
-			return fail(res, 500, err);
-		}
-		if (
-			item &&
-			item._owner_id &&
-			item._owner_id.toString() == res.user._id.toString() &&
-			(perms.owner && perms.owner.indexOf(method) !== -1)
-		) {
-			res.authorized = true;
-			next();
-			return;
+		var method = null;
+		if (req.method == "GET" || req.route.name === "postquerymodelname") {
+			method = "r";
+		} else if (req.method == "POST") {
+			method = "c";
+		} else if (req.method == "PUT") {
+			method = "u";
+		} else if (req.method == "DELETE") {
+			method = "d";
 		} else {
-			if (!res.authorized) {
-				return fail(res, 403, "Authorization failed");
+			console.error("Unsupported operation", req.method);
+			return fail(res, 500, "Unsupported operation: " + req.method);
+		}
+		res.authorized = false;
+		//If no perms are set, then this isn't an available model
+		if (!perms.admin) {
+			console.error("Model not available");
+			return fail(res, 500, "Model not available");
+		}
+		//First check if "all" is able to do this. If so, let's get on with it.
+		if (perms.all) {
+			if (perms.all.indexOf(method) !== -1) {
+				next();
+				return;
 			}
 		}
-	});
+		//This isn't an 'all' situation, so let's bail if the user isn't logged in
+		if (!res.user) {
+			return fail(res, 403, "Unauthorized");
+		}
+		//Let's check perms in this order - admin, user, group, owner
+		//Admin check
+		if (res.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
+			// console.log("Matched permission 'admin':" + method);
+			res.authorized = true;
+			next();
+			return;
+		}
+		//User check
+		if (perms.user && perms.user.indexOf(method) !== -1) {
+			// console.log("Matched permission 'user':" + method);
+			res.authorized = true;
+			next();
+			return;
+		}
+		//Group check
+		res.groups.forEach(function(group) {
+			if (perms[group] && perms[group].indexOf(method) !== -1) {
+				// console.log("Matched permission '" + group + "':" + method);
+				res.authorized = true;
+				next();
+				return;
+			}
+		});
+		//Owner check
+		req.Model.findById(req.params.item_id, function(err, item) {
+			if (err) {
+				console.error(err);
+				return fail(res, 500, err);
+			}
+			if (
+				item &&
+				item._owner_id &&
+				item._owner_id.toString() == res.user._id.toString() &&
+				(perms.owner && perms.owner.indexOf(method) !== -1)
+			) {
+				res.authorized = true;
+				next();
+				return;
+			} else {
+				if (!res.authorized) {
+					return fail(res, 403, "Authorization failed");
+				}
+			}
+		});
+	} catch(err) {
+		console.error("An unknown error occured", err);
+		return fail(res, 500, "An unknown error occured");
+	}
 };
 
 const admin_only = (req, res, next) => { // Chain after login
