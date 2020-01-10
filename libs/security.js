@@ -202,14 +202,14 @@ const auth = (req, res, next) => {
 			return;
 		}
 		//Group check
-		res.groups.forEach(function(group) {
+		for (let group of res.groups) {
 			if (perms[group] && perms[group].indexOf(method) !== -1) {
 				// console.log("Matched permission '" + group + "':" + method);
 				res.authorized = true;
 				next();
 				return;
 			}
-		});
+		}
 		//Owner check
 		req.Model.findById(req.params.item_id, function(err, item) {
 			if (err) {
