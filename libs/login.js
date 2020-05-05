@@ -1,4 +1,4 @@
-const rest = require("restler-q");
+const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const security = require("../libs/security");
@@ -107,19 +107,17 @@ const oauth_callback = async (req, res, next) => {
 		if (!code) {
 			throw ("missing_code");
 		}
-		const token = await rest.post(provider_config.token_uri, {
-			data: {
-				client_id: provider_config.app_id,
-				redirect_uri: `${req.config.url}/login/oauth/callback/${req.params.provider}`,
-				client_secret: provider_config.app_secret,
-				code: code,
-				grant_type: "authorization_code"
-			}
-		});
+		const token = (await axios.post(provider_config.token_uri, {
+			client_id: provider_config.app_id,
+			redirect_uri: `${req.config.url}/login/oauth/callback/${req.params.provider}`,
+			client_secret: provider_config.app_secret,
+			code: code,
+			grant_type: "authorization_code"
+		})).data;
 		if (!token.access_token) {
 			throw ("missing_access_token");
 		}
-		const data = await rest.get(provider_config.api_uri, { accessToken: token.access_token });
+		const data = (await axios.get(provider_config.api_uri, { headers: { Authorization: `Bearer ${token.access_token}` } })).data;
 		if (data.emailAddress) {
 			data.email = data.emailAddress;
 		}
