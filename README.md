@@ -376,3 +376,8 @@ The caching mechanism is pretty dumb at this point. We simply flush the cache co
 ## v1.2.4
 
 - Time log includes operation number
+
+## v2.0.1-0
+
+- Start v2!
+- Move to "connection_string" for MongoDB connection - allows connectivity to Atlas, for example
