@@ -239,6 +239,16 @@ const mongo_options = Object.assign(config.mongo.options, {
 // mongodb connection
 mongoose.connect(config.mongo.connection_string, mongo_options);
 
+const db = mongoose.connection;
+
+// mongodb error
+db.on('error', console.error.bind(console, 'connection error:'));
+
+// mongodb connection open
+db.once('open', () => {
+	console.log(`Connected to Mongo at: ${new Date()}`);
+});
+
 var server = new JXP(config);
 
 server.listen(config.port || 4001, function() {
