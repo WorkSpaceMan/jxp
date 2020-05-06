@@ -1,7 +1,7 @@
 {
 	"port": {port},
 	"mongo" : {
-		"server": "{mongo_server}",
-		"db": "{mongo_db}"
+		"connection_string": "{connection_string}",
+		"options": {}
 	}
 }
