@@ -19,7 +19,7 @@ program
 
 async function main() {
 	try {
-		const models = ["apikey", "test", "token", "user", "usergroups"];
+		const models = ["apikey", "test", "token", "user", "usergroups", "link"];
 		const destination_path = program.args.shift() || '.';
 		// Get some defaults
 		let default_author_name = "Me";
