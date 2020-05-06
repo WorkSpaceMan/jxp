@@ -1,14 +1,14 @@
 const restify = require("restify");
 const path = require("path");
-const security = require("../libs/security");
-const datamunging = require("../libs/datamunging");
-const login = require("../libs/login");
-const groups = require("../libs/groups");
-const setup = require("../libs/setup");
+const security = require("./security");
+const datamunging = require("./datamunging");
+const login = require("./login");
+const groups = require("./groups");
+const setup = require("./setup");
 const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
-const Cache = require("../libs/cache");
+const Cache = require("./cache");
 
 const cache = new Cache();
 var models = {};

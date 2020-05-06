@@ -193,7 +193,7 @@ Add the parameter `_silence` to supress callbacks. Useful to avoid infinite loop
 */
 
 const mongoose = require("mongoose");
-const JExpress = require("../libs/jexpress");
+const JXP = require("../libs/jxp");
 const config = require("config");
 
 config.callbacks = {
@@ -226,20 +226,20 @@ config.pre_hooks = {
 	},
 };
 
-config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
-
 //DB connection
 // ES6 promises
 mongoose.Promise = Promise;
-
-// mongodb connection
-mongoose.connect(`mongodb://${ config.mongo.server }/${ config.mongo.db }`, {
+if (!config.mongo.options) config.mongo.options = {};
+const mongo_options = Object.assign(config.mongo.options, {
 	promiseLibrary: global.Promise,
 	useNewUrlParser: true,
-	useCreateIndex: true,
+	useCreateIndex: true
 });
 
-var server = new JExpress(config);
+// mongodb connection
+mongoose.connect(config.mongo.connection_string, mongo_options);
+
+var server = new JXP(config);
 
 server.listen(config.port || 4001, function() {
 	console.log('%s listening at %s', server.name, server.url);

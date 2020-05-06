@@ -28,7 +28,7 @@ var setup = (req, res) => {
 			? req.body.password
 			: rand_token.generate(12);
 	user.email =
-		req.body && req.body.password ? req.body.email : "admin@jexpress.com";
+		req.body && req.body.password ? req.body.email : "admin@example.com";
 	user.password = security.encPassword(password);
 	user.name = req.body && req.body.name ? req.body.name : "admin";
 	user.admin = true;

@@ -12,7 +12,7 @@ var version = pkg.version;
 program
 .version(version)
 .usage('[options] [dir]')
-.option('-v, --version', 'JExpress version')
+.option('-v, --version', 'JXP version')
 .option("-c, --config <config.js>", "Use config file")
 .option("-e, --email <user>", "Admin user email")
 .option("-p, --password <password>", "Admin password")
@@ -24,7 +24,7 @@ function main() {
 	var email = program.email || readline.question("Admin user email: ");
 	var password = program.password || readline.question("Admin user password: ");
 	var name = program.username || readline.question("Admin user name (Admin): ", { defaultInput: "Admin" });
-	config.mongo = config.mongo || { server: "localhost", db: "jexpress" };
+	config.mongo = config.mongo || { server: "localhost", db: "jxp" };
 	//DB connection
 	mongoose.connect('mongodb://' + config.mongo.server + '/' + config.mongo.db, function(err) {
 		if (err) {

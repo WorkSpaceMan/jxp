@@ -7,8 +7,8 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
     npm install -g jxp
     mkdir my-app
     cd my-app
-    jexpress-setup
-    jexpress-add-admin
+    jxp-setup
+    jxp-add-admin
     npm install
     npm start
 

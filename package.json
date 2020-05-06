@@ -3,14 +3,14 @@
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
   "version": "1.2.12",
   "private": false,
-  "main": "libs/jexpress.js",
+  "main": "libs/jxp.js",
   "scripts": {
     "start": "node bin/server.js",
     "test": "mocha --timeout 10000"
   },
   "bin": {
-    "jexpress-setup": "bin/setup.js",
-    "jexpress-add-admin": "bin/init_db.js"
+    "jxp-setup": "bin/setup.js",
+    "jxp-add-admin": "bin/init_db.js"
   },
   "repository": {
     "type": "git",

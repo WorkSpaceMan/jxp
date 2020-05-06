@@ -38,9 +38,9 @@ async function main() {
 		let default_app_name = path.basename(path.resolve(destination_path));
 		const app_name = readline.question(`App name (${default_app_name}): `, { defaultInput: default_app_name });
 		const app_description = readline.question(`App description (${default_app_description}): `, { defaultInput: default_app_description });
-		let app_license = readline.question(`Licence (${default_license}): `, { defaultInput: default_license });
-		var app_author = readline.question(`Author (${default_app_author}): `, { defaultInput: default_app_author });
-		var app_version = readline.question(`Version (${default_version}): `, { defaultInput: default_version });
+		const app_license = readline.question(`Licence (${default_license}): `, { defaultInput: default_license });
+		const app_author = readline.question(`Author (${default_app_author}): `, { defaultInput: default_app_author });
+		const app_version = readline.question(`Version (${default_version}): `, { defaultInput: default_version });
 		var opts = {};
 		// Config setup
 		// opts.email = readline.question("Admin email address: ");
@@ -50,7 +50,7 @@ async function main() {
 		const default_connection_string = `mongodb://localhost/${ app_name }?retryWrites=true&w=majority`;
 		opts.connection_string = readline.question(`Mongo connection string (${default_connection_string}): `, { defaultInput: default_connection_string });
 		opts.shared_secret = crypto.randomBytes(20).toString('hex');
-		var packageJson = {
+		const package_data = {
 			"name": app_name,
 			"version": app_version,
 			"description": app_description,
@@ -60,18 +60,19 @@ async function main() {
 				"start": "node bin/server.js"
 			},
 			"dependencies": {
-				"jexpress": "j-norwood-young/jexpress-2"
+				"jxp": "^2.0.0"
 			},
 			"author": app_author,
 			"license": app_license
 		};
-		write("package.json", JSON.stringify(packageJson, null, "\t"));
+		await mkdirp(destination_path); // Ensure the dir exists
+		write(path.join(destination_path, "package.json"), JSON.stringify(package_data, null, "\t"));
 		await mkdir(path.join(destination_path, "bin"));
 		await mkdir(path.join(destination_path, "models"));
 		await mkdir(path.join(destination_path, "config"));
 		await mkdir(path.join(destination_path, "logs"));
 		await cp_replace("../config_sample.json", path.join(destination_path, "config/default.json"), opts, "{", "}");
-		await cp_replace("./server.js", path.join(destination_path, "bin/server.js"), { "../libs/jexpress": "jexpress" });
+		await cp_replace("./server.js", path.join(destination_path, "bin/server.js"), { "../libs/jxp": "jxp" });
 		for (let model of models) {
 			await cp("../models/" + model + "_model.js", path.join(destination_path, "models/" + model + "_model.js"));
 		}
