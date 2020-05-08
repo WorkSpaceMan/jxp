@@ -1,17 +1,17 @@
-var mongoose     = require('mongoose');
-var Schema       = mongoose.Schema;
+/* global ObjectId */
 
-var ObjectId = mongoose.Schema.Types.ObjectId;
+var Schema = require("../libs/schema");
 
 var UserGroupSchema   = new Schema({
 	user_id: { type: ObjectId, index: true, unique: true },
 	groups: [String],
-	_date: { type: Date, default: Date.now },
+},
+{
+	perms: {
+		admin: "crud",
+		user: "r",
+	}
 });
 
-UserGroupSchema.set("_perms", {
-	admin: "crud",
-	user: "r",
-});
-
-module.exports = mongoose.model('Usergroup', UserGroupSchema);
+const UserGroup = Schema.model('Usergroup', UserGroupSchema);
+module.exports = UserGroup;

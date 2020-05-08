@@ -1,7 +1,5 @@
-var mongoose     = require('mongoose');
-var Schema       = mongoose.Schema;
-
-var ObjectId = mongoose.Schema.Types.ObjectId;
+/* global ObjectId */
+const Schema = require("../libs/schema");
 
 var TokenSchema   = new Schema({
 	user_id: { type: ObjectId, index: true },
@@ -9,14 +7,14 @@ var TokenSchema   = new Schema({
 	access_token: String,
 	token_type: String,
 	expires_in: Number,
-	created: { type: Date, default: Date.now },
-	_owner_id: ObjectId,
+},
+{
+	perms: {
+		admin: "crud",
+		owner: "crud",
+		user: "",
+	}
 });
 
-TokenSchema.set("_perms", {
-	admin: "crud",
-	owner: "crud",
-	user: "",
-});
-
-module.exports = mongoose.model('Token', TokenSchema);
+const Token = Schema.model('Token', TokenSchema);
+module.exports = Token;

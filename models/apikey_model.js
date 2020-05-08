@@ -1,17 +1,11 @@
-var mongoose     = require('mongoose');
-var Schema       = mongoose.Schema;
-
-var ObjectId = mongoose.Schema.Types.ObjectId;
+/* global ObjectId */
+var Schema       = require("../libs/schema");
 
 var APIKeySchema   = new Schema({
 	user_id: { type: ObjectId, index: true },
 	apikey: { type: String, index: true, unique: true },
-	created: { type: Date, default: Date.now, index: true },
 	last_accessed: { type: Date, default: Date.now, index: true },
 });
 
-APIKeySchema.set("_perms", {
-	//We can never change or view this directly
-});
-
-module.exports = mongoose.model('APIKey', APIKeySchema);
+const APIKey = Schema.model('APIKey', APIKeySchema);
+module.exports = APIKey;

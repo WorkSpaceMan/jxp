@@ -1,11 +1,8 @@
-/* global ObjectId */
-
 const Schema     = require("../libs/schema");
 
 const LinkSchema   = new Schema({
     name: String,
     val: String,
-    _owner_id: ObjectId
 },
 {
     perms: {

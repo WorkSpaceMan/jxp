@@ -1,10 +1,5 @@
-var mongoose     = require('mongoose');
-var Schema       = mongoose.Schema;
-
+const Schema = require("../libs/schema");
 var friendly = require("mongoose-friendly");
-
-var ObjectId = mongoose.Schema.Types.ObjectId;
-var Mixed = mongoose.Schema.Types.Mixed;
 
 var UserSchema   = new Schema({
 	name: { type: String },
@@ -13,20 +8,16 @@ var UserSchema   = new Schema({
 	password: String,
 	admin: Boolean,
 	temp_hash: String,
-	date_created: { type: Date, default: Date.now },
-	_owner_id: ObjectId,
-	_deleted: { type: Boolean, default: false, index: true },
+},
+{
+	perms: {
+		admin: "crud",
+		owner: "cru",
+		user: "r",
+		member: "r",
+		api: "r"
+	}
 });
-
-UserSchema.set("_perms", {
-	admin: "crud",
-	owner: "cru",
-	user: "r",
-	member: "r",
-	api: "r"
-});
-
-var UserModel = mongoose.model('User', UserSchema);
 
 UserSchema.path('name').validate(function (v) {
 	return (v) && (v.length > 0);
@@ -43,4 +34,5 @@ function toLower (v) {
 	return null;
 }
 
-module.exports = mongoose.model('User', UserSchema);
+const UserModel = Schema.model('User', UserSchema);
+module.exports = UserModel;
