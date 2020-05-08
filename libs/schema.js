@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
-const ObjectId = mongoose.Schema.Types.ObjectId;
+
+// Set some global types
+global.ObjectId = mongoose.Schema.Types.ObjectId;
+global.Mixed = mongoose.Schema.Types.Mixed;
 
 const getModelFileFromRef = ref => {
     return `../models/${String(ref).toLowerCase()}_model`;
@@ -57,5 +60,11 @@ class Schema extends mongoose.Schema {
         }
     }
 }
+
+// Now we don't even need to import mongoose into our models for type
+Schema.Types = mongoose.Schema.Types;
+
+// Slightly self-referential, try not to think about it
+Schema.model = mongoose.model;
 
 module.exports = Schema;

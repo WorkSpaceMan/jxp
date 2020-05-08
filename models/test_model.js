@@ -1,18 +1,15 @@
-const mongoose     = require('mongoose');
-const Schema = require("../libs/schema");
+/* global ObjectId Mixed */
 
-// This is just a shortcut for us
-const ObjectId     = mongoose.Schema.Types.ObjectId;
-const Mixed        = mongoose.Schema.Types.Mixed;
+const Schema       = require("../libs/schema");
 
 const TestSchema   = new Schema({
     foo: String, // A normal string
     bar: { type: String, unique: true, index: true }, // Ah! Some business logic!
     yack: Mixed, // We can put anything in here, including objects
     shmack: [String], // We can store arrays
-    password: String, // Test password encryption
+    password: String, // Passwords are automagically encrypted
     fulltext: { type: String, index: { text: true } },
-    link_id: { type: ObjectId, link: "link", },
+    link_id: { type: ObjectId, link: "link", }, // We can populate these links during a query
     other_link_id: { type: ObjectId, link: "link", map_to: "other_link" },
 },
 {
@@ -34,7 +31,7 @@ TestSchema.statics.test = function() {
 };
 
 // Finally, we export our model. Make sure to change the name!
-const Test = mongoose.model('Test', TestSchema);
+const Test = Schema.model('Test', TestSchema);
 
 // Test.find({}).populate("link_test").exec((err, result) => { console.log(err, result)});
 module.exports = Test;
