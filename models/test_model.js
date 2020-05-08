@@ -33,6 +33,4 @@ TestSchema.statics.test = function() {
 
 // Finally, we export our model. Make sure to change the name!
 const Test = Schema.model('Test', TestSchema);
-
-// Test.find({}).populate("link_test").exec((err, result) => { console.log(err, result)});
 module.exports = Test;
