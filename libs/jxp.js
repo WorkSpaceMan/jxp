@@ -180,8 +180,8 @@ const actionGetOne = async (req, res) => {
 	const opname = `getOne ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		const item = await getOne(req.Model, req.params.item_id, req.query);
-		res.send(item);
+		const data = await getOne(req.Model, req.params.item_id, req.query);
+		res.send({ data });
 		console.timeEnd(opname);
 	} catch(err) {
 		console.error(new Date(), err);

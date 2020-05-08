@@ -19,7 +19,6 @@ describe('Test', () => {
 	before = init.init;
 
 	var apikey = null;
-	var last_accessed = null;
 
 	describe("login", () => {
 		it("it should login", (done) => {
@@ -31,7 +30,6 @@ describe('Test', () => {
 					res.body.should.have.property('apikey');
 					res.body.should.have.property('last_accessed');
 					apikey = res.body.apikey;
-					last_accessed = res.body.last_accessed;
 					done();
 				});
 		});
@@ -47,7 +45,6 @@ describe('Test', () => {
 					res.body.should.have.property('apikey');
 					res.body.should.have.property('last_accessed');
 					res.body.apikey.should.be.eql(apikey);
-					// res.body.last_accessed.should.not.be.eql(last_accessed);
 					done();
 				});
 		});
@@ -78,7 +75,7 @@ describe('Test', () => {
 				yack: { yack: "yack", shmack: 1 },
 				shmack: [ "do", "ray", "me" ],
 				password: "password",
-				fulltext: "In Xanadu did Kulba Khan a stately pleasure dome decree",
+				fulltext: "In Xanadu did Kubla Khan a stately pleasure dome decree",
 			};
 			chai.request(server)
 			.post("/api/test")
@@ -139,16 +136,17 @@ describe('Test', () => {
 	});
 
 	describe("/GET test", () => {
-		it("it should GET a single test", (done) => {
+		it("it should GET a single test contained in a data object", (done) => {
 			chai.request(server)
 			.get("/api/test/" + post_id)
 			.auth(init.email, init.password)
 			.end((err, res) => {
 				res.should.have.status(200);
-				res.body.should.be.an('object');
-				res.body.should.have.property("_id");
-				res.body.should.have.property("foo")
-				res.body.foo.should.eql("Foo1");
+				res.body.should.have.property("data");
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("_id");
+				res.body.data.should.have.property("foo")
+				res.body.data.foo.should.eql("Foo1");
 				done();
 			});
 		});
@@ -228,12 +226,13 @@ describe('Test', () => {
 			.end((err, res) => {
 				// console.log(res.body);
 				res.should.have.status(200);
-				res.body.should.have.property("link");
-				res.body.link.should.be.an('object');
-				res.body.link.name.should.eql("name1");
-				res.body.link.val.should.eql("val1");
-				res.body.should.have.property("link_id");
-				res.body.link_id.should.be.eql(link_id);
+				res.body.should.have.property("data");
+				res.body.data.should.have.property("link");
+				res.body.data.link.should.be.an('object');
+				res.body.data.link.name.should.eql("name1");
+				res.body.data.link.val.should.eql("val1");
+				res.body.data.should.have.property("link_id");
+				res.body.data.link_id.should.be.eql(link_id);
 				done();
 			});
 		});
@@ -244,12 +243,13 @@ describe('Test', () => {
 				.end((err, res) => {
 					// console.log(res.body);
 					res.should.have.status(200);
-					res.body.should.have.property("other_link")
-					res.body.other_link.should.be.an('object');
-					res.body.other_link.name.should.eql("name2");
-					res.body.other_link.val.should.eql("val2");
-					res.body.should.have.property("link_id");
-					res.body.other_link_id.should.be.eql(other_link_id);
+					res.body.should.have.property("data");
+					res.body.data.should.have.property("other_link")
+					res.body.data.other_link.should.be.an('object');
+					res.body.data.other_link.name.should.eql("name2");
+					res.body.data.other_link.val.should.eql("val2");
+					res.body.data.should.have.property("link_id");
+					res.body.data.other_link_id.should.be.eql(other_link_id);
 					done();
 				});
 		});
@@ -278,11 +278,12 @@ describe('Test', () => {
 			.end((err, res) => {
 				// console.log(res.body);
 				res.should.have.status(200);
-				res.body.should.have.property("link")
-				res.body.link.should.be.an('object');
-				res.body.link.name.should.eql("name1");
-				res.body.link.val.should.eql("val1");
-				res.body.link_id.should.be.eql(link_id);
+				res.body.should.have.property("data");
+				res.body.data.should.have.property("link")
+				res.body.data.link.should.be.an('object');
+				res.body.data.link.name.should.eql("name1");
+				res.body.data.link.val.should.eql("val1");
+				res.body.data.link_id.should.be.eql(link_id);
 				done();
 			});
 		});
@@ -306,10 +307,11 @@ describe('Test', () => {
 			.auth(init.email, init.password)
 			.end((err, res) => {
 				res.should.have.status(200);
-				res.body.link.should.have.property("val")
-				res.body.link.should.not.have.property("name")
-				res.body.link.should.be.an('object');
-				res.body.link.val.should.eql("val1");
+				res.body.should.have.property("data");
+				res.body.data.link.should.have.property("val")
+				res.body.data.link.should.not.have.property("name")
+				res.body.data.link.should.be.an('object');
+				res.body.data.link.val.should.eql("val1");
 				done();
 			});
 		});
@@ -331,10 +333,11 @@ describe('Test', () => {
 			.auth(init.email, init.password)
 			.end((err, res) => {
 				res.should.have.status(200);
-				res.body.link.should.have.property("val")
-				res.body.link.should.have.property("name")
-				res.body.link.should.be.an('object');
-				res.body.link.val.should.eql("val1");
+				res.body.should.have.property("data");
+				res.body.data.link.should.have.property("val")
+				res.body.data.link.should.have.property("name")
+				res.body.data.link.should.be.an('object');
+				res.body.data.link.val.should.eql("val1");
 				done();
 			});
 		});
@@ -356,14 +359,15 @@ describe('Test', () => {
 			.auth(init.email, init.password)
 			.end((err, res) => {
 				res.should.have.status(200);
-				res.body.should.have.property("link")
-				res.body.link.should.be.an('object');
-				res.body.link.name.should.eql("name1");
-				res.body.link.val.should.eql("val1");
-				res.body.should.have.property("other_link");
-				res.body.other_link.should.be.an('object');
-				res.body.other_link.name.should.eql("name2");
-				res.body.other_link.val.should.eql("val2");
+				res.body.should.have.property("data");
+				res.body.data.should.have.property("link")
+				res.body.data.link.should.be.an('object');
+				res.body.data.link.name.should.eql("name1");
+				res.body.data.link.val.should.eql("val1");
+				res.body.data.should.have.property("other_link");
+				res.body.data.other_link.should.be.an('object');
+				res.body.data.other_link.name.should.eql("name2");
+				res.body.data.other_link.val.should.eql("val2");
 				done();
 			});
 		});
