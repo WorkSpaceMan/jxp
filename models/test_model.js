@@ -11,6 +11,7 @@ const TestSchema   = new Schema({
     fulltext: { type: String, index: { text: true } },
     link_id: { type: ObjectId, link: "link", }, // We can populate these links during a query
     other_link_id: { type: ObjectId, link: "link", map_to: "other_link" },
+    array_link_id: [{ type: ObjectId, link: "link", map_to: "array_link" } ], // TODO
 },
 {
     perms: {

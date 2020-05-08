@@ -148,8 +148,8 @@ const actionGet = async (req, res, next) => {
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
 				const dirpath = req.Model.schema.paths[key];
-				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
-					q.populate(dirpath.path);
+				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
+					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link));
 				}
 			}
 			result.autopopulate = true;
@@ -393,8 +393,8 @@ const actionQuery = async (req, res) => {
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
 				const dirpath = req.Model.schema.paths[key];
-				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
-					q.populate(dirpath.path);
+				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
+					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link));
 				}
 			}
 			result.autopopulate = true;
@@ -508,8 +508,8 @@ const getOne = async (Model, item_id, params) => {
 	if (params.autopopulate) {
 		for (let key in Model.schema.paths) {
 			var dirpath = Model.schema.paths[key];
-			if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
-				query.populate(dirpath.path);
+			if (dirpath.instance == "ObjectID" && dirpath.options.link) {
+				query.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link));
 			}
 		}
 	}
