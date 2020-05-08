@@ -1,8 +1,10 @@
+/* global ObjectId */
 const mongoose = require('mongoose');
 
 // Set some global types
 global.ObjectId = mongoose.Schema.Types.ObjectId;
 global.Mixed = mongoose.Schema.Types.Mixed;
+// Add this to the top of your model to avoid eslint warnings: /* global ObjectId Mixed */
 
 const getModelFileFromRef = ref => {
     return `../models/${String(ref).toLowerCase()}_model`;
