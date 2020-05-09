@@ -1,0 +1,9 @@
+site_name: JXP
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Authentication: authentication.md
+  - Restful API: api.md
+  - Roles and Permissions: permissions.md
+theme: readthedocs
