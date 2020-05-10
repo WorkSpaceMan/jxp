@@ -1,6 +1,8 @@
 # Welcome to JXP
 
-JXP is an opinionated API framework with the following features:
+JXP is an opinionated API framework that you can change just by defining schemas.
+
+## Features
 
 * Takes care of the plumbing, like authentication and password encryption
 * Subscribe to the built-in Websocket to listen for changes

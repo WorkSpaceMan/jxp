@@ -41,6 +41,15 @@ A Mongo Atlas connection:
 },
 ```
 
+## Token lifespans
+
+Set how long you want your users' tokens to live for. Defaults to 24 hours for a token and 30 days for a refresh token.
+
+```json
+"token_expiry": 86400,
+"refresh_token_expiry": 2678400
+```
+
 ## Log
 
 You can define an access log as follows:
