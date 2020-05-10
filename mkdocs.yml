@@ -4,6 +4,8 @@ nav:
   - Installation: installation.md
   - Configuration: configuration.md
   - Authentication: authentication.md
+  - Schemas: schemas.md
   - Restful API: api.md
   - Roles and Permissions: permissions.md
+  - Changelog: changelog.md
 theme: readthedocs
