@@ -6,7 +6,8 @@
   "main": "libs/jxp.js",
   "scripts": {
     "start": "node bin/server.js",
-    "test": "mocha --timeout 10000"
+    "test": "mocha --timeout 10000",
+    "wstest": "mocha test/wstest"
   },
   "bin": {
     "jxp-setup": "bin/setup.js",
@@ -45,7 +46,8 @@
     "readline-sync": "^1.4.10",
     "restify": "^8.5.1",
     "restify-cors-middleware": "^1.1.1",
-    "underscore": "^1.10.2"
+    "underscore": "^1.10.2",
+    "ws": "^7.2.5"
   },
   "devDependencies": {
     "chai": "^4.2.0",
