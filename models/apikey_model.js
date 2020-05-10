@@ -2,7 +2,7 @@
 var Schema       = require("../libs/schema");
 
 var APIKeySchema   = new Schema({
-	user_id: { type: ObjectId, index: true },
+	user_id: { type: ObjectId, index: true, unique: true },
 	apikey: { type: String, index: true, unique: true },
 	last_accessed: { type: Date, default: Date.now, index: true },
 });

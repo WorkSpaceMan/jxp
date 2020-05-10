@@ -19,6 +19,8 @@ describe('Test', () => {
 	before = init.init;
 
 	var apikey = null;
+	var token = null;
+	var refresh_token = null;
 
 	describe("login", () => {
 		it("it should login", (done) => {
@@ -27,28 +29,133 @@ describe('Test', () => {
 				.send({ email: init.email, password: init.password })
 				.end((err, res) => {
 					res.should.have.status(200);
+					res.body.should.have.property('user_id');
 					res.body.should.have.property('apikey');
-					res.body.should.have.property('last_accessed');
+					res.body.should.have.property('token');
+					res.body.should.have.property('token_expires');
+					res.body.should.have.property('refresh_token');
+					res.body.should.have.property('refresh_token_expires');
 					apikey = res.body.apikey;
+					token = res.body.token;
 					done();
 				});
 		});
 	});
 
+	describe("logout", () => {
+		it("should logout", done => {
+			chai.request(server)
+				.get("/login/logout")
+				.set("Authorization", `Bearer ${token}`)
+				.end((err, res) => {
+					res.should.have.status(200);
+					done();
+				});
+		})
+	})
+
+	describe("logged_out", () => {
+		it("should have an expired token", done => {
+			chai.request(server)
+				.get("/api/test")
+				.set("Authorization", `Bearer ${token}`)
+				.end((err, res) => {
+					res.should.have.status(403);
+					done();
+				});
+		})
+	})
+
 	describe("login_again", () => {
-		it("it should login again with the same api key", (done) => {
+		it("it should login again with the same api key but a new token", (done) => {
 			chai.request(server)
 				.post("/login")
 				.send({ email: init.email, password: init.password })
 				.end((err, res) => {
 					res.should.have.status(200);
+					res.body.should.have.property('user_id');
 					res.body.should.have.property('apikey');
-					res.body.should.have.property('last_accessed');
+					res.body.should.have.property('token');
+					res.body.should.have.property('token_expires');
 					res.body.apikey.should.be.eql(apikey);
+					res.body.token.should.not.eql(token);
+					token = res.body.token;
+					refresh_token = res.body.refresh_token;
 					done();
 				});
 		});
 	});
+
+	describe("refresh_token", () => {
+		it("it should refresh the token", (done) => {
+			chai.request(server)
+				.post("/refresh")
+				.set("Authorization", `Bearer ${refresh_token}`)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.have.property('user_id');
+					res.body.should.have.property('token');
+					res.body.should.have.property('token_expires');
+					res.body.should.have.property('refresh_token');
+					res.body.should.have.property('refresh_token_expires');
+					res.body.token.should.not.eql(token);
+					res.body.refresh_token.should.not.eql(refresh_token);
+					token = res.body.token;
+					refresh_token = res.body.refresh_token;
+					done();
+				});
+		});
+	});
+
+	describe("Authentication", () => {
+		it("should authenticate with basic auth", done => {
+			chai.request(server)
+				.get("/api/user")
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					done();
+				});
+		});
+		it("should authenticate with a token", done => {
+			chai.request(server)
+				.get("/api/user")
+				.set("Authorization", `Bearer ${token}`)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					done();
+				});
+		})
+		it("should authenticate with an API key in the header", done => {
+			chai.request(server)
+				.get("/api/user")
+				.set("X-API-Key", apikey)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					done();
+				});
+		})
+		it("should authenticate with an API key in the url", done => {
+			chai.request(server)
+				.get(`/api/user?apikey=${apikey}`)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					done();
+				});
+		})
+		it("should fail authenticate without any auth methods", done => {
+			chai.request(server)
+				.get(`/api/user`)
+				.end((err, res) => {
+					res.should.have.status(403);
+					done();
+				});
+		})
+	})
 
 	describe("/GET test", () => {
 		it("it should GET all the tests", (done) => {
@@ -58,7 +165,7 @@ describe('Test', () => {
 				// .auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
-					res.body.data.should.be.a('array');
+					res.body.data.should.be.an('array');
 					res.body.data.length.should.be.eql(0);
 					done();
 				});

@@ -9,6 +9,7 @@ const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
 const Cache = require("./cache");
+// const ws = require("./ws");
 
 const cache = new Cache();
 var models = {};
@@ -877,11 +878,13 @@ const JXP = function(options) {
 	/* Login and authentication */
 	server.post("/login/recover", login.recover);
 	server.post("/login/getjwt", security.login, login.getJWT);
-	server.get("/login/logout", login.logout);
-	server.post("/login/logout", login.logout);
+	server.get("/login/logout", security.login, login.logout);
+	server.get("/logout", security.login, login.logout);
 	server.get("/login/oauth/:provider", login.oauth);
 	server.get("/login/oauth/callback/:provider", login.oauth_callback);
 	server.post("/login", login.login);
+	server.post("/refresh", security.refresh);
+	server.post("/login/refresh", security.refresh);
 
 	/* Groups */
 	server.put(
@@ -915,6 +918,11 @@ const JXP = function(options) {
 	server.get("/cache", (req, res) => {
 		res.send(cache.status());
 	})
+
+	/* Websocket */
+	// server.on("upgrade", ws.upgrade, (req, res) => {
+	// 	res.send("Upgraded");
+	// })
 	return server;
 };
 

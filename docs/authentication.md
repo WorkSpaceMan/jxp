@@ -19,6 +19,8 @@ When the user submits their username and password, you would POST that data to t
 
 ### Login
 
+Logging in will always delete the previous token and give you a new one.
+
 POST `http://localhost:4001/login`
 Data:
 ```json
@@ -31,12 +33,12 @@ Data:
 Successful Response (Status 200):
 ```json
 {
-    "_id": "5dae227c979662488715b491",
-    "created": "2019-10-21T21:26:20.671Z",
     "user_id": "5dadbd7e2384ad419975e4a1",
     "apikey": "<apikey>",
     "token": "<token>",
-    "token_expires": "2019-11-21T21:26:20.671Z"
+    "token_expires": "2025-11-21T21:26:20.671Z",
+    "refresh_token": "<refresh_token>",
+    "refresh_token_expires": "2025-12-21T21:26:20.671Z"
 }
 ```
 
@@ -45,7 +47,41 @@ Failed Response (Status 401):
 {
     "status": "fail",
     "message": "Authentication failed",
-    "err": "Incorrect username; username: <email>"
+    "err": "Incorrect email; email: <email>"
+}
+```
+
+### Refresh Token
+
+You can use your refresh_token to refresh a token, even if it's expired. By default, refresh tokens last 30 days, whereas tokens last 24 hours.
+
+Note that the response is almost identical to the `/login` endpoint, except it doesn't have the `apikey`.
+
+POST `http://localhost:4001/refresh`
+Header: 
+```json
+{
+    "Authorization": "Bearer <refresh token>",
+}
+```
+
+Successful Response (Status 200):
+```json
+{
+    "user_id": "5dadbd7e2384ad419975e4a1",
+    "token": "<token>",
+    "token_expires": "2025-11-21T21:26:20.671Z",
+    "refresh_token": "<refresh_token>",
+    "refresh_token_expires": "2025-12-21T21:26:20.671Z"
+}
+```
+
+Failed Response (Status 401):
+```json
+{
+    "status": "fail",
+    "message": "Authentication failed",
+    "err": "Incorrect email; email: <email>"
 }
 ```
 
