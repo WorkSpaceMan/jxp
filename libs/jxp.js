@@ -926,4 +926,6 @@ const JXP = function(options) {
 	return server;
 };
 
+JXP.Schema = require("./schema");
+
 module.exports = JXP;
