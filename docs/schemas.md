@@ -119,3 +119,34 @@ _v: Number
 
 The version is tracked.
 
+## Stored Procedures
+
+You can write your own stored procs in your schemas to do whatever you want. You can access these through the `/call` endpoint. Declare these as a static Mongoose function.
+
+`/call/test/test`
+
+```js
+TestSchema.statics.test = function(data) {
+    console.log(data);
+    return "Testing OKAY!";
+};
+```
+
+You can GET your static, or POST data to it.
+
+You can even prepopulate the function with an item:
+
+`/call/test/:item_id/testItem`
+
+```js
+TestSchema.statics.testItem = function(item, data) {
+    console.log("Item", item);
+    console.log("Data", data);
+};
+```
+
+The static call will include the user's data as `data.__user`. [NOTE: This will probably change to "sender" before v2 is finalised.]
+
+## Pre- and post-fuctions
+
+You can use [Mongoose pre- and post-middleware](https://mongoosejs.com/docs/middleware.html#post) to do advanced validation or to return a calculated field with your results.
