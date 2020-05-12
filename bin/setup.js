@@ -70,7 +70,7 @@ async function main() {
 				"start": "node bin/server.js"
 			},
 			"dependencies": {
-				"jxp": "^2.0.1-3"
+				"jxp": "^2.0.1-4"
 			},
 			"author": app_author,
 			"license": app_license
