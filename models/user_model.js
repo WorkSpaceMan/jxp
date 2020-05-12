@@ -1,7 +1,7 @@
-const Schema = require("../libs/schema");
+/* global JXPSchema */
 var friendly = require("mongoose-friendly");
 
-var UserSchema   = new Schema({
+var UserSchema = new JXPSchema({
 	name: { type: String },
 	urlid: { type: String, unique: true, index: true },
 	email: { type: String, unique: true, index: true, set: toLower },
@@ -34,5 +34,5 @@ function toLower (v) {
 	return null;
 }
 
-const UserModel = Schema.model('User', UserSchema);
+const UserModel = JXPSchema.model('User', UserSchema);
 module.exports = UserModel;

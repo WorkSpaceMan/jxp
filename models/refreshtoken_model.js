@@ -1,8 +1,7 @@
-/* global ObjectId */
-const Schema = require("../libs/schema");
+/* global JXPSchema ObjectId */
 const config = require("config");
 
-var RefreshTokenSchema = new Schema({
+var RefreshTokenSchema = new JXPSchema({
     user_id: { type: ObjectId, index: true },
     refresh_token: { type: String, index: true },
     expires_in: { type: Number, default: config.refresh_token_expiry || 2678400 }, // In seconds
@@ -17,5 +16,5 @@ var RefreshTokenSchema = new Schema({
 
 RefreshTokenSchema.index({ "expire_at": 1 }, { expireAfterSeconds: config.refresh_token_expiry || 2678400 });
 
-const RefreshToken = Schema.model('RefreshToken', RefreshTokenSchema);
+const RefreshToken = JXPSchema.model('RefreshToken', RefreshTokenSchema);
 module.exports = RefreshToken;

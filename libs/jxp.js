@@ -646,6 +646,8 @@ const changeUrlParams = (req, key, val) => {
 	return req.config.url + req.path() + "?" + querystring.stringify(q);
 };
 
+global.JXPSchema = require("./schema");
+
 const JXP = function(options) {
 	const server = restify.createServer();
 
@@ -925,7 +927,5 @@ const JXP = function(options) {
 	// })
 	return server;
 };
-
-JXP.Schema = require("./schema");
 
 module.exports = JXP;

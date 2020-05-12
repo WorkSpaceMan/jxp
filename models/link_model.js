@@ -1,6 +1,6 @@
-const Schema     = require("../libs/schema");
+/* global JXPSchema */
 
-const LinkSchema   = new Schema({
+const LinkSchema = new JXPSchema({
     name: String,
     val: String,
 },
@@ -13,5 +13,5 @@ const LinkSchema   = new Schema({
     }
 });
 
-const Link = Schema.model('Link', LinkSchema);
+const Link = JXPSchema.model('Link', LinkSchema);
 module.exports = Link;

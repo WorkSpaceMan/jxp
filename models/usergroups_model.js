@@ -1,8 +1,6 @@
-/* global ObjectId */
+/* global JXPSchema ObjectId */
 
-var Schema = require("../libs/schema");
-
-var UserGroupSchema   = new Schema({
+var UserGroupSchema = new JXPSchema({
 	user_id: { type: ObjectId, index: true, unique: true },
 	groups: [String],
 },
@@ -13,5 +11,5 @@ var UserGroupSchema   = new Schema({
 	}
 });
 
-const UserGroup = Schema.model('Usergroup', UserGroupSchema);
+const UserGroup = JXPSchema.model('Usergroup', UserGroupSchema);
 module.exports = UserGroup;

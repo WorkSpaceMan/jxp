@@ -1,8 +1,6 @@
-/* global ObjectId Mixed */
+/* global JXPSchema ObjectId Mixed */
 
-const Schema       = require("../libs/schema");
-
-const TestSchema   = new Schema({
+const TestSchema = new JXPSchema({
     foo: String, // A normal string
     bar: { type: String, unique: true, index: true }, // Ah! Some business logic!
     yack: Mixed, // We can put anything in here, including objects
@@ -32,5 +30,5 @@ TestSchema.statics.test = function() {
 };
 
 // Finally, we export our model. Make sure to change the name!
-const Test = Schema.model('Test', TestSchema);
+const Test = JXPSchema.model('Test', TestSchema);
 module.exports = Test;

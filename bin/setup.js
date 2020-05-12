@@ -9,6 +9,8 @@ const execSync = require('child_process').execSync;
 const mongoose = require("mongoose");
 
 const security = require("../libs/security");
+global.JXPSchema = require("../libs/schema");
+
 const User = require("../models/user_model");
 
 const pkg = require('../package.json');
@@ -68,7 +70,7 @@ async function main() {
 				"start": "node bin/server.js"
 			},
 			"dependencies": {
-				"jxp": "2.0.1-0"
+				"jxp": "^2.0.1-2"
 			},
 			"author": app_author,
 			"license": app_license
@@ -82,7 +84,7 @@ async function main() {
 		await cp_replace("../config_sample.json", path.join(destination_path, "config/default.json"), opts, "{", "}");
 		await cp_replace("./server.js", path.join(destination_path, "bin/server.js"), { "../libs/jxp": "jxp" });
 		for (let model of models) {
-			await cp_replace("../models/" + model + "_model.js", path.join(destination_path, "models/" + model + "_model.js"), { 'require("../libs/schema")': "require(JXP).Schema" });
+			await cp("../models/" + model + "_model.js", path.join(destination_path, "models/" + model + "_model.js"));
 		}
 
 		console.log();

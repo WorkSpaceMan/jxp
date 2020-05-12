@@ -1,8 +1,7 @@
-/* global ObjectId */
-const Schema = require("../libs/schema");
+/* global JXPSchema ObjectId */
 const config = require("config");
 
-var TokenSchema   = new Schema({
+var TokenSchema = new JXPSchema({
 	user_id: { type: ObjectId, index: true },
 	provider: String,
 	access_token: { type: String, index: true },
@@ -20,5 +19,5 @@ var TokenSchema   = new Schema({
 
 TokenSchema.index({ "expire_at": 1 }, { expireAfterSeconds: config.token_expiry || 86400 });
 
-const Token = Schema.model('Token', TokenSchema);
+const Token = JXPSchema.model('Token', TokenSchema);
 module.exports = Token;

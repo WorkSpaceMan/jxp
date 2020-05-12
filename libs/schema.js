@@ -1,13 +1,17 @@
 /* global ObjectId */
 const mongoose = require('mongoose');
+const path = require("path");
+const config = require("config");
 
 // Set some global types
 global.ObjectId = mongoose.Schema.Types.ObjectId;
 global.Mixed = mongoose.Schema.Types.Mixed;
 // Add this to the top of your model to avoid eslint warnings: /* global ObjectId Mixed */
 
+const model_dir = config.model_dir || path.join(__dirname, "../models");
+
 const getModelFileFromRef = ref => {
-    return `../models/${String(ref).toLowerCase()}_model`;
+    return path.join(model_dir, `${String(ref).toLowerCase()}_model`);
 }
 
 class Schema extends mongoose.Schema {
@@ -20,7 +24,7 @@ class Schema extends mongoose.Schema {
         }, opts);
         // Set default defiitions
         definition = Object.assign({
-            _deleted:{ type: Boolean, default: false, index: true },
+            _deleted: { type: Boolean, default: false, index: true },
             _owner_id: ObjectId,
         }, definition);
         // construct our parent
@@ -51,6 +55,7 @@ class Schema extends mongoose.Schema {
             const def = this.definition[key];
             if (!def.link) continue;
             const virtual_name = def.map_to || def.virtual || String(def.link).toLowerCase();
+            console.log({ Link: getModelFileFromRef(def.link) });
             const model = require(getModelFileFromRef(def.link));
             this.virtual(virtual_name, {
                 ref: () => model,

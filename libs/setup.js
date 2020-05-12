@@ -3,6 +3,7 @@ const path = require("path");
 const security = require("./security");
 const config = require("config");
 config.model_dir = config.model_dir || path.join(process.cwd(), "./models");
+global.JXPSchema = require("./schema");
 const User = require(path.join(config.model_dir, "user_model"));
 
 var checkUserDoesNotExist = (req, res, next) => {
