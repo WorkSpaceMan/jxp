@@ -57,7 +57,7 @@ async function main() {
 		opts.connection_string = readline.question(`Mongo connection string (${default_connection_string}): `, { defaultInput: default_connection_string });
 		const email = readline.question(`Admin user email (${default_author_email}): `);
 		const name = readline.question(`Admin user name (${default_author_name}): `, { defaultInput: "Admin" });
-		const random_password = crypto.randomBytes(12).toString('hex');
+		const random_password = crypto.randomBytes(12).toString('base64');
 		const password = readline.question(`Admin user password (${random_password}): `, { hideEchoBack: true, defaultInput: random_password });
 		opts.shared_secret = crypto.randomBytes(20).toString('hex');
 		const package_data = {
