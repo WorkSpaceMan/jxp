@@ -25,7 +25,7 @@ program
 
 async function main() {
 	try {
-		const models = ["apikey", "test", "token", "user", "usergroups", "link"];
+		const models = ["apikey", "test", "token", "user", "usergroups", "link", "refreshtoken"];
 		const destination_path = program.args.shift() || '.';
 		// Get some defaults
 		let default_author_name = "Me";
@@ -70,7 +70,7 @@ async function main() {
 				"start": "node bin/server.js"
 			},
 			"dependencies": {
-				"jxp": "^2.0.1-2"
+				"jxp": "^2.0.1-3"
 			},
 			"author": app_author,
 			"license": app_license
