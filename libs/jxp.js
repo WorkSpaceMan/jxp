@@ -419,6 +419,28 @@ const actionQuery = async (req, res) => {
 	}
 };
 
+// Actions (verbs)
+const actionAggregate = async (req, res) => {
+	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
+		console.error("query missing or not of type object")
+		return res.send(500, { status: "error", message: "query missing or not of type object" });
+	}
+	const opname = `aggregate ${req.modelname} ${ops++}`;
+	console.time(opname);
+	let query = req.body.query;
+	try {
+		let result = {};
+		result.data = await req.Model.aggregate(query);
+		res.result = result;
+		console.timeEnd(opname);
+		res.json(result);
+	} catch (err) {
+		console.error(new Date(), err);
+		console.timeEnd(opname);
+		res.send(500, { status: "error", message: err.toString() });
+	}
+};
+
 // var actionBatch = (req, res, next) => {
 // 	console.time("BATCH " + req.modelname);
 // 	var items = [];
@@ -850,6 +872,16 @@ const JXP = function(options) {
 		cache.read.bind(cache),
 		actionQuery,
 	);
+
+	server.post(
+		"/aggregate/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.get,
+		cache.read.bind(cache),
+		actionAggregate
+	)
 
 	/* Batch routes - ROLLED BACK FOR NOW */
 	// server.post('/batch/create/:modelname', middlewareModel, security.login, security.auth, actionBatch);

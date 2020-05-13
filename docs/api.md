@@ -146,7 +146,7 @@ As with PUT, we need to reference a specific item, so the endpoint needs to incl
 If you need to send an advanced query, such as a combined $and/$or, you can _POST_ a `{query}` variable to the `/query/{modelname}` endpoint. Most of the other features you'd use for `/get/{modelname}` (except for _search_ since it's a query) will still work.
 
 Eg.
-```
+```javascript
 query = {
     "$and": [
         { 
@@ -160,4 +160,38 @@ query = {
         }
     ]
 }
+```
+
+## Aggregate queries
+
+You can perform an aggregate query by POSTing your query to `/aggregate/{modelname}`. The aggregation pipeline must be wrapped in an array
+
+Eg.
+```javascript
+[
+    { 
+        $match: { 
+            $or: [ 
+                { 
+                    score: { 
+                        $gt: 70, $lt: 90 
+                    } 
+                }, 
+                { 
+                    views: { 
+                        $gte: 1000 
+                    } 
+                } 
+            ] 
+        } 
+    },
+    { 
+        $group: { 
+            _id: null, 
+            count: { 
+                $sum: 1 
+            } 
+        } 
+    }
+]
 ```

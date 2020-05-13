@@ -299,7 +299,8 @@ const auth = (req, res, next) => {
 			passed[i] = false;
 		}
 		var method = null;
-		if (req.method == "GET" || req.route.name === "postquerymodelname") {
+		// console.log("req.route.name", req.route.name);
+		if (req.method == "GET" || req.route.name === "postquerymodelname" || req.route.name === "postaggregatemodelname") {
 			method = "r";
 		} else if (req.method == "POST") {
 			method = "c";
