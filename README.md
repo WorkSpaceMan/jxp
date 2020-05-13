@@ -22,8 +22,7 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
 
     npm install -g jxp
     jxp-setup my-app
-    jxp-add-admin
-    npm install
+    cd my-ap
     npm start
 
 ## Documentation

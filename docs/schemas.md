@@ -14,9 +14,9 @@ Schemas are all found in the `/models` directory, and have the format `/models/<
 
 A typical schema looks like `/models/test_model.js`:
 ```javascript
-const Schema       = require("../libs/schema");
+/* global JXPSchema ObjectId Mixed */
 
-const TestSchema   = new Schema({
+const TestSchema   = new JXPSchema({
     foo: String, // A normal string
     bar: { type: String, unique: true, index: true }, // A unique string
     yack: Mixed, // We can put anything in here, including objects
@@ -46,11 +46,11 @@ TestSchema.statics.test = function() {
 };
 
 // Finally, we export our model. Make sure to change the name!
-const Test = Schema.model('Test', TestSchema);
+const Test = JXPSchema.model('Test', TestSchema);
 module.exports = Test;
 ```
 
-The `new Schema(definition, options)` function takes two parameters, the first being the schema definition, and the second options for the schema.
+The `new JXPSchema(definition, options)` function takes two parameters, the first being the schema definition, and the second options for the schema.
 
 ## Definitions
 
@@ -66,7 +66,7 @@ Links are one of the most powerful features of JXP. They allow you to define a r
 
 When we get to querying the data, we can join related documents together and get a complete record (or parts thereof). To define a relationship, we give it a type of ObjectId (since the _id of the related document will be stored as our value). We use the key `link` to define the schema we want to get the data from. And if we want the result to use a different key, we can use `map_to` to define that result key.
 
-```json
+```javascript
 other_link_id: { type: ObjectId, link: "link", map_to: "other_link" },
 ```
 
