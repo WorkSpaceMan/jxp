@@ -1,3 +1,9 @@
+/*
+$auth
+$subscribe
+$fetch
+*/
+
 const WS = require("ws");
 const wss = new WS.Server({ noServer: true });
 const url = require('url');
@@ -48,6 +54,7 @@ const handleMessage = (msg, client_id, msg_id)=> {
     // console.log(`Received message ${msg} from ${client_id} (${msg_id})`);
     try {
         if (typeof msg !== "object") throw "msg should be an object";
+        
     } catch(err) {
         console.error(err);
     }
