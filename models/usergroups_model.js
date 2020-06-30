@@ -1,7 +1,7 @@
 /* global JXPSchema ObjectId */
 
 var UserGroupSchema = new JXPSchema({
-	user_id: { type: ObjectId, index: true, unique: true },
+	user_id: { type: ObjectId, index: true, unique: true, link: "User" },
 	groups: [String],
 },
 {
