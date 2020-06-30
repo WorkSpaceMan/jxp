@@ -150,7 +150,7 @@ const actionGet = async (req, res, next) => {
 			for (let key in req.Model.schema.paths) {
 				const dirpath = req.Model.schema.paths[key];
 				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
-					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link));
+					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link.toLowerCase()));
 				}
 			}
 			result.autopopulate = true;
@@ -532,7 +532,7 @@ const getOne = async (Model, item_id, params) => {
 		for (let key in Model.schema.paths) {
 			var dirpath = Model.schema.paths[key];
 			if (dirpath.instance == "ObjectID" && dirpath.options.link) {
-				query.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link));
+				query.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link.toLowerCase()));
 			}
 		}
 	}
