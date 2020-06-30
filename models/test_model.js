@@ -3,13 +3,14 @@
 const TestSchema = new JXPSchema({
     foo: String, // A normal string
     bar: { type: String, unique: true, index: true }, // Ah! Some business logic!
+    user_id: { type: ObjectId, link: "User" },
     yack: Mixed, // We can put anything in here, including objects
     shmack: [String], // We can store arrays
     password: String, // Passwords are automagically encrypted
     fulltext: { type: String, index: { text: true } },
-    link_id: { type: ObjectId, link: "link", }, // We can populate these links during a query
-    other_link_id: { type: ObjectId, link: "link", map_to: "other_link" },
-    array_link_id: [{ type: ObjectId, link: "link", map_to: "array_link" } ], // TODO
+    link_id: { type: ObjectId, link: "Link", }, // We can populate these links during a query
+    other_link_id: { type: ObjectId, link: "Link", map_to: "other_link" },
+    array_link_id: [{ type: ObjectId, link: "Link", map_to: "array_link" } ]
 },
 {
     perms: {
