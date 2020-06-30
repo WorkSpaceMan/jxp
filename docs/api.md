@@ -96,9 +96,13 @@ If you go beyond the total number of pages, you will get an empty `data` array.
 
 This is one of the most useful features of this API. You can automatically populate the results with linked objects.
 
-To autopopulate all the fields, use the parameter `autopopulate=1`
+* To autopopulate all the linked objects, use the parameter `autopopulate=1`
 
-To populate just one field, use `populate=field`
+* To populate just one linked object, use `populate=linked_object`
+
+* To populate multiple linked objects, you can use `populate[]=linked_object1&populate[]=linked_object2`
+
+* To populate and just return specific fields, use `populate[linked_object]=field1,field2`
 
 ### Filtering
 

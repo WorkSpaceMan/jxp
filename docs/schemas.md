@@ -23,9 +23,9 @@ const TestSchema   = new JXPSchema({
     shmack: [String], // We can store arrays
     password: String, // Passwords are automagically encrypted
     fulltext: { type: String, index: { text: true } },
-    link_id: { type: ObjectId, link: "link", }, // We can populate these links during a query
-    other_link_id: { type: ObjectId, link: "link", map_to: "other_link" },
-    array_link_id: [{ type: ObjectId, link: "link", map_to: "array_link" } ], // TODO
+    link_id: { type: ObjectId, link: "Link", }, // We can populate these links during a query
+    other_link_id: { type: ObjectId, link: "Link", map_to: "other_link" },
+    array_link_id: [{ type: ObjectId, link: "Link", map_to: "array_link" } ], // TODO
 },
 {
     perms: {
@@ -67,12 +67,14 @@ Links are one of the most powerful features of JXP. They allow you to define a r
 When we get to querying the data, we can join related documents together and get a complete record (or parts thereof). To define a relationship, we give it a type of ObjectId (since the _id of the related document will be stored as our value). We use the key `link` to define the schema we want to get the data from. And if we want the result to use a different key, we can use `map_to` to define that result key.
 
 ```javascript
-other_link_id: { type: ObjectId, link: "link", map_to: "other_link" },
+other_link_id: { type: ObjectId, link: "Link", map_to: "other_link" },
 ```
 
 This is similar to Mongoose's `ref` option, but it differs in two important ways:
 * We don't need to import the referring model
 * Mongoose overwrites the original ObjectId value with the related document. JXP presents the document as a separate key.
+
+NB: Use the name of the external schema (with the same capitalisation) in your link. Eg. If you are linking a user to an organisation, and you declared your user schema with `const User = new JXPSchema...` then you would use `link="User"` and not `link="user"`. However, when populating that link, you would use the lowercase form, `user`. Eg. `?populate[user]=name` to return the user's name.
 
 ## Options
 
