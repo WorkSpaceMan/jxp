@@ -55,9 +55,9 @@ class Schema extends mongoose.Schema {
             const def = this.definition[key];
             if (!def.link) continue;
             const virtual_name = def.map_to || def.virtual || String(def.link).toLowerCase();
-            const model = require(getModelFileFromRef(def.link));
+            require(getModelFileFromRef(def.link));
             this.virtual(virtual_name, {
-                ref: () => model,
+                ref: def.link,
                 localField: key,
                 foreignField: "_id",
                 justOne: def.justOne || true,
