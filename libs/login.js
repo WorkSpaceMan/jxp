@@ -37,7 +37,7 @@ const recover = async (req, res) => {
 		if (!user) {
 			throw ("Could not find email");
 		}
-		const result = await security.generateApiKey(user);
+		const result = await security.generateApiKey(user._id);
 		const token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, { expiresIn: "2d" });
 		var text = `Someone (hopefully you) requested a password reset. Please click on the following url to recover your password. If you did not request a password reset, you can ignore this message. \n${req.config.password_recovery_url}/${token}`;
 		var html = text;
@@ -61,28 +61,15 @@ const recover = async (req, res) => {
 	}
 }
 
-function logout(req, res) {
-	var apikey = req.query.apikey || req.params.apikey;
-	APIKey.findOne({ apikey }, function (err, apikey) {
-		if (err) {
-			console.error(err);
-			res.send(500, { status: "error", error: err });
-			return;
-		}
-		if (!apikey) {
-			console.error("API Key not found");
-			res.send(404, { status: "fail", message: "API Key not found" });
-			return;
-		}
-		apikey.delete(function (err) {
-			if (err) {
-				console.error(err);
-				res.send(500, { status: "error", error: err });
-				return;
-			}
-			res.send({ status: "ok", message: "User logged out" });
-		});
-	});
+const logout = async (req, res) => {
+	try {
+		if (!res.user) throw("You don't seem to be logged in");
+		await security.revokeToken(res.user._id);
+		res.send({ status: "ok", message: "User logged out" });
+	} catch(err) {
+		console.error(err);
+		res.send(500, { status: "error", error: err });
+	}
 }
 
 const oauth = (req, res, next) => { // Log in through an OAuth2 provider, defined in config.js
@@ -170,12 +157,21 @@ const login = async (req, res) => {
 	}
 	try {
 		const user = await User.findOne({ email });
-		if (!user) throw (`Incorrect username; username: ${email}`);
-
+		if (!user) throw (`Incorrect email; email: ${email}`);
 		if (!(await bcrypt.compare(password, user.password))) {
-			throw (`Incorrect password; username: ${email}`);
+			throw (`Incorrect password; email: ${email}`);
 		}
-		res.send(await security.generateApiKey(user));
+		const token = await security.refreshToken(user._id);
+		const refreshtoken = await security.ensureRefreshToken(user._id);
+		const apikey = await security.generateApiKey(user._id)
+		res.send({
+			user_id: user._id,
+			token: token.access_token,
+			apikey: apikey.apikey,
+			token_expires: security.tokenExpires(token),
+			refresh_token: refreshtoken.refresh_token,
+			refresh_token_expires: security.tokenExpires(refreshtoken)
+		});
 	} catch (err) {
 		res.send(401, { status: "fail", message: "Authentication failed", err });
 		console.error(new Date(), `Authentication failed`, ip, err);
@@ -183,7 +179,7 @@ const login = async (req, res) => {
 	}
 }
 
-function getJWT(req, res) {
+const getJWT = (req, res) => {
 	var user = null;
 	if (!res.user.admin) {
 		res.send(403, { status: "fail", message: "Unauthorized" });
@@ -204,7 +200,7 @@ function getJWT(req, res) {
 			return;
 		}
 		user = result;
-		security.generateApiKey(user)
+		security.generateApiKey(user._id)
 			.then(function (result) {
 				var token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, {
 					expiresIn: "2d"
@@ -217,14 +213,14 @@ function getJWT(req, res) {
 	return;
 }
 
-var Login = {
-	init: init,
-	recover: recover,
-	logout: logout,
-	oauth: oauth,
-	oauth_callback: oauth_callback,
-	login: login,
-	getJWT: getJWT
+const Login = {
+	init,
+	recover,
+	logout,
+	oauth,
+	oauth_callback,
+	login,
+	getJWT
 };
 
 module.exports = Login;

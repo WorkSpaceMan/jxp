@@ -1,14 +1,15 @@
 const restify = require("restify");
 const path = require("path");
-const security = require("../libs/security");
-const datamunging = require("../libs/datamunging");
-const login = require("../libs/login");
-const groups = require("../libs/groups");
-const setup = require("../libs/setup");
+const security = require("./security");
+const datamunging = require("./datamunging");
+const login = require("./login");
+const groups = require("./groups");
+const setup = require("./setup");
 const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
-const Cache = require("../libs/cache");
+const Cache = require("./cache");
+// const ws = require("./ws");
 
 const cache = new Cache();
 var models = {};
@@ -148,8 +149,8 @@ const actionGet = async (req, res, next) => {
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
 				const dirpath = req.Model.schema.paths[key];
-				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
-					q.populate(dirpath.path);
+				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
+					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link.toLowerCase()));
 				}
 			}
 			result.autopopulate = true;
@@ -180,8 +181,8 @@ const actionGetOne = async (req, res) => {
 	const opname = `getOne ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		const item = await getOne(req.Model, req.params.item_id, req.query);
-		res.send(item);
+		const data = await getOne(req.Model, req.params.item_id, req.query);
+		res.send({ data });
 		console.timeEnd(opname);
 	} catch(err) {
 		console.error(new Date(), err);
@@ -393,8 +394,8 @@ const actionQuery = async (req, res) => {
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
 				const dirpath = req.Model.schema.paths[key];
-				if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
-					q.populate(dirpath.path);
+				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
+					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link));
 				}
 			}
 			result.autopopulate = true;
@@ -412,6 +413,28 @@ const actionQuery = async (req, res) => {
 		console.timeEnd(opname);
 		res.json(result);
 	} catch(err) {
+		console.error(new Date(), err);
+		console.timeEnd(opname);
+		res.send(500, { status: "error", message: err.toString() });
+	}
+};
+
+// Actions (verbs)
+const actionAggregate = async (req, res) => {
+	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
+		console.error("query missing or not of type object")
+		return res.send(500, { status: "error", message: "query missing or not of type object" });
+	}
+	const opname = `aggregate ${req.modelname} ${ops++}`;
+	console.time(opname);
+	let query = req.body.query;
+	try {
+		let result = {};
+		result.data = await req.Model.aggregate(query);
+		res.result = result;
+		console.timeEnd(opname);
+		res.json(result);
+	} catch (err) {
 		console.error(new Date(), err);
 		console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
@@ -508,8 +531,8 @@ const getOne = async (Model, item_id, params) => {
 	if (params.autopopulate) {
 		for (let key in Model.schema.paths) {
 			var dirpath = Model.schema.paths[key];
-			if (dirpath.instance == "ObjectID" && dirpath.options.ref) {
-				query.populate(dirpath.path);
+			if (dirpath.instance == "ObjectID" && dirpath.options.link) {
+				query.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link.toLowerCase()));
 			}
 		}
 	}
@@ -644,6 +667,8 @@ const changeUrlParams = (req, key, val) => {
 	q[key] = val;
 	return req.config.url + req.path() + "?" + querystring.stringify(q);
 };
+
+global.JXPSchema = require("./schema");
 
 const JXP = function(options) {
 	const server = restify.createServer();
@@ -848,6 +873,16 @@ const JXP = function(options) {
 		actionQuery,
 	);
 
+	server.post(
+		"/aggregate/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.get,
+		cache.read.bind(cache),
+		actionAggregate
+	)
+
 	/* Batch routes - ROLLED BACK FOR NOW */
 	// server.post('/batch/create/:modelname', middlewareModel, security.login, security.auth, actionBatch);
 
@@ -877,11 +912,13 @@ const JXP = function(options) {
 	/* Login and authentication */
 	server.post("/login/recover", login.recover);
 	server.post("/login/getjwt", security.login, login.getJWT);
-	server.get("/login/logout", login.logout);
-	server.post("/login/logout", login.logout);
+	server.get("/login/logout", security.login, login.logout);
+	server.get("/logout", security.login, login.logout);
 	server.get("/login/oauth/:provider", login.oauth);
 	server.get("/login/oauth/callback/:provider", login.oauth_callback);
 	server.post("/login", login.login);
+	server.post("/refresh", security.refresh);
+	server.post("/login/refresh", security.refresh);
 
 	/* Groups */
 	server.put(
@@ -915,6 +952,11 @@ const JXP = function(options) {
 	server.get("/cache", (req, res) => {
 		res.send(cache.status());
 	})
+
+	/* Websocket */
+	// server.on("upgrade", ws.upgrade, (req, res) => {
+	// 	res.send("Upgraded");
+	// })
 	return server;
 };
 

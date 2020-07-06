@@ -1,7 +1,10 @@
 {
 	"port": {port},
 	"mongo" : {
-		"server": "{mongo_server}",
-		"db": "{mongo_db}"
-	}
+		"connection_string": "{connection_string}",
+		"options": {}
+	},
+	"token_expiry": 86400,
+	"refresh_token_expiry": 2678400,
+	"shared_secret": "{shared_secret}"
 }

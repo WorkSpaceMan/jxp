@@ -1,0 +1,13 @@
+site_name: JXP
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Authentication: authentication.md
+  - Schemas: schemas.md
+  - Restful API: api.md
+  - Roles and Permissions: permissions.md
+  - Hooks: hooks.md
+  - Special Features: special.md
+  - Changelog: changelog.md
+theme: readthedocs

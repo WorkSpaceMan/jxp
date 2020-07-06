@@ -1,22 +1,23 @@
-var mongoose     = require('mongoose');
-var Schema       = mongoose.Schema;
+/* global JXPSchema ObjectId */
+const config = require("config");
 
-var ObjectId = mongoose.Schema.Types.ObjectId;
-
-var TokenSchema   = new Schema({
+var TokenSchema = new JXPSchema({
 	user_id: { type: ObjectId, index: true },
 	provider: String,
-	access_token: String,
+	access_token: { type: String, index: true },
 	token_type: String,
-	expires_in: Number,
-	created: { type: Date, default: Date.now },
-	_owner_id: ObjectId,
+	expires_in: { type: Number, default: config.token_expiry || 86400 }, // In seconds
+	last_accessed: { type: Date, default: Date.now, index: true },
+},
+{
+	perms: {
+		admin: "crud",
+		owner: "crud",
+		user: "",
+	}
 });
 
-TokenSchema.set("_perms", {
-	admin: "crud",
-	owner: "crud",
-	user: "",
-});
+TokenSchema.index({ "expire_at": 1 }, { expireAfterSeconds: config.token_expiry || 86400 });
 
-module.exports = mongoose.model('Token', TokenSchema);
+const Token = JXPSchema.model('Token', TokenSchema);
+module.exports = Token;

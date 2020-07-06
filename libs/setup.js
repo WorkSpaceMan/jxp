@@ -3,6 +3,7 @@ const path = require("path");
 const security = require("./security");
 const config = require("config");
 config.model_dir = config.model_dir || path.join(process.cwd(), "./models");
+global.JXPSchema = require("./schema");
 const User = require(path.join(config.model_dir, "user_model"));
 
 var checkUserDoesNotExist = (req, res, next) => {
@@ -28,7 +29,7 @@ var setup = (req, res) => {
 			? req.body.password
 			: rand_token.generate(12);
 	user.email =
-		req.body && req.body.password ? req.body.email : "admin@jexpress.com";
+		req.body && req.body.password ? req.body.email : "admin@example.com";
 	user.password = security.encPassword(password);
 	user.name = req.body && req.body.name ? req.body.name : "admin";
 	user.admin = true;

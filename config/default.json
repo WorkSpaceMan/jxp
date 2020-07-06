@@ -1,7 +1,9 @@
 {
 	"port": 4001,
-	"mongo_server": "localhost",
-	"mongo_db": "jexpress",
+	"mongo": {
+		"connection_string": "mongodb://localhost/test",
+		"options": {}
+	},
 	"memcached": {
 		"server": "localhost:11211",
 		"lifetime": 604800

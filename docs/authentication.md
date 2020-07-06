@@ -1,99 +1,183 @@
-## Authentication
+# Authentication
 
-### API Key
+## API Key
 
-You can authenticate as a user through one of two methods. The first is through requesting an API key. (This is really more of a token. Let's not dwell on this, shall we?)
+There are four ways of authenticating:
 
-The login endpoints are:
+* Basic Auth
+* A Bearer Token
+* An API Key
+* A Javascript Web Token
 
-* POST `/login` -- Send `email` and `password` to recieve an API key which you can use to authenticate yourself
-* POST or GET `/login/logout` -- Expire the API key
-* `/login/jwt` -- Request a one-time JSON Web Token that you can use to log in through your front end
-* `/login/recover` -- Send the user an email with their JWT embedded so that they can reset their password
+We always use `email` and `password` to identify the user. The passwords are always one-way encrypted using bcrypt.
 
-Once you have an API key, you can append `?apikey=MyAPIKey` to the end of any request to authenticate yourself.
+In a typical application, your front-end site would present a login page asking for the user's email and password. In addition, you would present a "Forgotten Password" link. 
+
+When the user submits their username and password, you would POST that data to the `/login` endpoint. If the login succeeds, the page will return their API key and bearer token. 
+
+## Login endpoints
+
+### Login
+
+Logging in will always delete the previous token and give you a new one.
+
+POST `http://localhost:4001/login`
+Data:
+```json
+{
+    "email": "blah@blah.com",
+    "password": "TopSecret"
+}
+```
+
+Successful Response (Status 200):
+```json
+{
+    "user_id": "5dadbd7e2384ad419975e4a1",
+    "apikey": "<apikey>",
+    "token": "<token>",
+    "token_expires": "2025-11-21T21:26:20.671Z",
+    "refresh_token": "<refresh_token>",
+    "refresh_token_expires": "2025-12-21T21:26:20.671Z"
+}
+```
+
+Failed Response (Status 401):
+```json
+{
+    "status": "fail",
+    "message": "Authentication failed",
+    "err": "Incorrect email; email: <email>"
+}
+```
+
+### Refresh Token
+
+You can use your refresh_token to refresh a token, even if it's expired. By default, refresh tokens last 30 days, whereas tokens last 24 hours.
+
+Note that the response is almost identical to the `/login` endpoint, except it doesn't have the `apikey`.
+
+POST `http://localhost:4001/refresh`
+Header: 
+```json
+{
+    "Authorization": "Bearer <refresh token>",
+}
+```
+
+Successful Response (Status 200):
+```json
+{
+    "user_id": "5dadbd7e2384ad419975e4a1",
+    "token": "<token>",
+    "token_expires": "2025-11-21T21:26:20.671Z",
+    "refresh_token": "<refresh_token>",
+    "refresh_token_expires": "2025-12-21T21:26:20.671Z"
+}
+```
+
+Failed Response (Status 401):
+```json
+{
+    "status": "fail",
+    "message": "Authentication failed",
+    "err": "Incorrect email; email: <email>"
+}
+```
+
+### Logout
+
+This will immeditately expire the token.
+
+POST or GET `http://localhost:4001/login/logout`
+
+### Recover Password
+
+Send the user an email with their JWT embedded so that they can reset their password
+
+POST `http://localhost:4001/login/recover`
+
+Data:
+```
+{
+    "email": "blah@blah.com"
+}
+```
+
+Successful Response (200): 
+```
+{
+    "status": "ok",
+    "message": "Sent recovery email"
+}
+```
+
+Failed Response (403):
+```
+{
+    "status": "fail",
+    "message": "Unauthorized",
+    "err": "Could not find email"
+}
+```
+
+***Note:*** You will still have to build the password reset page on your front end.
+
+### JWT
+
+A Javascript Web Token can be used to log the user in through a URL. 
+
+POST `http://localhost:4001/login/getjwt`
+
+Data:
+```
+{
+    "email": "blah@blah.com"
+}
+```
+
+Successful Response (200): 
+```
+{
+    "status": "ok",
+    "jwt": "<jwt>"
+}
+```
+
+Failed Response (403):
+```
+{
+    "status": "fail",
+    "message": "Unauthorized",
+    "err": "Could not find email"
+}
+```
+
+## Authenticating
 
 ### Basic Auth
 
 Basic auth encodes (NOTE: ***NOT*** encrypts) your username and password and sends it as part of the header. You can use Basic Auth to authenticate yourself at any time.
 
-***NOTE:*** You should only use basic auth over SSL, since it is trivial to decode the username and password. In fact, you should use SSL for everything, anway.
+***WARNING:*** You must only use basic auth over SSL, since it is trivial to decode the username and password. In fact, you should use SSL for everything, anyway.
 
-## Access Control
+A basic auth is created by base64-encoding your username and password, separated by a colon. 
 
-You can set permissions on each model for user groups which you can define yourself. There are also a few special groups:
-* `all` -- All users, whether they authenticate or not.
-* `owner` -- The user who created an item. This requires the model to have a `_owner_id` property (see the above example).
-* `user` -- Any authenticated user.
-* `admin` -- Any admin user.
+Eg. `echo "blah@blah.com:password" | base64` would generate a basic auth token on the command line. (In this case, it would encode to `YmxhaEBibGFoLmNvbTpwYXNzd29yZAo=`.)
 
-Each group can have one, some or all of the following permissions:
-* `c` -- Create -- the ability to create a new record (a POST operation)
-* `r` -- Retrieve -- the ability to read a record or all records (a GET operation)
-* `u` -- Update -- the ability to update an existing record (a PUT operation)
-* `d` -- Delete -- the ability to delete an existin record (a DELETE operation)
+However, `echo "YmxhaEBibGFoLmNvbTpwYXNzd29yZAo=" | base64 --decode` would reveal the uesrname and password, which is why it's not safe to use it on an unencrypted connection.
 
-The permissions are defined in the model as follows:
+Header: `Authorization: Basic <your basic token>`
 
-```js
-TestSchema.set("_perms", {
-    admin: "crud", // CRUD = Create, Retrieve, Update and Delete
-    owner: "rud",
-    user: "cr",
-    all: "r" // Unauthenticated users will be able to read from test, but that is all
-});
-```
+### Bearer Token
 
-In this case, the admin and record owner have full permissions. (We don't need to set "create" for the owner, obvz.) An authenticated user can create and retrive records. Everyone can read everything.
+_This is the preferred method of authenticating._
 
-To make a model completely private, just don't set the perms.
+Bearer tokens are ephemeral tokens that will expire in a certain time period. When a user logs out of a session, they will be destroyed.
 
-## Groups
+Header: `Authorization: Bearer <your bearer token>`
 
-You can add and remove groups to a user with the `/groups/:user_id` endpoint. The group will be automatically created if it doesn't already exist.
+### API Key
 
-* GET gets all the groups for the user
-* PUT adds a group
-* POST rewrites the user's groups
-* DELETE deletes the matching group  
+The API Key is a permanent key that doesn't expire. It can be used by adding `?apikey=<apikey>` to the end of any request, or sending `apikey: <apikey>` in the header. 
 
-The field needs to be named `group`. You can even have an array of groups, eg. `group[0]`, `group[1]` etc.
-
-***Example***
-
-Note that you'll need to authenticate as an admin through one of the methods described for these examples
-
-Set the user's group to `test`
-
-```
-curl -X POST -F "group=test" "http://localhost:3001/groups/5485bd62fbad8791660d2658"
-```
-
-Add the groups `test1` and `test2`
-
-```
-curl -X PUT -F "group[0]=test0" -F "group[1]=test1" "http://localhost:3001/groups/5485bd62fbad8791660d2658"
-```
-
-### Adding custom permission logic
-
-Maybe you want to do some more checks on permissions than the "crud" we offer. You can catch
-the user object in your model as a virtual attribute. (I suppose you could use a real Mixed attribute too.)
-
-Eg.
-
-```js
-var sender;
-
-LedgerSchema.virtual("__user").set(function(usr) {
-    sender = usr;
-});
-```
-
-And then later, say in your pre- or post-save...
-
-```js
-(!sender.admin)) {
-    return next(new Error( "Verboten!"));
-}
-```

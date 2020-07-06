@@ -3,6 +3,8 @@ const path = require("path");
 
 const model_dir = path.join(process.cwd(), "./models");
 
+global.JXPSchema = require("../libs/schema");
+
 var User = require(path.join(model_dir, "user_model"));
 var Apikey = require(path.join(model_dir, "apikey_model"));
 

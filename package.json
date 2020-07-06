@@ -1,16 +1,17 @@
 {
   "name": "jxp",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "1.2.12",
+  "version": "2.1.0-0",
   "private": false,
-  "main": "libs/jexpress.js",
+  "main": "libs/jxp.js",
   "scripts": {
     "start": "node bin/server.js",
-    "test": "mocha --timeout 10000"
+    "test": "mocha --timeout 10000",
+    "wstest": "mocha test/wstest"
   },
   "bin": {
-    "jexpress-setup": "bin/setup.js",
-    "jexpress-add-admin": "bin/init_db.js"
+    "jxp-setup": "bin/setup.js",
+    "jxp-add-admin": "bin/init_db.js"
   },
   "repository": {
     "type": "git",
@@ -40,13 +41,13 @@
     "nodemailer": "^6.4.6",
     "nodemailer-smtp-transport": "^2.7.4",
     "path": "^0.12.7",
-    "q": "^2.0.3",
     "querystring": "^0.2.0",
     "rand-token": "^1.0.1",
     "readline-sync": "^1.4.10",
     "restify": "^8.5.1",
     "restify-cors-middleware": "^1.1.1",
-    "underscore": "^1.10.2"
+    "underscore": "^1.10.2",
+    "ws": "^7.2.5"
   },
   "devDependencies": {
     "chai": "^4.2.0",

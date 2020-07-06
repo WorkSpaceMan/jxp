@@ -5,3 +5,5 @@ logs/*
 config/*
 *.log
 package-lock.json
+yarn.locksite/
+site/*

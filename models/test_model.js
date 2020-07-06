@@ -1,35 +1,29 @@
-const mongoose     = require('mongoose');
-const Schema       = mongoose.Schema;
+/* global JXPSchema ObjectId Mixed */
 
-// This is just a shortcut for us
-const ObjectId     = mongoose.Schema.Types.ObjectId;
-const Mixed        = mongoose.Schema.Types.Mixed;
-
-// Link an external model
-const Link         = require("./link_model");
-
-const TestSchema   = new Schema({
+const TestSchema = new JXPSchema({
     foo: String, // A normal string
     bar: { type: String, unique: true, index: true }, // Ah! Some business logic!
+    user_id: { type: ObjectId, link: "User" },
     yack: Mixed, // We can put anything in here, including objects
     shmack: [String], // We can store arrays
-    password: String, // Test password encryption
+    password: String, // Passwords are automagically encrypted
     fulltext: { type: String, index: { text: true } },
-    link_id: { type: ObjectId, ref: "Link" },
-    other_link_id: { type: ObjectId, ref: "Link" },
-    _owner_id: ObjectId // This is one of the magic fields that will be populated by the API
-});
+    link_id: { type: ObjectId, link: "Link", }, // We can populate these links during a query
+    other_link_id: { type: ObjectId, link: "Link", map_to: "other_link" },
+    array_link_id: [{ type: ObjectId, link: "Link", map_to: "array_link" } ]
+},
+{
+    perms: {
+        admin: "crud", // CRUD = Create, Retrieve, Update and Delete
+        owner: "crud",
+        user: "cr",
+        all: "r" // Unauthenticated users will be able to read from test, but that is all
+    }
+}
+);
 
 // Full text index
-TestSchema.index( { "$**": "text" } );
-
-// We can set permissions for different user types and user groups
-TestSchema.set("_perms", {
-    admin: "crud", // CRUD = Create, Retrieve, Update and Delete
-    owner: "crud",
-    user: "cr",
-    all: "r" // Unauthenticated users will be able to read from test, but that is all
-});
+// TestSchema.index( { "$**": "text" } );
 
 // We can define useful functions that we can call through the API using our /call endpoint
 TestSchema.statics.test = function() {
@@ -37,4 +31,5 @@ TestSchema.statics.test = function() {
 };
 
 // Finally, we export our model. Make sure to change the name!
-module.exports = mongoose.model('Test', TestSchema);
+const Test = JXPSchema.model('Test', TestSchema);
+module.exports = Test;
