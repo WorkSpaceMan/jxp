@@ -25,7 +25,7 @@ class Schema extends mongoose.Schema {
         // Set default defiitions
         definition = Object.assign({
             _deleted: { type: Boolean, default: false, index: true },
-            _owner_id: ObjectId,
+            _owner_id: { type: ObjectId, link: "User", map_to: "_owner" }
         }, definition);
         // construct our parent
         super(definition, opts);
