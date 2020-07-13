@@ -52,7 +52,12 @@ class Schema extends mongoose.Schema {
         // Example: link_id: { type: ObjectId, link: "link", }
         // Example with a custom key: link_id: { type: ObjectId, link: "link", map_to: "custom_name" }
         for (let key of Object.keys(this.definition)) {
-            const def = this.definition[key];
+            let def = this.definition[key];
+            let is_array = false;
+            if (def[0]) {
+                def = def[0];
+                is_array = true;
+            }
             if (!def.link) continue;
             const virtual_name = def.map_to || def.virtual || String(def.link).toLowerCase();
             require(getModelFileFromRef(def.link));
@@ -60,9 +65,16 @@ class Schema extends mongoose.Schema {
                 ref: def.link,
                 localField: key,
                 foreignField: "_id",
-                justOne: def.justOne || true,
+                justOne: def.justOne || !is_array,
                 options: Object.assign({}, def.options)
             })
+            // console.log(virtual_name, {
+            //     ref: def.link,
+            //     localField: key,
+            //     foreignField: "_id",
+            //     justOne: def.justOne || true,
+            //     options: Object.assign({}, def.options)
+            // });
         }
     }
 }

@@ -511,6 +511,35 @@ describe('Test', () => {
 				done();
 			});
 		});
+		it("should link an array of links to TEST", done => {
+			chai.request(server)
+				.put("/api/test/" + post_id)
+				.auth(init.email, init.password)
+				.send({ array_link_id: [ link_id, other_link_id ] })
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('object');
+					res.body.data.should.have.property("array_link_id")
+					res.body.data.array_link_id.should.be.an("array");
+					res.body.data.array_link_id.should.have.length(2);
+					done();
+				});
+		});
+		it("should populate an array of links", done => {
+			chai.request(server)
+				.get(`/api/test?populate=array_link`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					console.log(res.body.data);
+					res.should.have.status(200);
+					res.body.data[0].should.have.property("array_link");
+					res.body.data[0].array_link.should.be.an("array");
+					res.body.data[0].array_link.should.have.length(2);
+					res.body.data[0].array_link[0].should.be.an("object");
+					res.body.data[0].array_link[0].val.should.eql("val1");
+					done();
+				});
+		});
 		describe("/POST query", () => {
 			it("it should POST a complex query", (done) => {
 				var query = {
