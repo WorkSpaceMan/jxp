@@ -69,6 +69,7 @@ class WSClient {
             parsed_msg.data = parsed_msg.data || {};
             const result = await this.actions[parsed_msg.action].call(this, parsed_msg.data);
             return {
+                action: parsed_msg.action,
                 status: "okay",
                 client_id: this.id,
                 msg_id: parsed_msg.msg_id,
@@ -94,12 +95,12 @@ class WSClient {
             user = await security.basicAuth([data.email, data.password]);
         }
         if (data.apikey) {
-            user = await security.apiKeyAuth;
+            user = await security.apiKeyAuth(data.apikey);
         }
         if (data.token) {
-            user = await security.bearerAuth;
+            user = await security.bearerAuth(data.token);
         }
-        if (!user) throw "Unable to authenticate";
+        if (!user || !user.email) throw "Unable to authenticate";
         this.user = user;
         this.is_authed = true;
         this.groups = await security.getGroups(this.user._id);
