@@ -46,11 +46,23 @@ describe("Websocket Connect", () => {
         // console.log({ result });
         return true;
     })
+    it("client1 should authenticate", async () => {
+        client1.send(JSON.stringify({
+            msg_id: +new Date(),
+            action: "auth",
+            data: {
+                email: "test@freespeechpub.co.za",
+                password: "test"
+            }
+        }));
+        // console.log({ result });
+        return true;
+    })
     it('Should wait a bit', function (done) {
         setTimeout(function () {
             console.log('waiting over.');
             done();
-        }, 100)
+        }, 500)
     })
     it("should subscribe to test", async () => {
         client.send(JSON.stringify({
@@ -67,7 +79,10 @@ describe("Websocket Connect", () => {
             action: "subscribe",
             msg_id: +new Date(),
             data: {
-                model: "test"
+                model: "test",
+                filter: {
+                    foo: "Blah"
+                }
             }
         }));
         return true;

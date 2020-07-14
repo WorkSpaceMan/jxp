@@ -834,7 +834,6 @@ const JXP = function(options) {
 		config.pre_hooks.post,
 		actionPost,
 		(req, res, next) => {
-			console.log("Yo");
 			next();
 		},
 		cache.flush.bind(cache)

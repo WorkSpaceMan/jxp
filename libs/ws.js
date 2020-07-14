@@ -107,12 +107,14 @@ class WSClient {
                 await security.check_perms(this.user, this.groups, models[data.model], "r", data.id);
                 this.listeners[`put-${data.model}-${data.id}`] = {};
                 this.listeners[`put-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`put-${data.model}-${data.id}`].filter = data.filter;
                 emitter.on(`put-${data.model}-${data.id}`, this.listeners[`put-${data.model}-${data.id}`].fn);
                 return `Subscribed to put-${data.model}-${data.id}`;
             } else {
                 if (this.listeners[`post-${data.model}`]) return `Already subscribed`;
                 await security.check_perms(this.user, this.groups, models[data.model], "r");
                 this.listeners[`post-${data.model}`] = {};
+                if (data.filter) this.listeners[`post-${data.model}`].filter = data.filter;
                 this.listeners[`post-${data.model}`].fn = this.sendPost.bind(this);
                 emitter.on(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
                 return `Subscribed to post-${data.model}`;
@@ -140,6 +142,13 @@ class WSClient {
     }
 
     async sendPost(data) {
+        if (this.listeners[`post-${data.modelname}`].filter) {
+            let passed = false;
+            for (let filter in this.listeners[`post-${data.modelname}`].filter) {
+                if (data.result[filter] === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
+            }
+            if (!passed) return;
+        }
         this.send({
             status: "post",
             modelname: data.modelname,
@@ -149,6 +158,13 @@ class WSClient {
     }
 
     async sendPut(data) {
+        if (this.listeners[`post-${data.modelname}`].filter) {
+            let passed = false;
+            for (let filter in this.listeners[`post-${data.modelname}`].filter) {
+                if (data.result[filter] === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
+            }
+            if (!passed) return;
+        }
         this.send({
             status: "put",
             modelname: data.modelname,
