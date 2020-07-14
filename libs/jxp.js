@@ -9,7 +9,7 @@ const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
 const Cache = require("./cache");
-// const ws = require("./ws");
+const ws = require("./ws");
 
 const cache = new Cache();
 var models = {};
@@ -195,7 +195,7 @@ const actionGetOne = async (req, res) => {
 	}
 };
 
-const actionPost = async (req, res) => {
+const actionPost = async (req, res, next) => {
 	const opname = `post ${req.modelname} ${ops++}`;
 	console.time(opname);
 	try {
@@ -210,6 +210,7 @@ const actionPost = async (req, res) => {
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
 			req.config.callbacks.post.call(null, req.modelname, result, res.user);
+			ws.postHook.call(null, req.modelname, result, res.user);
 		}
 		res.json({
 			status: "ok",
@@ -217,6 +218,7 @@ const actionPost = async (req, res) => {
 			data: item
 		});
 		console.timeEnd(opname);
+		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		console.timeEnd(opname);
@@ -224,7 +226,7 @@ const actionPost = async (req, res) => {
 	}
 };
 
-const actionPut = async (req, res) => {
+const actionPut = async (req, res, next) => {
 	const opname = `put ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
@@ -244,6 +246,7 @@ const actionPut = async (req, res) => {
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
 			req.config.callbacks.put.call(null, req.modelname, item, res.user );
+			ws.putHook.call(null, req.modelname, item, res.user);
 		}
 		res.json({
 			status: "ok",
@@ -251,6 +254,7 @@ const actionPut = async (req, res) => {
 			data: data
 		});
 		console.timeEnd(opname);
+		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		console.timeEnd(opname);
@@ -259,7 +263,7 @@ const actionPut = async (req, res) => {
 	}
 };
 
-const actionDelete = async (req, res) => {
+const actionDelete = async (req, res, next) => {
 	var silence = req.params._silence;
 	if (req.body && req.body._silence) silence = true;
 	const opname = `del ${req.modelname}/${req.params.item_id} ${ops++}`;
@@ -296,6 +300,7 @@ const actionDelete = async (req, res) => {
 			message: `${req.modelname}/${ req.params.item_id } deleted`
 		});
 		console.timeEnd(opname);
+		next();
 	} catch(err) {
 		console.error(new Date(), err);
 		console.timeEnd(opname);
@@ -487,7 +492,7 @@ const metaModels = (req, res) => {
 		files.forEach(function(file) {
 			var modelname = path.basename(file, ".js").replace("_model", "");
 			try {
-				var modelobj = require(model_dir + "/" + file);
+				var modelobj = require(path.join(model_dir, file));
 				if (
 					modelobj.schema &&
 					modelobj.schema.get("_perms") &&
@@ -760,6 +765,7 @@ const JXP = function(options) {
 	security.init(config);
 	login.init(config);
 	groups.init(config);
+	ws.init({models});
 
 	// Set up our API server
 
@@ -827,6 +833,10 @@ const JXP = function(options) {
 		middlewarePasswords,
 		config.pre_hooks.post,
 		actionPost,
+		(req, res, next) => {
+			console.log("Yo");
+			next();
+		},
 		cache.flush.bind(cache)
 	);
 	server.put(
@@ -954,9 +964,7 @@ const JXP = function(options) {
 	})
 
 	/* Websocket */
-	// server.on("upgrade", ws.upgrade, (req, res) => {
-	// 	res.send("Upgraded");
-	// })
+	server.on("upgrade", ws.upgrade)
 	return server;
 };
 

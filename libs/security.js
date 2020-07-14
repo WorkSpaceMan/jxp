@@ -279,25 +279,14 @@ const authenticate = async req => {
 	}
 }
 
-const auth = (req, res, next) => {
-	// console.log("Started Auth");
+const auth = async (req, res, next) => {
 	// Check against model as to whether we're allowed to edit this model
 	if (!req.Model) {
 		console.error("Model missing");
 		return fail(res, 500, "Model missing");
 	}
 	try {
-		const perms = req.Model.schema.get("_perms");
-		var passed = {
-			admin: false,
-			owner: false,
-			user: false,
-			all: false
-		};
-		for (var i in perms) {
-			// Add any user-defined perms to our passed table
-			passed[i] = false;
-		}
+		
 		var method = null;
 		// console.log("req.route.name", req.route.name);
 		if (req.method == "GET" || req.route.name === "postquerymodelname" || req.route.name === "postaggregatemodelname") {
@@ -312,73 +301,72 @@ const auth = (req, res, next) => {
 			console.error("Unsupported operation", req.method);
 			return fail(res, 500, "Unsupported operation: " + req.method);
 		}
-		res.authorized = false;
+		await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
+		next();
+	} catch(err) {
+		console.error(err);
+		return fail(res, 403, { status: "Unauthorized", error: err });
+	}
+};
+
+const check_perms = async (user, groups, model, method, item_id) => {
+	console.log({
+		user, groups, model, method, item_id
+	})
+	try {
+		const perms = model.schema.get("_perms");
+		var passed = {
+			admin: false,
+			owner: false,
+			user: false,
+			all: false
+		};
+		for (var i in perms) {
+			// Add any user-defined perms to our passed table
+			passed[i] = false;
+		}
 		//If no perms are set, then this isn't an available model
 		if (!perms.admin) {
 			console.error("Model not available");
-			return fail(res, 500, "Model not available");
+			throw("Model not available");
 		}
 		//First check if "all" is able to do this. If so, let's get on with it.
 		if (perms.all) {
 			if (perms.all.indexOf(method) !== -1) {
-				next();
-				return;
+				return true;
 			}
 		}
 		//This isn't an 'all' situation, so let's bail if the user isn't logged in
-		if (!res.user) {
-			return fail(res, 403, "Unauthorized");
+		if (!user) {
+			throw("Unauthorized");
 		}
 		//Let's check perms in this order - admin, user, group, owner
 		//Admin check
-		if (res.user.admin && perms.admin && perms.admin.indexOf(method) !== -1) {
+		if (user.admin && perms.admin && perms.admin.includes(method)) {
 			// console.log("Matched permission 'admin':" + method);
-			res.authorized = true;
-			next();
-			return;
+			return true;
 		}
 		//User check
-		if (perms.user && perms.user.indexOf(method) !== -1) {
+		if (perms.user && perms.user.includes(method)) {
 			// console.log("Matched permission 'user':" + method);
-			res.authorized = true;
-			next();
-			return;
+			return true;
 		}
 		//Group check
-		for (let group of res.groups) {
-			if (perms[group] && perms[group].indexOf(method) !== -1) {
+		for (let group of groups) {
+			if (perms[group] && perms[group].includes(method) ) {
 				// console.log("Matched permission '" + group + "':" + method);
-				res.authorized = true;
-				next();
-				return;
+				return true;
 			}
 		}
 		//Owner check
-		req.Model.findById(req.params.item_id, function(err, item) {
-			if (err) {
-				console.error(err);
-				return fail(res, 500, err);
-			}
-			if (
-				item &&
-				item._owner_id &&
-				item._owner_id.toString() == res.user._id.toString() &&
-				(perms.owner && perms.owner.indexOf(method) !== -1)
-			) {
-				res.authorized = true;
-				next();
-				return;
-			} else {
-				if (!res.authorized) {
-					return fail(res, 403, "Authorization failed");
-				}
-			}
-		});
-	} catch(err) {
-		console.error("An unknown error occured", err);
-		return fail(res, 500, "An unknown error occured");
+		if (!item_id) throw ("Authorization failed");
+		const item = await model.findById(item_id);
+		if (item && item._owner_id && item._owner_id.toString() == user._id.toString() && (perms.owner && perms.owner.includes(method))) return true;
+		throw ("Authorization failed");
+	} catch (err) {
+		return Promise.reject(err);
 	}
-};
+}
 
 const admin_only = (req, res, next) => { // Chain after login
 	if (!res.user) {
@@ -393,6 +381,7 @@ const admin_only = (req, res, next) => { // Chain after login
 const Security = {
 	init,
 	basicAuthData,
+	basicAuth,
 	encPassword,
 	generateApiKey,
 	generateToken,
@@ -407,7 +396,9 @@ const Security = {
 	refresh,
 	authenticate,
 	auth,
-	admin_only
+	admin_only,
+	check_perms,
+	getGroups,
 };
 
 module.exports = Security;

@@ -5,31 +5,179 @@ $fetch
 */
 
 const WS = require("ws");
-const wss = new WS.Server({ noServer: true });
 const url = require('url');
 const crypto = require("crypto");
 const security = require("./security");
 let client_count = 0;
+const EventEmitter = require("events");
+
+class Emitter extends EventEmitter { }
+const emitter = new Emitter();
+
+let models = [];
 
 const md5 = s => {
     return crypto.createHash('md5').update(String(s)).digest("hex");
 }
 
-wss.on('connection', function connection(ws, req) {
-    // console.log(req);
+const wss = new WS.Server({ noServer: true });
+
+const init = (data) => {
+    models = data.models;
+}
+
+class WSClient {
+    constructor(ws) {
+        this.ws = ws;
+        this.id_string = `client-${client_count++}-${+new Date()}`;
+        this.id = md5(this.id_string);
+        this.msg_count = 0;
+        this.is_authed = false;
+        this.user = null;
+        this.actions = {
+            ping: this.ping,
+            auth: this.auth,
+            subscribe: this.subscribe,
+            unsubscribe: this.unsubscribe
+        }
+        this.listeners = {};
+    }
+
+    close() {
+        this.is_authed = false;
+        this.user = null;
+        this.listeners = [];
+    }
+
+    async receive(msg) {
+        this.msg_count++;
+        let parsed_msg = null;
+        try {
+            parsed_msg = JSON.parse(msg);
+        } catch (err) {
+            console.log("Unable to parse message", msg);
+            return {
+                status: "error",
+                message: "Unable to parse message"
+            }
+        }
+        try {
+            if (typeof parsed_msg !== "object") throw "msg should be an object";
+            if (!parsed_msg.action) throw "missing action";
+            if (!this.actions[parsed_msg.action]) throw `action ${parsed_msg.action} not implemented`;
+            if (!parsed_msg.msg_id) throw `missing msg_id`;
+            parsed_msg.data = parsed_msg.data || {};
+            const result = await this.actions[parsed_msg.action].call(this, parsed_msg.data);
+            return {
+                status: "okay",
+                client_id: this.id,
+                msg_id: parsed_msg.msg_id,
+                result
+            }
+        } catch (err) {
+            console.error(err);
+            return {
+                status: "error",
+                message: err,
+                msg_id: parsed_msg.msg_id
+            }
+        }
+    }
+
+    async ping () {
+        return "pong!";
+    }
+
+    async auth(data) {
+        if (data.email && data.password) {
+            const user = await security.basicAuth([data.email, data.password]);
+            this.user = user;
+            this.is_authed = true;
+            this.groups = await security.getGroups(this.user._id);
+            console.log(`Logged in ${user.name} <${user.email}>`)
+        }
+        return "Authed";
+    }
+
+    async subscribe(data) {
+        try {
+            if (!this.is_authed) throw("User not authenticated");
+            if (data.id) {
+                if (this.listeners[`put-${data.model}-${data.id}`]) return `Already subscribed`;
+                await security.check_perms(this.user, this.groups, models[data.model], "r", data.id);
+                this.listeners[`put-${data.model}-${data.id}`] = {};
+                this.listeners[`put-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
+                emitter.on(`put-${data.model}-${data.id}`, this.listeners[`put-${data.model}-${data.id}`].fn);
+                return `Subscribed to put-${data.model}-${data.id}`;
+            } else {
+                if (this.listeners[`post-${data.model}`]) return `Already subscribed`;
+                await security.check_perms(this.user, this.groups, models[data.model], "r");
+                this.listeners[`post-${data.model}`] = {};
+                this.listeners[`post-${data.model}`].fn = this.sendPost.bind(this);
+                emitter.on(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
+                return `Subscribed to post-${data.model}`;
+            }
+        } catch(err) {
+            console.error(err);
+            return `Failed to subscribe ${err}`;
+        }
+    }
+    
+    async unsubscribe(data) {
+        if (data.id) {
+            emitter.off(`put-${data.model}-${data._id}`, this.listeners[`put-${data.model}-${data._id}`].fn);
+            delete (this.listeners[`put-${data.model}-${data._id}`]);
+            return `Unsubscribed to put-${data.model}-${data._id}`;
+        } else {
+            emitter.off(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
+            delete (this.listeners[`post-${data.model}`]);
+            return `Unsubscribed to post-${data.model}`;
+        }
+    }
+
+    async send(data) {
+        this.ws.send(JSON.stringify({ client_id: this.id, data }));
+    }
+
+    async sendPost(data) {
+        this.send({
+            status: "post",
+            modelname: data.modelname,
+            result: data.result,
+            user_id: data.user._id
+        });
+    }
+
+    async sendPut(data) {
+        this.send({
+            status: "put",
+            modelname: data.modelname,
+            item: data.item,
+            user_id: data.user._id
+        });
+    }
+}
+
+wss.on('connection', function connection(ws) {
     try {
-        let client_id_string = `client-${client_count++}-${+new Date()}`;
-        let client_id = md5(client_id_string);
-        let msg_count = 0;
-        ws.on('message', function message(msg) {
+        const client = new WSClient(ws);
+        // clients[client.id] = client;
+        ws.on('message', async function message(msg) {
             try {
-                let msg_id_string = `msg-${msg_count++}-${+new Date()}`;
-                let msg_id = md5(msg_id_string);
-                console.log(`Received message from ${client_id_string} (${msg_id_string})`);
-                handleMessage(msg, client_id, msg_id);
+                console.log(`Received message from ${client.id}`);
+                const result = await client.receive(msg);
+                ws.send(JSON.stringify(result));
             } catch(err) {
                 console.error("message error", err);
             }
+        });
+        ws.on('close', function close() {
+            if (client.user) {
+                console.log(`Close ${client.user.name} <${client.user.email}>`);
+            } else {
+                console.log(`Close anonymous connection`);
+            }
+            client.close();
         });
     } catch(err) {
         console.error("connection error", err);
@@ -50,16 +198,17 @@ const upgrade = async (req, socket, head) => {
     }
 }
 
-const handleMessage = (msg, client_id, msg_id)=> {
-    // console.log(`Received message ${msg} from ${client_id} (${msg_id})`);
-    try {
-        if (typeof msg !== "object") throw "msg should be an object";
-        
-    } catch(err) {
-        console.error(err);
-    }
+const postHook = async(modelname, result, user) => {
+    emitter.emit(`post-${modelname}`, { modelname, result, user });
+}
+
+const putHook = async (modelname, result, user) => {
+    emitter.emit(`put-${modelname}`, { modelname, result, user });
 }
 
 module.exports = {
-    upgrade
+    upgrade,
+    postHook,
+    putHook,
+    init
 };

@@ -530,7 +530,7 @@ describe('Test', () => {
 				.get(`/api/test?populate=array_link`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					console.log(res.body.data);
+					// console.log(res.body.data);
 					res.should.have.status(200);
 					res.body.data[0].should.have.property("array_link");
 					res.body.data[0].array_link.should.be.an("array");
