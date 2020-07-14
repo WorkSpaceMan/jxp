@@ -139,7 +139,7 @@ const actionGet = async (req, res, next) => {
 		if (req.query.populate) {
 			if ((typeof req.query.populate === "object") && !Array.isArray(req.query.populate)) {
 				for (let i in req.query.populate) {
-					q.populate(i, req.query.populate[i].replace(",", " "));
+					q.populate(i, req.query.populate[i].replace(/,/g, " "));
 				}
 			} else {
 				q.populate(req.query.populate);
@@ -389,7 +389,7 @@ const actionQuery = async (req, res) => {
 		if (req.query.populate) {
 			if ((typeof req.query.populate === "object") && !Array.isArray(req.query.populate)) {
 				for (let i in req.query.populate) {
-					q.populate(i, req.query.populate[i].replace(",", " "));
+					q.populate(i, req.query.populate[i].replace(/,/g, " "));
 				}
 			} else {
 				q.populate(req.query.populate);
@@ -527,7 +527,7 @@ const getOne = async (Model, item_id, params) => {
 	if (params.populate) {
 		if ((typeof params.populate === "object")  && !Array.isArray(params.populate)) {
 			for (let i in params.populate) {
-				query.populate(i, params.populate[i].replace(",", " "));
+				query.populate(i, params.populate[i].replace(/,/g, " "));
 			}
 		} else {
 			query.populate(params.populate);
