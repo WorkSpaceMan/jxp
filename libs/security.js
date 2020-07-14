@@ -399,6 +399,8 @@ const Security = {
 	admin_only,
 	check_perms,
 	getGroups,
+	apiKeyAuth,
+	bearerAuth,
 };
 
 module.exports = Security;

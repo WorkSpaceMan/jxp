@@ -89,13 +89,21 @@ class WSClient {
     }
 
     async auth(data) {
+        let user = null;
         if (data.email && data.password) {
-            const user = await security.basicAuth([data.email, data.password]);
-            this.user = user;
-            this.is_authed = true;
-            this.groups = await security.getGroups(this.user._id);
-            console.log(`Logged in ${user.name} <${user.email}>`)
+            user = await security.basicAuth([data.email, data.password]);
         }
+        if (data.apikey) {
+            user = await security.apiKeyAuth;
+        }
+        if (data.token) {
+            user = await security.bearerAuth;
+        }
+        if (!user) throw "Unable to authenticate";
+        this.user = user;
+        this.is_authed = true;
+        this.groups = await security.getGroups(this.user._id);
+        console.log(`Logged in ${user.name} <${user.email}>`)
         return "Authed";
     }
 
