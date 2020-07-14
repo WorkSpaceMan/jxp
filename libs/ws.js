@@ -126,7 +126,6 @@ class WSClient {
                 this.listeners[`post-${data.model}`].fn = this.sendPost.bind(this);
                 emitter.on(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
                 if (this.listeners[`put-${data.model}-${data.id}`]) return `Already subscribed`;
-                await security.check_perms(this.user, this.groups, models[data.model], "r", data.id);
                 this.listeners[`put-${data.model}`] = {};
                 this.listeners[`put-${data.model}`].fn = this.sendPut.bind(this);
                 if (data.filter) this.listeners[`put-${data.model}`].filter = data.filter;
@@ -135,7 +134,7 @@ class WSClient {
             }
         } catch(err) {
             console.error(err);
-            return `Failed to subscribe ${err}`;
+            return `Failed to subscribe to ${data.model} (${err})`;
         }
     }
     
