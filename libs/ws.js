@@ -125,6 +125,12 @@ class WSClient {
                 if (data.filter) this.listeners[`post-${data.model}`].filter = data.filter;
                 this.listeners[`post-${data.model}`].fn = this.sendPost.bind(this);
                 emitter.on(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
+                if (this.listeners[`put-${data.model}-${data.id}`]) return `Already subscribed`;
+                await security.check_perms(this.user, this.groups, models[data.model], "r", data.id);
+                this.listeners[`put-${data.model}`] = {};
+                this.listeners[`put-${data.model}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`put-${data.model}`].filter = data.filter;
+                emitter.on(`put-${data.model}`, this.listeners[`put-${data.model}`].fn);
                 return `Subscribed to post-${data.model}`;
             }
         } catch(err) {
@@ -141,6 +147,9 @@ class WSClient {
         } else {
             emitter.off(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
             delete (this.listeners[`post-${data.model}`]);
+            emitter.off(`put-${data.model}`, this.listeners[`put-${data.model}`].fn);
+            delete (this.listeners[`post-${data.model}`]);
+            delete (this.listeners[`put-${data.model}`]);
             return `Unsubscribed to post-${data.model}`;
         }
     }
@@ -227,6 +236,7 @@ const postHook = async(modelname, result, user) => {
 }
 
 const putHook = async (modelname, result, user) => {
+    emitter.emit(`put-${modelname}-${result._id}`, { modelname, result, user });
     emitter.emit(`put-${modelname}`, { modelname, result, user });
 }
 
