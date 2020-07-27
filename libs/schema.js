@@ -68,13 +68,6 @@ class Schema extends mongoose.Schema {
                 justOne: def.justOne || !is_array,
                 options: Object.assign({}, def.options)
             })
-            // console.log(virtual_name, {
-            //     ref: def.link,
-            //     localField: key,
-            //     foreignField: "_id",
-            //     justOne: def.justOne || true,
-            //     options: Object.assign({}, def.options)
-            // });
         }
     }
 }
