@@ -310,9 +310,6 @@ const auth = async (req, res, next) => {
 };
 
 const check_perms = async (user, groups, model, method, item_id) => {
-	console.log({
-		user, groups, model, method, item_id
-	})
 	try {
 		const perms = model.schema.get("_perms");
 		var passed = {
