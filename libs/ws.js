@@ -159,7 +159,7 @@ class WSClient {
     }
 
     async sendPost(data) {
-        if (this.listeners[`post-${data.modelname}`].filter) {
+        if (this.listeners[`post-${data.modelname}`] && this.listeners[`post-${data.modelname}`].filter) {
             let passed = false;
             for (let filter in this.listeners[`post-${data.modelname}`].filter) {
                 if (data.result[filter] === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
@@ -175,10 +175,10 @@ class WSClient {
     }
 
     async sendPut(data) {
-        if (this.listeners[`post-${data.modelname}`].filter) {
+        if (this.listeners[`put-${data.modelname}`] && this.listeners[`put-${data.modelname}`].filter) {
             let passed = false;
-            for (let filter in this.listeners[`post-${data.modelname}`].filter) {
-                if (data.result[filter] === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
+            for (let filter in this.listeners[`put-${data.modelname}`].filter) {
+                if (data.result[filter] === this.listeners[`put-${data.modelname}`].filter[filter]) passed = true;
             }
             if (!passed) return;
         }
