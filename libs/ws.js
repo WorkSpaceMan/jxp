@@ -185,7 +185,7 @@ class WSClient {
         this.send({
             status: "put",
             modelname: data.modelname,
-            item: data.item,
+            item: data.result,
             user_id: data.user._id
         });
     }
