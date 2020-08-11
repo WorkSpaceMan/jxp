@@ -162,7 +162,7 @@ class WSClient {
         if (this.listeners[`post-${data.modelname}`] && this.listeners[`post-${data.modelname}`].filter) {
             let passed = false;
             for (let filter in this.listeners[`post-${data.modelname}`].filter) {
-                if (data.result[filter] === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
+                if (data.result[filter].toString() === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
             }
             if (!passed) return;
         }
@@ -178,7 +178,7 @@ class WSClient {
         if (this.listeners[`put-${data.modelname}`] && this.listeners[`put-${data.modelname}`].filter) {
             let passed = false;
             for (let filter in this.listeners[`put-${data.modelname}`].filter) {
-                if (data.result[filter] === this.listeners[`put-${data.modelname}`].filter[filter]) passed = true;
+                if (data.result[filter].toString() === this.listeners[`put-${data.modelname}`].filter[filter]) passed = true;
             }
             if (!passed) return;
         }
