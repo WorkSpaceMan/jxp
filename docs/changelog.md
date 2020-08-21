@@ -33,3 +33,9 @@
 ## v2.0.1-1
 
 - Tokens as the preferred login methodology
+
+## v2.8.x
+
+- Websockets
+- Bulk uploads
+- Advanced queries

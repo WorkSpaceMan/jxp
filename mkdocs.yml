@@ -8,6 +8,8 @@ nav:
   - Restful API: api.md
   - Roles and Permissions: permissions.md
   - Hooks: hooks.md
+  - Advanced Usage: advanced.md
+  - Websocket: websocket.md
   - Special Features: special.md
   - Changelog: changelog.md
 theme: readthedocs
