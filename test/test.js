@@ -595,9 +595,92 @@ describe('Test', () => {
 				});
 			});
 		});
+		describe("/POST bulkwrite", () => {
+			it("it should make sure we are set up right", done => {
+				chai.request(server)
+					.get("/api/test")
+					.auth(init.email, init.password)
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("foo");
+						res.body.data[0].foo.should.eql("Foo1");
+						res.body.should.have.property("count");
+						res.body.count.should.eql(1);
+						done();
+					});
+			})
+			it("it should bulkwrite", (done) => {
+				const query = [
+					{
+						"insertOne": {
+							"document": {
+								"foo": "Foo2",
+								"bar": "Bar2",
+								"yack": { "yack": "yack2", "shmack": 2 },
+							}
+						},
+					},
+					{
+						"updateOne": {
+							"filter": {
+								"foo": "Foo1"
+							},
+							"update": {
+								"$set": {
+									"foo": "Foo bulk updated"
+								}
+							}
+						}
+					},
+					{
+						"updateOne": {
+							"filter": {
+								"foo": "Foo3"
+							},
+							"update": {
+								"foo": "Foo3",
+								"bar": "Bar3",
+								"yack": { "yack": "yack3", "shmack": 3 },
+							},
+							"upsert": true
+						},
+					}
+				];
+				chai.request(server)
+					.post("/bulkwrite/test")
+					.auth(init.admin_email, init.admin_password)
+					.send({ query })
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('object');
+						res.body.data.should.have.property("ok");
+						res.body.data.ok.should.eql(1);
+						res.body.data.nInserted.should.eql(1);
+						res.body.data.nUpserted.should.eql(1);
+						res.body.data.nMatched.should.eql(1);
+						res.body.data.nModified.should.eql(1);
+						done();
+					});
+			});
+			it("it should test bulkwrite", (done) => {
+				chai.request(server)
+					.get("/api/test?sort[createdAt]=1")
+					.auth(init.email, init.password)
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("foo");
+						res.body.data[0].foo.should.eql("Foo bulk updated");
+						res.body.data[1].should.have.property("foo");
+						res.body.data[2].should.have.property("foo");
+						res.body.should.have.property("count");
+						res.body.count.should.eql(3);
+						done();
+					});
+			});
+		});
 	});
-
-	
 
 	describe("Models", () => {
 		it("it should get all the model definitions", (done) => {

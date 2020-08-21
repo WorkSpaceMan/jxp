@@ -5,21 +5,20 @@ const model_dir = path.join(process.cwd(), "./models");
 
 global.JXPSchema = require("../libs/schema");
 
-var User = require(path.join(model_dir, "user_model"));
-var Apikey = require(path.join(model_dir, "apikey_model"));
+const User = require(path.join(model_dir, "user_model"));
+const Apikey = require(path.join(model_dir, "apikey_model"));
 
-var security = require("../libs/security");
+const security = require("../libs/security");
 
-var chai = require('chai');
-var chaiHttp = require('chai-http');
-var should = chai.should();
+const chai = require('chai');
+const chaiHttp = require('chai-http');
+const should = chai.should();
 
-var server = require(path.join(__dirname, "../bin/server.js"));
+const server = require(path.join(__dirname, "../bin/server.js"));
 
 chai.use(chaiHttp);
 
-
-var empty = (model) => {
+const empty = (model) => {
 	return new Promise((resolve, reject) => {
 		model.deleteMany({}, err => {
 			if (err)
@@ -29,9 +28,9 @@ var empty = (model) => {
 	});
 };
 
-var post = (model, data) => {
+const post = (model, data) => {
 	return new Promise((resolve, reject) => {
-		var item = new model(data);
+		const item = new model(data);
 		item.save((err, result) => {
 			if (err)
 				return reject(err);
@@ -41,14 +40,18 @@ var post = (model, data) => {
 	});
 };
 
-var email = "test@freespeechpub.co.za";
-var password = "test";
+const email = "test@freespeechpub.co.za";
+const password = "test";
+const admin_email = "admin@freespeechpub.co.za";
+const admin_password = "SecretPassword";
 
-var init = async () => {
+const init = async () => {
 	try {
 		await empty(User);
 		await empty(Apikey);
-		return await post(User, { name: "Test User", email, password: security.encPassword(password), urlid: "test-user" });
+		await post(User, { name: "Admin User", email: admin_email, password: security.encPassword(admin_password), urlid: "admin-user", admin: true });
+		await post(User, { name: "Test User", email, password: security.encPassword(password), urlid: "test-user" });
+		return true;
 	} catch(err) {
 		console.error(err);
 		throw(err);
@@ -66,10 +69,9 @@ describe('Init', () => {
 			.get("/api/user")
 			.auth(email, password)
 			.end((err, res) => {
-				// console.log(res.error);
 				res.should.have.status(200);
 				res.body.data.should.be.a('array');
-				res.body.data.length.should.be.eql(1);
+				res.body.data.length.should.be.eql(2);
 				done();
 			});
 		});
@@ -80,5 +82,7 @@ describe('Init', () => {
 module.exports = {
 	init,
 	email,
-	password
+	password,
+	admin_email,
+	admin_password,
 };

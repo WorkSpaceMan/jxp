@@ -446,6 +446,29 @@ const actionAggregate = async (req, res) => {
 	}
 };
 
+// Actions (verbs)
+const actionBulkWrite = async (req, res) => {
+	if (!req.body || !req.body.query || !Array.isArray(req.body.query)) {
+		console.error("query missing or not of type array")
+		return res.send(500, { status: "error", message: "query missing or not of type array" });
+	}
+	const opname = `bulkwrite ${req.modelname} ${ops++}`;
+	console.time(opname);
+	let query = req.body.query;
+	// console.log(query);
+	try {
+		let result = {};
+		result.data = await req.Model.bulkWrite(query);
+		res.result = result;
+		console.timeEnd(opname);
+		res.json(result);
+	} catch (err) {
+		console.error(new Date(), err);
+		console.timeEnd(opname);
+		res.send(500, { status: "error", message: err.toString() });
+	}
+};
+
 // var actionBatch = (req, res, next) => {
 // 	console.time("BATCH " + req.modelname);
 // 	var items = [];
@@ -890,7 +913,17 @@ const JXP = function(options) {
 		config.pre_hooks.get,
 		cache.read.bind(cache),
 		actionAggregate
-	)
+	);
+
+	server.post(
+		"/bulkwrite/:modelname",
+		middlewareModel,
+		security.login,
+		security.bulkAuth,
+		config.pre_hooks.get,
+		cache.read.bind(cache),
+		actionBulkWrite
+	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
 	// server.post('/batch/create/:modelname', middlewareModel, security.login, security.auth, actionBatch);

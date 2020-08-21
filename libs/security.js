@@ -286,7 +286,6 @@ const auth = async (req, res, next) => {
 		return fail(res, 500, "Model missing");
 	}
 	try {
-		
 		var method = null;
 		// console.log("req.route.name", req.route.name);
 		if (req.method == "GET" || req.route.name === "postquerymodelname" || req.route.name === "postaggregatemodelname") {
@@ -309,23 +308,27 @@ const auth = async (req, res, next) => {
 	}
 };
 
+// Bulk auth requires all CRUD permissions
+const bulkAuth = async (req, res, next) => {
+	try {
+		await check_perms(res.user, res.groups, req.Model, "c");
+		await check_perms(res.user, res.groups, req.Model, "r");
+		await check_perms(res.user, res.groups, req.Model, "u");
+		await check_perms(res.user, res.groups, req.Model, "d");
+		next();
+	} catch (err) {
+		console.error(err);
+		return fail(res, 403, { status: "Unauthorized", error: err });
+	}
+};
+
 const check_perms = async (user, groups, model, method, item_id) => {
 	try {
 		const perms = model.schema.get("_perms");
-		var passed = {
-			admin: false,
-			owner: false,
-			user: false,
-			all: false
-		};
-		for (var i in perms) {
-			// Add any user-defined perms to our passed table
-			passed[i] = false;
-		}
 		//If no perms are set, then this isn't an available model
 		if (!perms.admin) {
-			console.error("Model not available");
-			throw("Model not available");
+			console.error("Model permissions not set correctly - add an admin section");
+			throw("Model permissions not set correctly - add an admin section");
 		}
 		//First check if "all" is able to do this. If so, let's get on with it.
 		if (perms.all) {
@@ -356,7 +359,7 @@ const check_perms = async (user, groups, model, method, item_id) => {
 			}
 		}
 		//Owner check
-		if (!item_id) throw ("Authorization failed");
+		if (!item_id) throw (`Authorization failed - ${method}`);
 		const item = await model.findById(item_id);
 		if (item && item._owner_id && item._owner_id.toString() == user._id.toString() && (perms.owner && perms.owner.includes(method))) return true;
 		throw ("Authorization failed");
@@ -398,6 +401,7 @@ const Security = {
 	getGroups,
 	apiKeyAuth,
 	bearerAuth,
+	bulkAuth
 };
 
 module.exports = Security;
