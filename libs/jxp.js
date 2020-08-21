@@ -448,13 +448,13 @@ const actionAggregate = async (req, res) => {
 
 // Actions (verbs)
 const actionBulkWrite = async (req, res) => {
-	if (!req.body || !req.body.query || !Array.isArray(req.body.query)) {
+	if (!req.body || !Array.isArray(req.body)) {
 		console.error("query missing or not of type array")
 		return res.send(500, { status: "error", message: "query missing or not of type array" });
 	}
 	const opname = `bulkwrite ${req.modelname} ${ops++}`;
 	console.time(opname);
-	let query = req.body.query;
+	let query = req.body;
 	// console.log(query);
 	try {
 		let result = {};

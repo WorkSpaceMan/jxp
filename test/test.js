@@ -650,7 +650,7 @@ describe('Test', () => {
 				chai.request(server)
 					.post("/bulkwrite/test")
 					.auth(init.admin_email, init.admin_password)
-					.send({ query })
+					.send(query)
 					.end((err, res) => {
 						res.should.have.status(200);
 						res.body.data.should.be.an('object');
