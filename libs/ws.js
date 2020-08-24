@@ -85,7 +85,7 @@ class WSClient {
         }
     }
 
-    async ping () {
+    async ping() {
         return "pong!";
     }
 
@@ -110,47 +110,62 @@ class WSClient {
 
     async subscribe(data) {
         try {
-            if (!this.is_authed) throw("User not authenticated");
+            if (!this.is_authed) throw ("User not authenticated");
             if (data.id) {
                 if (this.listeners[`put-${data.model}-${data.id}`]) return `Already subscribed`;
                 await security.check_perms(this.user, this.groups, models[data.model], "r", data.id);
+                // Put
                 this.listeners[`put-${data.model}-${data.id}`] = {};
                 this.listeners[`put-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
                 if (data.filter) this.listeners[`put-${data.model}-${data.id}`].filter = data.filter;
                 emitter.on(`put-${data.model}-${data.id}`, this.listeners[`put-${data.model}-${data.id}`].fn);
+                // Delete
+                this.listeners[`del-${data.model}-${data.id}`] = {};
+                this.listeners[`del-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`del-${data.model}-${data.id}`].filter = data.filter;
+                emitter.on(`del-${data.model}-${data.id}`, this.listeners[`del-${data.model}-${data.id}`].fn);
                 return `Subscribed to put-${data.model}-${data.id}`;
             } else {
                 if (this.listeners[`post-${data.model}`]) return `Already subscribed`;
                 await security.check_perms(this.user, this.groups, models[data.model], "r");
+                // Post
                 this.listeners[`post-${data.model}`] = {};
                 if (data.filter) this.listeners[`post-${data.model}`].filter = data.filter;
                 this.listeners[`post-${data.model}`].fn = this.sendPost.bind(this);
                 emitter.on(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
-                if (this.listeners[`put-${data.model}-${data.id}`]) return `Already subscribed`;
+                // Put
                 this.listeners[`put-${data.model}`] = {};
                 this.listeners[`put-${data.model}`].fn = this.sendPut.bind(this);
                 if (data.filter) this.listeners[`put-${data.model}`].filter = data.filter;
                 emitter.on(`put-${data.model}`, this.listeners[`put-${data.model}`].fn);
+                // Delete
+                this.listeners[`del-${data.model}`] = {};
+                this.listeners[`del-${data.model}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`del-${data.model}`].filter = data.filter;
+                emitter.on(`del-${data.model}`, this.listeners[`del-${data.model}`].fn);
                 return `Subscribed to post-${data.model}`;
             }
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             return `Failed to subscribe to ${data.model} (${err})`;
         }
     }
-    
+
     async unsubscribe(data) {
         if (data.id) {
             emitter.off(`put-${data.model}-${data._id}`, this.listeners[`put-${data.model}-${data._id}`].fn);
             delete (this.listeners[`put-${data.model}-${data._id}`]);
-            return `Unsubscribed to put-${data.model}-${data._id}`;
+            emitter.off(`del-${data.model}-${data._id}`, this.listeners[`del-${data.model}-${data._id}`].fn);
+            delete (this.listeners[`del-${data.model}-${data._id}`]);
+            return `Unsubscribed to ${data.model}-${data._id}`;
         } else {
             emitter.off(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
             delete (this.listeners[`post-${data.model}`]);
             emitter.off(`put-${data.model}`, this.listeners[`put-${data.model}`].fn);
-            delete (this.listeners[`post-${data.model}`]);
             delete (this.listeners[`put-${data.model}`]);
-            return `Unsubscribed to post-${data.model}`;
+            emitter.off(`del-${data.model}`, this.listeners[`del-${data.model}`].fn);
+            delete (this.listeners[`del-${data.model}`]);
+            return `Unsubscribed to ${data.model}`;
         }
     }
 
@@ -189,6 +204,22 @@ class WSClient {
             user_id: data.user._id
         });
     }
+
+    async sendDel(data) {
+        if (this.listeners[`del-${data.modelname}`] && this.listeners[`del-${data.modelname}`].filter) {
+            let passed = false;
+            for (let filter in this.listeners[`del-${data.modelname}`].filter) {
+                if (data.result[filter].toString() === this.listeners[`del-${data.modelname}`].filter[filter]) passed = true;
+            }
+            if (!passed) return;
+        }
+        this.send({
+            status: "del",
+            modelname: data.modelname,
+            item: data.result,
+            user_id: data.user._id
+        });
+    }
 }
 
 wss.on('connection', function connection(ws) {
@@ -200,7 +231,7 @@ wss.on('connection', function connection(ws) {
                 console.log(`Received message from ${client.id}`);
                 const result = await client.receive(msg);
                 ws.send(JSON.stringify(result));
-            } catch(err) {
+            } catch (err) {
                 console.error("message error", err);
             }
         });
@@ -212,7 +243,7 @@ wss.on('connection', function connection(ws) {
             }
             client.close();
         });
-    } catch(err) {
+    } catch (err) {
         console.error("connection error", err);
     }
 });
@@ -220,18 +251,18 @@ wss.on('connection', function connection(ws) {
 const upgrade = async (req, socket, head) => {
     try {
         const pathname = url.parse(req.url).pathname;
-        if (pathname !== "/websocket") throw("Only /websocket endpoint supported");
+        if (pathname !== "/websocket") throw ("Only /websocket endpoint supported");
         wss.handleUpgrade(req, socket, head, function done(ws) {
             wss.emit('connection', ws, req);
         });
-    } catch(err) {
+    } catch (err) {
         console.log("Websocket Auth failed");
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
     }
 }
 
-const postHook = async(modelname, result, user) => {
+const postHook = async (modelname, result, user) => {
     emitter.emit(`post-${modelname}`, { modelname, result, user });
 }
 
@@ -240,9 +271,15 @@ const putHook = async (modelname, result, user) => {
     emitter.emit(`put-${modelname}`, { modelname, result, user });
 }
 
+const delHook = async (modelname, result, user) => {
+    emitter.emit(`del-${modelname}-${result._id}`, { modelname, result, user });
+    emitter.emit(`del-${modelname}`, { modelname, result, user });
+}
+
 module.exports = {
     upgrade,
     postHook,
     putHook,
+    delHook,
     init
 };

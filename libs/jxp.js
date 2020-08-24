@@ -294,6 +294,7 @@ const actionDelete = async (req, res, next) => {
 				res.user,
 				{ soft: false }
 			);
+			ws.delHook.call(null, req.modelname, item, res.user);
 		}
 		res.json({
 			status: "ok",
