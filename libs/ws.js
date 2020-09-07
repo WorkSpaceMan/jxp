@@ -182,10 +182,12 @@ class WSClient {
             if (!passed) return;
         }
         this.send({
-            status: "post",
+            event: "post",
             modelname: data.modelname,
-            result: data.result,
-            user_id: data.user._id
+            item: data.result,
+            user_id: data.user._id,
+            user_name: data.user.name,
+            user_email: data.user.email,
         });
     }
 
@@ -198,10 +200,12 @@ class WSClient {
             if (!passed) return;
         }
         this.send({
-            status: "put",
+            event: "put",
             modelname: data.modelname,
             item: data.result,
-            user_id: data.user._id
+            user_id: data.user._id,
+            user_name: data.user.name,
+            user_email: data.user.email,
         });
     }
 
@@ -214,10 +218,12 @@ class WSClient {
             if (!passed) return;
         }
         this.send({
-            status: "del",
+            event: "del",
             modelname: data.modelname,
             item: data.result,
-            user_id: data.user._id
+            user_id: data.user._id,
+            user_name: data.user.name,
+            user_email: data.user.email,
         });
     }
 }
