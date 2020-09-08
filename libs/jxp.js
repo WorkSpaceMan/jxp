@@ -72,7 +72,7 @@ const outputCSV = (req, res) => {
 		res.end(csv);
 	} catch (err) {
 		console.error(err);
-		res.send(500, err);
+		res.send(500, { status: "error", error: err, message: err.toString() });
 	}
 }
 
@@ -503,45 +503,55 @@ const actionBulkWrite = async (req, res) => {
 // Meta
 
 const metaModels = (req, res) => {
-	fs.readdir(model_dir, function(err, files) {
-		if (err) {
-			console.trace(err);
-			res.send(500, {
-				status: "error",
-				message: "Error reading models directory " + model_dir
-			});
-			return false;
-		}
-		var models = [];
-		files.forEach(function(file) {
-			var modelname = path.basename(file, ".js").replace("_model", "");
-			try {
-				var modelobj = require(path.join(model_dir, file));
-				if (
-					modelobj.schema &&
-					modelobj.schema.get("_perms") &&
-					(modelobj.schema.get("_perms").admin ||
-						modelobj.schema.get("_perms").user ||
-						modelobj.schema.get("_perms").owner ||
-						modelobj.schema.get("_perms").all)
-				) {
-					var model = {
-						model: modelname,
-						file: file,
-						perms: modelobj.schema.get("_perms")
-					};
-					models.push(model);
-				}
-			} catch (error) {
-				console.error("Error with model " + modelname, error);
+	try {
+		fs.readdir(model_dir, function(err, files) {
+			if (err) {
+				console.trace(err);
+				res.send(500, {
+					status: "error",
+					message: "Error reading models directory " + model_dir
+				});
+				return false;
 			}
+			var models = [];
+			files.forEach(function(file) {
+				var modelname = path.basename(file, ".js").replace("_model", "");
+				try {
+					var modelobj = require(path.join(model_dir, file));
+					if (
+						modelobj.schema &&
+						modelobj.schema.get("_perms") &&
+						(modelobj.schema.get("_perms").admin ||
+							modelobj.schema.get("_perms").user ||
+							modelobj.schema.get("_perms").owner ||
+							modelobj.schema.get("_perms").all)
+					) {
+						var model = {
+							model: modelname,
+							file: file,
+							perms: modelobj.schema.get("_perms")
+						};
+						models.push(model);
+					}
+				} catch (error) {
+					console.error("Error with model " + modelname, error);
+				}
+			});
+			res.send(models);
 		});
-		res.send(models);
-	});
+	} catch (err) {
+		console.error(err);
+		return res.send(500, { status: "error", error: err, message: err.toString() });
+	}
 };
 
 const metaModel = (req, res) => {
-	res.send(req.Model.schema.paths);
+	try {
+		res.send(req.Model.schema.paths);
+	} catch (err) {
+		console.error(err);
+		return res.send(500, { status: "error", error: err, message: err.toString() });
+	}
 };
 
 // Utitlities
