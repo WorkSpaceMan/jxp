@@ -112,38 +112,38 @@ class WSClient {
         try {
             if (!this.is_authed) throw ("User not authenticated");
             if (data.id) {
-                if (this.listeners[`put-${data.model}-${data.id}`]) return `Already subscribed`;
+                if (this.listeners[`put-${this.id}-${data.model}-${data.id}`]) return `Already subscribed`;
                 await security.check_perms(this.user, this.groups, models[data.model], "r", data.id);
                 // Put
-                this.listeners[`put-${data.model}-${data.id}`] = {};
-                this.listeners[`put-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
-                if (data.filter) this.listeners[`put-${data.model}-${data.id}`].filter = data.filter;
-                emitter.on(`put-${data.model}-${data.id}`, this.listeners[`put-${data.model}-${data.id}`].fn);
+                this.listeners[`put-${this.id}-${data.model}-${data.id}`] = {};
+                this.listeners[`put-${this.id}-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`put-${this.id}-${data.model}-${data.id}`].filter = data.filter;
+                emitter.on(`put-${data.model}-${data.id}`, this.listeners[`put-${this.id}-${data.model}-${data.id}`].fn);
                 // Delete
-                this.listeners[`del-${data.model}-${data.id}`] = {};
-                this.listeners[`del-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
-                if (data.filter) this.listeners[`del-${data.model}-${data.id}`].filter = data.filter;
-                emitter.on(`del-${data.model}-${data.id}`, this.listeners[`del-${data.model}-${data.id}`].fn);
-                return `Subscribed to put-${data.model}-${data.id}`;
+                this.listeners[`del-${this.id}-${data.model}-${data.id}`] = {};
+                this.listeners[`del-${this.id}-${data.model}-${data.id}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`del-${this.id}-${data.model}-${data.id}`].filter = data.filter;
+                emitter.on(`del-${data.model}-${data.id}`, this.listeners[`del-${this.id}-${data.model}-${data.id}`].fn);
+                return `Subscribed to put-${this.id}-${data.model}-${data.id}`;
             } else {
-                if (this.listeners[`post-${data.model}`]) return `Already subscribed`;
+                if (this.listeners[`post-${this.id}-${data.model}`]) return `Already subscribed`;
                 await security.check_perms(this.user, this.groups, models[data.model], "r");
                 // Post
-                this.listeners[`post-${data.model}`] = {};
-                if (data.filter) this.listeners[`post-${data.model}`].filter = data.filter;
-                this.listeners[`post-${data.model}`].fn = this.sendPost.bind(this);
-                emitter.on(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
+                this.listeners[`post-${this.id}-${data.model}`] = {};
+                if (data.filter) this.listeners[`post-${this.id}-${data.model}`].filter = data.filter;
+                this.listeners[`post-${this.id}-${data.model}`].fn = this.sendPost.bind(this);
+                emitter.on(`post-${data.model}`, this.listeners[`post-${this.id}-${data.model}`].fn);
                 // Put
-                this.listeners[`put-${data.model}`] = {};
-                this.listeners[`put-${data.model}`].fn = this.sendPut.bind(this);
-                if (data.filter) this.listeners[`put-${data.model}`].filter = data.filter;
-                emitter.on(`put-${data.model}`, this.listeners[`put-${data.model}`].fn);
+                this.listeners[`put-${this.id}-${data.model}`] = {};
+                this.listeners[`put-${this.id}-${data.model}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`put-${this.id}-${data.model}`].filter = data.filter;
+                emitter.on(`put-${data.model}`, this.listeners[`put-${this.id}-${data.model}`].fn);
                 // Delete
-                this.listeners[`del-${data.model}`] = {};
-                this.listeners[`del-${data.model}`].fn = this.sendPut.bind(this);
-                if (data.filter) this.listeners[`del-${data.model}`].filter = data.filter;
-                emitter.on(`del-${data.model}`, this.listeners[`del-${data.model}`].fn);
-                return `Subscribed to post-${data.model}`;
+                this.listeners[`del-${this.id}-${data.model}`] = {};
+                this.listeners[`del-${this.id}-${data.model}`].fn = this.sendPut.bind(this);
+                if (data.filter) this.listeners[`del-${this.id}-${data.model}`].filter = data.filter;
+                emitter.on(`del-${data.model}`, this.listeners[`del-${this.id}-${data.model}`].fn);
+                return `Subscribed to post-${this.id}-${data.model}`;
             }
         } catch (err) {
             console.error(err);
@@ -153,18 +153,18 @@ class WSClient {
 
     async unsubscribe(data) {
         if (data.id) {
-            emitter.off(`put-${data.model}-${data._id}`, this.listeners[`put-${data.model}-${data._id}`].fn);
-            delete (this.listeners[`put-${data.model}-${data._id}`]);
-            emitter.off(`del-${data.model}-${data._id}`, this.listeners[`del-${data.model}-${data._id}`].fn);
-            delete (this.listeners[`del-${data.model}-${data._id}`]);
+            emitter.off(`put-${this.id}-${data.model}-${data._id}`, this.listeners[`put-${this.id}-${data.model}-${data._id}`].fn);
+            delete (this.listeners[`put-${this.id}-${data.model}-${data._id}`]);
+            emitter.off(`del-${this.id}-${data.model}-${data._id}`, this.listeners[`del-${this.id}-${data.model}-${data._id}`].fn);
+            delete (this.listeners[`del-${this.id}-${data.model}-${data._id}`]);
             return `Unsubscribed to ${data.model}-${data._id}`;
         } else {
-            emitter.off(`post-${data.model}`, this.listeners[`post-${data.model}`].fn);
-            delete (this.listeners[`post-${data.model}`]);
-            emitter.off(`put-${data.model}`, this.listeners[`put-${data.model}`].fn);
-            delete (this.listeners[`put-${data.model}`]);
-            emitter.off(`del-${data.model}`, this.listeners[`del-${data.model}`].fn);
-            delete (this.listeners[`del-${data.model}`]);
+            emitter.off(`post-${this.id}-${data.model}`, this.listeners[`post-${this.id}-${data.model}`].fn);
+            delete (this.listeners[`post-${this.id}-${data.model}`]);
+            emitter.off(`put-${this.id}-${data.model}`, this.listeners[`put-${this.id}-${data.model}`].fn);
+            delete (this.listeners[`put-${this.id}-${data.model}`]);
+            emitter.off(`del-${this.id}-${data.model}`, this.listeners[`del-${this.id}-${data.model}`].fn);
+            delete (this.listeners[`del-${this.id}-${data.model}`]);
             return `Unsubscribed to ${data.model}`;
         }
     }
@@ -174,10 +174,11 @@ class WSClient {
     }
 
     async sendPost(data) {
-        if (this.listeners[`post-${data.modelname}`] && this.listeners[`post-${data.modelname}`].filter) {
+        if (this.listeners[`post-${this.id}-${data.modelname}`] && this.listeners[`post-${this.id}-${data.modelname}`].filter) {
             let passed = false;
-            for (let filter in this.listeners[`post-${data.modelname}`].filter) {
-                if (data.result[filter].toString() === this.listeners[`post-${data.modelname}`].filter[filter]) passed = true;
+            if (!Object.keys(this.listeners[`post-${this.id}-${data.modelname}`].filter).length) passed = true;
+            for (let filter in this.listeners[`post-${this.id}-${data.modelname}`].filter) {
+                if (data.result[filter].toString() === this.listeners[`post-${this.id}-${data.modelname}`].filter[filter]) passed = true;
             }
             if (!passed) return;
         }
@@ -192,10 +193,11 @@ class WSClient {
     }
 
     async sendPut(data) {
-        if (this.listeners[`put-${data.modelname}`] && this.listeners[`put-${data.modelname}`].filter) {
+        if (this.listeners[`put-${this.id}-${data.modelname}`] && this.listeners[`put-${this.id}-${data.modelname}`].filter) {
             let passed = false;
-            for (let filter in this.listeners[`put-${data.modelname}`].filter) {
-                if (data.result[filter].toString() === this.listeners[`put-${data.modelname}`].filter[filter]) passed = true;
+            if (!Object.keys(this.listeners[`post-${this.id}-${data.modelname}`].filter).length) passed = true;
+            for (let filter in this.listeners[`put-${this.id}-${data.modelname}`].filter) {
+                if (data.result[filter].toString() === this.listeners[`put-${this.id}-${data.modelname}`].filter[filter]) passed = true;
             }
             if (!passed) return;
         }
@@ -210,10 +212,11 @@ class WSClient {
     }
 
     async sendDel(data) {
-        if (this.listeners[`del-${data.modelname}`] && this.listeners[`del-${data.modelname}`].filter) {
+        if (this.listeners[`del-${this.id}-${data.modelname}`] && this.listeners[`del-${this.id}-${data.modelname}`].filter) {
             let passed = false;
-            for (let filter in this.listeners[`del-${data.modelname}`].filter) {
-                if (data.result[filter].toString() === this.listeners[`del-${data.modelname}`].filter[filter]) passed = true;
+            if (!Object.keys(this.listeners[`post-${this.id}-${data.modelname}`].filter).length) passed = true;
+            for (let filter in this.listeners[`del-${this.id}-${data.modelname}`].filter) {
+                if (data.result[filter].toString() === this.listeners[`del-${this.id}-${data.modelname}`].filter[filter]) passed = true;
             }
             if (!passed) return;
         }
