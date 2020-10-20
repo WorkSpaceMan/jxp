@@ -1,7 +1,11 @@
 /* global ObjectId */
+
+// Our general requirements
 const mongoose = require('mongoose');
 const path = require("path");
 const config = require("config");
+const JXPHelper = require('jxp-helper');
+
 
 // Set some global types
 global.ObjectId = mongoose.Schema.Types.ObjectId;
@@ -35,6 +39,8 @@ class Schema extends mongoose.Schema {
         // Action!
         this.setPerms();
         this.generateLinks();
+        // Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
+        if (config.apikey) this.jxphelper = new JXPHelper({ apikey: config.apikey });
     }
 
     setPerms() {
