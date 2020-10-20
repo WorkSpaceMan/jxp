@@ -5,6 +5,11 @@ const mongoose = require('mongoose');
 const path = require("path");
 const config = require("config");
 const JXPHelper = require('jxp-helper');
+// Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
+const jxp_settings = {};
+if (config.apikey) jxp_settings.apikey = config.apikey;
+if (config.server) jxp_settings.server = config.server;
+if (jxp_settings.apikey && jxp_settings.server) global.jxphelper = new JXPHelper(jxp_settings);
 
 
 // Set some global types
@@ -39,13 +44,6 @@ class Schema extends mongoose.Schema {
         // Action!
         this.setPerms();
         this.generateLinks();
-        // Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
-        const jxp_settings = {};
-        if (config.apikey) jxp_settings.apikey = config.apikey;
-        if (config.server) jxp_settings.server = config.server;
-        if (opts.apikey) jxp_settings.apikey = opts.apikey;
-        if (opts.server) jxp_settings.server = opts.server;
-        if (jxp_settings.apikey && jxp_settings.server) this.jxphelper = new JXPHelper(jxp_settings);
     }
 
     setPerms() {
