@@ -40,6 +40,32 @@ Eg:
 ]
 ```
 
+### Aggregations with ObjectIds
+
+Because we can't define ObjectIds in our aggregate functions, we need to send the ObjectIds as strings and then convert them in the pipeline.
+
+Eg.
+```JSON
+[
+    { 
+        "$addFields": {
+            "campaign_id_obj": {
+                "$toObjectId":  "5fd45d05f2b93af8d59588fb"
+            }
+        }
+    },
+    {
+        "$match": {
+            "$expr": {
+                "$eq": [
+                    "$campaign_id", "$campaign_id_obj"
+                ]
+            }
+        }
+    }
+]
+```
+
 ## Bulk Writes
 
 You can bulk writes through the `/bulkwrite/<modelname>` endpoint. Note that authorisation works a little differently - the user must have permissions to Create, Edit, Update and Read.
