@@ -66,6 +66,10 @@ Eg.
 ]
 ```
 
+### AllowDiskUse
+
+To enable allowDiskUse, add `?allowDiskUse=true` as a query parameter to the calling url.
+
 ## Bulk Writes
 
 You can bulk writes through the `/bulkwrite/<modelname>` endpoint. Note that authorisation works a little differently - the user must have permissions to Create, Edit, Update and Read.

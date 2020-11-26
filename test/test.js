@@ -595,6 +595,25 @@ describe('Test', () => {
 				});
 			});
 		});
+		describe("/POST aggregate allowDiskUse", () => {
+			it("it should POST an aggregate query with allowDiskUse", (done) => {
+				var query = [
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+					.post("/aggregate/test?allowDiskUse=true")
+					.auth(init.email, init.password)
+					.send({ query })
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("_id");
+						res.body.data[0].should.have.property("count");
+						res.body.data[0].count.should.eql(1);
+						done();
+					});
+			});
+		});
 		describe("/POST bulkwrite", () => {
 			it("it should make sure we are set up right", done => {
 				chai.request(server)

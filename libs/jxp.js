@@ -436,7 +436,11 @@ const actionAggregate = async (req, res) => {
 	let query = req.body.query;
 	try {
 		let result = {};
-		result.data = await req.Model.aggregate(query);
+		if (req.query.allowDiskUse) {
+			result.data = await req.Model.aggregate(query).allowDiskUse(true).exec();
+		} else {
+			result.data = await req.Model.aggregate(query);
+		}
 		res.result = result;
 		console.timeEnd(opname);
 		res.json(result);
