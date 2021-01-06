@@ -5,6 +5,7 @@ const datamunging = require("./datamunging");
 const login = require("./login");
 const groups = require("./groups");
 const setup = require("./setup");
+const Docs = require("./docs");
 const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
@@ -14,13 +15,11 @@ const ws = require("./ws");
 const cache = new Cache();
 var models = {};
 
-var model_dir = "";
-
 var ops = 0;
 
 // Middleware
 const middlewareModel = (req, res, next) => {
-	var modelname = req.params.modelname;
+	const modelname = req.params.modelname;
 	req.modelname = modelname;
 	// console.log("Model", modelname);
 	try {
@@ -88,7 +87,7 @@ const actionGet = async (req, res, next) => {
 		return result;
 	};
 
-	var filters = {};
+	let filters = {};
 	try {
 		filters = parseFilter(req.query.filter);
 	} catch (err) {
@@ -96,13 +95,13 @@ const actionGet = async (req, res, next) => {
 		res.send(500, { status: "error", error: err, message: err.toString() });
 		return;
 	}
-	var search = parseSearch(req.query.search);
-	for (var i in search) {
+	let search = parseSearch(req.query.search);
+	for (let i in search) {
 		filters[i] = search[i];
 	}
-	var qcount = req.Model.find(filters);
-	var q = req.Model.find(filters);
-	var checkDeleted = [{ _deleted: false }, { _deleted: null }];
+	let qcount = req.Model.find(filters);
+	let q = req.Model.find(filters);
+	let checkDeleted = [{ _deleted: false }, { _deleted: null }];
 	if (!req.query.showDeleted) {
 		qcount.or(checkDeleted);
 		q.or(checkDeleted);
@@ -199,14 +198,14 @@ const actionPost = async (req, res, next) => {
 	const opname = `post ${req.modelname} ${ops++}`;
 	console.time(opname);
 	try {
-		var item = new req.Model();
+		let item = new req.Model();
 		_populateItem(item, datamunging.deserialize(req.body));
 		if (res.user) {
 			item._owner_id = res.user._id;
 			item.__user = res.user;
 		}
 		const result = await item.save();
-		var silence = req.params._silence;
+		let silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
 			req.config.callbacks.post.call(null, req.modelname, result, res.user);
@@ -242,7 +241,7 @@ const actionPut = async (req, res, next) => {
 			item.__user = res.user;
 		}
 		const data = await item.save();
-		var silence = req.params._silence;
+		let silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
 			req.config.callbacks.put.call(null, req.modelname, item, res.user );
@@ -264,7 +263,7 @@ const actionPut = async (req, res, next) => {
 };
 
 const actionDelete = async (req, res, next) => {
-	var silence = req.params._silence;
+	let silence = req.params._silence;
 	if (req.body && req.body._silence) silence = true;
 	const opname = `del ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
@@ -361,8 +360,8 @@ const actionQuery = async (req, res) => {
 	if (!req.query.showDeleted) {
 		query.push(checkDeleted);
 	}
-	var qcount = req.Model.find({ "$and": query });
-	var q = req.Model.find({ "$and": query });
+	let qcount = req.Model.find({ "$and": query });
+	let q = req.Model.find({ "$and": query });
 	try {
 		const count = await qcount.countDocuments();
 		const result = { count };
@@ -504,59 +503,7 @@ const actionBulkWrite = async (req, res) => {
 // 	});
 // };
 
-// Meta
 
-const metaModels = (req, res) => {
-	try {
-		fs.readdir(model_dir, function(err, files) {
-			if (err) {
-				console.trace(err);
-				res.send(500, {
-					status: "error",
-					message: "Error reading models directory " + model_dir
-				});
-				return false;
-			}
-			var models = [];
-			files.forEach(function(file) {
-				var modelname = path.basename(file, ".js").replace("_model", "");
-				try {
-					var modelobj = require(path.join(model_dir, file));
-					if (
-						modelobj.schema &&
-						modelobj.schema.get("_perms") &&
-						(modelobj.schema.get("_perms").admin ||
-							modelobj.schema.get("_perms").user ||
-							modelobj.schema.get("_perms").owner ||
-							modelobj.schema.get("_perms").all)
-					) {
-						var model = {
-							model: modelname,
-							file: file,
-							perms: modelobj.schema.get("_perms")
-						};
-						models.push(model);
-					}
-				} catch (error) {
-					console.error("Error with model " + modelname, error);
-				}
-			});
-			res.send(models);
-		});
-	} catch (err) {
-		console.error(err);
-		return res.send(500, { status: "error", error: err, message: err.toString() });
-	}
-};
-
-const metaModel = (req, res) => {
-	try {
-		res.send(req.Model.schema.paths);
-	} catch (err) {
-		console.error(err);
-		return res.send(500, { status: "error", error: err, message: err.toString() });
-	}
-};
 
 // Utitlities
 
@@ -788,8 +735,6 @@ const JXP = function(options) {
 		}
 	}
 
-	model_dir = config.model_dir;
-
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);
 	let modelnames = files.filter(function(fname) {
@@ -804,6 +749,7 @@ const JXP = function(options) {
 	login.init(config);
 	groups.init(config);
 	ws.init({models});
+	const docs = new Docs({config, models});
 
 	// Set up our API server
 
@@ -998,8 +944,9 @@ const JXP = function(options) {
 	server.del("/groups/:user_id", security.login, security.admin_only, groups.actionDelete, cache.flush.bind(cache));
 
 	/* Meta */
-	server.get("/model/:modelname", middlewareModel, metaModel);
-	server.get("/model", metaModels);
+	server.get("/model/:modelname", middlewareModel, docs.metaModel.bind(docs));
+	server.get("/model", docs.metaModels.bind(docs));
+	server.get("/model/_design", docs.dbDiagram.bind(docs));
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
