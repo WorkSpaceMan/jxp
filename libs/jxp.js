@@ -946,7 +946,10 @@ const JXP = function(options) {
 	/* Meta */
 	server.get("/model/:modelname", middlewareModel, docs.metaModel.bind(docs));
 	server.get("/model", docs.metaModels.bind(docs));
-	server.get("/model/_design", docs.dbDiagram.bind(docs));
+	// server.get("/docs/_design", docs.dbDiagram.bind(docs));
+	server.get("/docs/md/:md_doc", docs.md.bind(docs));
+	server.get("/docs/model/:modelname", docs.model.bind(docs));
+	server.get("/", docs.frontPage.bind(docs));
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);

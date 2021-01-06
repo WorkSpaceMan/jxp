@@ -1,0 +1,56 @@
+extends layout
+
+block content
+    h1= "Model " + model.collection.name
+    hr
+    h2 Permissions
+    if perms
+        table.table
+            thead
+                tr
+                    th User Group
+                    th Create?
+                    th Read?
+                    th Update?
+                    th Delete?
+            tbody
+                each value, key in perms
+                    tr
+                        td= key
+                        td= value.includes("c") ? "x" : ""
+                        td= value.includes("r") ? "x" : ""
+                        td= value.includes("u") ? "x" : ""
+                        td= value.includes("d") ? "x" : ""
+    else
+        .alert.alert-warning No permissions defined for this model, it will not be accessible through the API
+
+    hr
+    h2 Fields
+    table.table
+        thead
+            tr
+                th Name
+                th Type
+                th Link
+                th Maps To
+                th Default
+                th Indexed?
+                th Unique?
+        tbody
+            each fieldname in fields
+                - let field = model.schema.paths[fieldname]
+                if (field.path)
+                    tr
+                        td= field.path
+                        td= field.instance
+                        td= field.options.link
+                        td= field.options.map_to
+                        td= field.defaultValue
+                        td= (field.options.index) ? "x" : ""
+                        td= (field.options.unique) ? "x" : ""
+    hr
+    h1 Raw definition
+    each fieldname in fields
+        - let field = model.schema.paths[fieldname]
+        pre.pre= JSON.stringify(field, null, "\t")
+

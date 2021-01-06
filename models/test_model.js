@@ -2,7 +2,7 @@
 
 const TestSchema = new JXPSchema({
     foo: String, // A normal string
-    bar: { type: String, unique: true, index: true }, // Ah! Some business logic!
+    bar: { type: String, unique: true, index: true, default: "Some Default" }, // Ah! Some business logic!
     user_id: { type: ObjectId, link: "User" },
     yack: Mixed, // We can put anything in here, including objects
     shmack: [String], // We can store arrays

@@ -17,5 +17,11 @@ JXP is an opinionated API framework that you can change just by defining schemas
 * Lightning-fast
 * Logging, done
 * Stateless
+* Websocket Integration
 
+## Links
 
+* [JXP on NPM](https://www.npmjs.com/package/jxp)
+* [GitHub Repository](https://github.com/j-norwood-young/jexpress-2)
+* [JXP Helper](https://www.npmjs.com/package/jxp-helper) - A super-helpful client library for JXP
+* [Documentation on ReadTheDocs](https://jxp.readthedocs.io)
