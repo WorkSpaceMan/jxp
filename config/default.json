@@ -1,5 +1,5 @@
 {
-	"port": 4001,
+	"port": 4002,
 	"mongo": {
 		"connection_string": "mongodb://localhost/test",
 		"options": {}
