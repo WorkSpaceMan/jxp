@@ -810,7 +810,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache(config.cache_timeout),
+		// apicache(config.cache_timeout),
 		actionGet,
 		outputJSON
 	);
@@ -820,7 +820,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.getOne,
-		apicache(config.cache_timeout),
+		// apicache(config.cache_timeout),
 		actionGetOne
 	);
 	server.post(
@@ -864,7 +864,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache(config.cache_timeout),
+		// apicache(config.cache_timeout),
 		actionGet,
 		outputCSV
 	);
@@ -876,7 +876,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache(config.cache_timeout),
+		// apicache(config.cache_timeout),
 		actionQuery,
 	);
 
@@ -886,7 +886,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache(config.cache_timeout),
+		// apicache(config.cache_timeout),
 		actionAggregate
 	);
 
