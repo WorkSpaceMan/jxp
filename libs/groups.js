@@ -1,4 +1,4 @@
-const Groups = null;
+var Groups = null;
 
 const init = config => {
 	const path = require("path");
