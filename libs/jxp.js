@@ -720,7 +720,8 @@ const JXP = function(options) {
 			put: (modelname, id, data, result) => {},
 			// eslint-disable-next-line no-unused-vars
 			delete: (modelname, id, data, result) => {}
-		}
+		},
+		cache_timeout: "5 minutes",
 	};
 
 	//Override config with passed in options
@@ -809,7 +810,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache("1 minute"),
+		apicache(config.cache_timeout),
 		actionGet,
 		outputJSON
 	);
@@ -819,7 +820,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.getOne,
-		apicache("1 minute"),
+		apicache(config.cache_timeout),
 		actionGetOne
 	);
 	server.post(
@@ -863,7 +864,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache("1 minute"),
+		apicache(config.cache_timeout),
 		actionGet,
 		outputCSV
 	);
@@ -875,7 +876,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache("1 minute"),
+		apicache(config.cache_timeout),
 		actionQuery,
 	);
 
@@ -885,7 +886,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		apicache("1 minute"),
+		apicache(config.cache_timeout),
 		actionAggregate
 	);
 
