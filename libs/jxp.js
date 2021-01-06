@@ -9,10 +9,10 @@ const Docs = require("./docs");
 const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
-const Cache = require("./cache");
 const ws = require("./ws");
+const Apicache = require("apicache");
+const apicache = Apicache.middleware;
 
-const cache = new Cache();
 var models = {};
 
 var ops = 0;
@@ -45,6 +45,13 @@ const middlewareCheckAdmin = (req, res, next) => {
 	req.params.admin = false;
 	next();
 };
+
+const apicacheClear = (req, res, next) => {
+	let s = "/api";
+	if (req.params.modelname) s+=`/${req.params.modelname}`;
+	if (req.params.item_id) s+=`/${req.params.item_id}`;
+	Apicache.clear(s);
+}
 
 // Outputs whatever is in res.result as JSON
 const outputJSON = (req, res) => {
@@ -456,7 +463,7 @@ const actionAggregate = async (req, res) => {
 };
 
 // Actions (verbs)
-const actionBulkWrite = async (req, res) => {
+const actionBulkWrite = async (req, res, next) => {
 	if (!req.body || !Array.isArray(req.body)) {
 		console.error("query missing or not of type array")
 		return res.send(500, { status: "error", message: "query missing or not of type array" });
@@ -471,6 +478,7 @@ const actionBulkWrite = async (req, res) => {
 		res.result = result;
 		console.timeEnd(opname);
 		res.json(result);
+		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		console.timeEnd(opname);
@@ -801,7 +809,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		cache.read.bind(cache),
+		apicache("1 minute"),
 		actionGet,
 		outputJSON
 	);
@@ -811,7 +819,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.getOne,
-		cache.read.bind(cache),
+		apicache("1 minute"),
 		actionGetOne
 	);
 	server.post(
@@ -825,7 +833,7 @@ const JXP = function(options) {
 		(req, res, next) => {
 			next();
 		},
-		cache.flush.bind(cache)
+		apicacheClear,
 	);
 	server.put(
 		"/api/:modelname/:item_id",
@@ -836,7 +844,7 @@ const JXP = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.put,
 		actionPut,
-		cache.flush.bind(cache)
+		apicacheClear,
 	);
 	server.del(
 		"/api/:modelname/:item_id",
@@ -845,7 +853,7 @@ const JXP = function(options) {
 		security.auth,
 		config.pre_hooks.delete,
 		actionDelete,
-		cache.flush.bind(cache)
+		apicacheClear,
 	);
 
 	// CSV endpoints
@@ -855,7 +863,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		cache.read.bind(cache),
+		apicache("1 minute"),
 		actionGet,
 		outputCSV
 	);
@@ -867,7 +875,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		cache.read.bind(cache),
+		apicache("1 minute"),
 		actionQuery,
 	);
 
@@ -877,7 +885,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		cache.read.bind(cache),
+		apicache("1 minute"),
 		actionAggregate
 	);
 
@@ -887,8 +895,8 @@ const JXP = function(options) {
 		security.login,
 		security.bulkAuth,
 		config.pre_hooks.get,
-		cache.read.bind(cache),
-		actionBulkWrite
+		actionBulkWrite,
+		apicacheClear
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
@@ -935,7 +943,7 @@ const JXP = function(options) {
 		security.admin_only,
 		_fixArrays,
 		groups.actionPut,
-		cache.flush.bind(cache)
+		apicacheClear,
 	);
 	server.post(
 		"/groups/:user_id",
@@ -943,10 +951,10 @@ const JXP = function(options) {
 		security.admin_only,
 		_fixArrays,
 		groups.actionPost,
-		cache.flush.bind(cache)
+		apicacheClear,
 	);
 	server.get("/groups/:user_id", security.login, groups.actionGet);
-	server.del("/groups/:user_id", security.login, security.admin_only, groups.actionDelete, cache.flush.bind(cache));
+	server.del("/groups/:user_id", security.login, security.admin_only, groups.actionDelete, apicacheClear);
 
 	/* Meta */
 	server.get("/model/:modelname", middlewareModel, docs.metaModel.bind(docs));
@@ -958,11 +966,15 @@ const JXP = function(options) {
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
-	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, cache.flush.bind(cache));
+	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, apicacheClear);
 
 	/* Cache */
-	server.get("/cache", (req, res) => {
-		res.send(cache.status());
+	server.get("/cache/performance", (req, res) => {
+		res.send(Apicache.getPerformance());
+	})
+
+	server.get("/cache/index", (req, res) => {
+		res.send(Apicache.getIndex());
 	})
 
 	/* Websocket */

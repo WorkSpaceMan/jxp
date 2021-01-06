@@ -43,3 +43,8 @@
 ## v2.5.x
 
 - Documentation system
+
+## 2.6.x
+
+- Replace home-grown cache with apicache
+- Major performance boost when getting large collections (50secs to < 1 sec)
