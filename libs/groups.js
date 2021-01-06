@@ -1,11 +1,11 @@
-var Groups = null;
+const Groups = null;
 
-var init = config => {
-	var path = require("path");
+const init = config => {
+	const path = require("path");
 	Groups = require(path.join(config.model_dir, 'usergroups_model'));
 };
 
-var actionPut = async (req, res) => {
+const actionPut = async (req, res) => {
 	const user_id = req.params.user_id;
 	const group = req.body.group;
 	if (!group) {
@@ -44,7 +44,7 @@ var actionPut = async (req, res) => {
 	}
 };
 
-var actionPost = async (req, res) => {
+const actionPost = async (req, res) => {
 	const user_id = req.params.user_id;
 	const group = req.body.group;
 	if (!group) {
@@ -83,7 +83,7 @@ var actionPost = async (req, res) => {
 	}
 };
 
-var actionGet = async (req, res) => {
+const actionGet = async (req, res) => {
 	var user_id = req.params.user_id;
 	if (!user_id) {
 		console.error("user_id required");
@@ -104,7 +104,7 @@ var actionGet = async (req, res) => {
 	}
 };
 
-var actionDelete = async (req, res) => {
+const actionDelete = async (req, res) => {
 	const user_id = req.params.user_id;
 	const group = req.query.group;
 	if (!group) {
@@ -122,7 +122,7 @@ var actionDelete = async (req, res) => {
 			res.send(400, "User not found");
 			return;
 		}
-		var i = userGroup.groups.indexOf(group);
+		let i = userGroup.groups.indexOf(group);
 		if (i > -1) {
 			userGroup.groups.splice(i, 1);
 		}
@@ -135,9 +135,9 @@ var actionDelete = async (req, res) => {
 };
 
 module.exports = {
-	init: init,
-	actionPut: actionPut,
-	actionPost: actionPost,
-	actionGet: actionGet,
-	actionDelete: actionDelete
+	init,
+	actionPut,
+	actionPost,
+	actionGet,
+	actionDelete
 };
