@@ -27,33 +27,34 @@
     "url": "https://github.com/j-norwood-young/jexpress-2/issues"
   },
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
-    "commander": "^6.1.0",
-    "config": "^3.3.2",
-    "json2csv": "^5.0.3",
+    "commander": "^6.2.1",
+    "config": "^3.3.3",
+    "json2csv": "^5.0.5",
     "jsonwebtoken": "^8.5.1",
-    "jxp-helper": "^1.3.2",
+    "jxp-helper": "^1.3.5",
     "memcached": "^2.2.2",
     "mkdirp": "^1.0.4",
-    "mongoose": "5.10.9",
+    "mongoose": "5.11.10",
     "mongoose-friendly": "^0.1.4",
     "morgan": "^1.10.0",
-    "nodemailer": "^6.4.14",
+    "nodemailer": "^6.4.17",
     "nodemailer-smtp-transport": "^2.7.4",
     "path": "^0.12.7",
+    "pug": "^3.0.0",
     "querystring": "^0.2.0",
     "rand-token": "^1.0.1",
     "readline-sync": "^1.4.10",
     "restify": "^8.5.1",
     "restify-cors-middleware": "^1.1.1",
-    "underscore": "^1.11.0",
-    "ws": "^7.3.1"
+    "underscore": "^1.12.0",
+    "ws": "^7.4.2"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
-    "mocha": "^8.2.0",
+    "mocha": "^8.2.1",
     "should": "^13.2.3"
   }
 }
