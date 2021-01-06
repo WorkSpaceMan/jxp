@@ -20,6 +20,9 @@ class Docs {
 
     metaModel(req, res) {
         try {
+            if (!req.Model) {
+                return res.send(404, { status: "error", error: "Model not found" })
+            }
             res.send(req.Model.schema.paths);
         } catch (err) {
             console.error(err);
@@ -28,7 +31,7 @@ class Docs {
     }
 
     dbDiagram(req, res) {
-        res.send("models");
+        res.send(this.models);
     }
 }
 
