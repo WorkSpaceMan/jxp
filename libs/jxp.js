@@ -86,7 +86,6 @@ const actionGet = async (req, res, next) => {
 		}
 		return result;
 	};
-
 	let filters = {};
 	try {
 		filters = parseFilter(req.query.filter);
@@ -99,20 +98,26 @@ const actionGet = async (req, res, next) => {
 	for (let i in search) {
 		filters[i] = search[i];
 	}
+	let countquery = filters;
 	let qcount = req.Model.find(filters);
 	let q = req.Model.find(filters);
 	let checkDeleted = [{ _deleted: false }, { _deleted: null }];
 	if (!req.query.showDeleted) {
+		countquery = Object.assign({ $or: checkDeleted }, countquery);
 		qcount.or(checkDeleted);
 		q.or(checkDeleted);
 	}
 	if (req.query.search) {
 		// console.log({ search: req.query.search });
 		q = req.Model.find({ $text: { $search: req.query.search }}, { score : { $meta: "textScore" } }).sort( { score: { $meta : "textScore" } } );
+		countquery = Object.assign({ $text: { $search: req.query.search }}, countquery);
 		qcount = req.Model.find({ $text: { $search: req.query.search }});
 	}
 	try {
-		const count = await qcount.countDocuments();
+		let count = await req.Model.estimatedDocumentCount();
+		if (count < 100000 && Object.keys(countquery).length !== 0) {
+			count = await qcount.countDocuments();
+		}
 		const result = { count };
 		const limit = parseInt(req.query.limit);
 		if (limit) {
