@@ -1,10 +1,13 @@
 const rand_token = require("rand-token");
 const path = require("path");
 const security = require("./security");
-const config = require("config");
-config.model_dir = config.model_dir || path.join(process.cwd(), "./models");
-global.JXPSchema = require("./schema");
-const User = require(path.join(config.model_dir, "user_model"));
+var User = null;
+var connection_string = null;
+
+const init = config => {
+	User = require(path.join(config.model_dir, "user_model"));
+	connection_string = config.mongo.connection_string;
+}
 
 const checkUserDoesNotExist = async (req, res, next) => {
 	try {
@@ -53,7 +56,7 @@ const setup = async (req, res) => {
 const data_setup = async (req, res) => {
 	try {
 		const { MongoClient } = require("mongodb");
-		const client = new MongoClient(config.mongo.connection_string);
+		const client = new MongoClient(connection_string);
 		await client.connect();
 		const db = client.db(client.s.options.dbName);
 		const data = req.body;
@@ -70,6 +73,7 @@ const data_setup = async (req, res) => {
 }
 
 module.exports = {
+	init,
 	checkUserDoesNotExist,
 	setup,
 	data_setup

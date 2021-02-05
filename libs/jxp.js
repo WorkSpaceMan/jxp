@@ -678,12 +678,8 @@ const JXP = function(options) {
 
 	//Set up config with default
 	var config = {
-		model_dir: path.join(path.dirname(process.argv[1]), "../models"),
-		mongo: {
-			server: "localhost",
-			db: "openmembers"
-		},
-		url: "http://localhost:3001",
+		model_dir: path.join(__dirname, "../models"),
+		mongo: options.mongo,
 		callbacks: {
 			put: function() {},
 			post: function() {},
@@ -723,7 +719,6 @@ const JXP = function(options) {
 		},
 		cache_timeout: "5 minutes",
 	};
-
 	//Override config with passed in options
 
 	for (let i in options) {
@@ -759,6 +754,7 @@ const JXP = function(options) {
 		models[modelname] = require(path.join(config.model_dir, fname));
 	});
 
+	setup.init(config);
 	security.init(config);
 	login.init(config);
 	groups.init(config);
