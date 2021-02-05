@@ -9,10 +9,8 @@ const User = require(path.join(config.model_dir, "user_model"));
 const checkUserDoesNotExist = async (req, res, next) => {
 	try {
 		const count = await User.countDocuments();
-		console.log({count});
 		if (count) {
 			const users = await User.find();
-			console.log(users);
 			return res.send(403, { status: "failed", error: "Cannot setup if user exists" });
 		}
 		return next();
