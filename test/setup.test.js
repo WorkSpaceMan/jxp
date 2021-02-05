@@ -35,7 +35,6 @@ describe('Setup', () => {
 				.post("/setup")
 				.send({ email: init.email, password: init.password })
 				.end((err, res) => {
-                    console.log(res.body);
 					res.should.have.status(200);
 					res.body.status.should.equal('success');
                     res.body.name.should.equal('admin');
