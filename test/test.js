@@ -16,7 +16,10 @@ var server = require("../bin/server");
 chai.use(chaiHttp);
 
 describe('Test', () => {
-	before = init.init;
+	before(async function() {
+		await init.init();
+    })
+
 
 	var apikey = null;
 	var token = null;

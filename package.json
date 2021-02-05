@@ -1,12 +1,12 @@
 {
   "name": "jxp",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "2.6.1",
+  "version": "2.6.2",
   "private": false,
   "main": "libs/jxp.js",
   "scripts": {
     "start": "node bin/server.js",
-    "test": "mocha --timeout 10000",
+    "test": "mocha --timeout 10000 -b --exit",
     "wstest": "mocha test/wstest"
   },
   "bin": {

@@ -34,3 +34,60 @@ Then include in your project:
 
 `const JXP = require("jxp")`
 
+## Setup
+
+NOTE: All the `/setup` endpoints will only run if the user table is empty to ensure that you can't overwrite an existing installation.
+
+You can set up a first user using the `/setup` endpoint, with the following default properties that you can override:
+```js
+{
+    email: "admin@example.com",
+    password: "a randomly generated password",
+    name: "admin"
+}
+```
+
+Response: 
+```js
+{
+  status: "success",
+  name: "admin",
+  email: "admin@example.com",
+  password: "randompassword"
+}
+```
+
+You can scaffold an entire system by using the `/setup/data` endpoint. This writes directly to the database, and doesn't go through the API, so be careful -- features like the automatic password encryption will not take effect. You also need to use the collection names, not the model names, eg. the `user` model becomes `users`.
+
+```js
+{
+   users: [
+       { email: init.admin_email, password: init.admin_password, name: "Admin User", admin: true, urlid: "admin-user" },
+       { email: init.email, password: init.password, name: "Jeff", admin: false, urlid: "jeff" },
+    ],
+    tests: [
+        { foo: "setup_data", bar: "setup_data" }
+    ]
+}
+```
+
+Response:
+```js
+{
+  status: 'success',
+  results: {
+    users: {
+      result: [Object],
+      ops: [Array],
+      insertedCount: 2,
+      insertedIds: [Object]
+    },
+    tests: {
+      result: [Object],
+      ops: [Array],
+      insertedCount: 1,
+      insertedIds: [Object]
+    }
+  }
+}
+```

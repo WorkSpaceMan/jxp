@@ -967,7 +967,8 @@ const JXP = function(options) {
 
 	/* Setup */
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
-	server.post("/setup", setup.checkUserDoesNotExist, setup.setup, apicacheClear);
+	server.post("/setup", setup.checkUserDoesNotExist, setup.setup);
+	server.post("/setup/data", setup.checkUserDoesNotExist, setup.data_setup);
 
 	/* Cache */
 	server.get("/cache/performance", (req, res) => {
