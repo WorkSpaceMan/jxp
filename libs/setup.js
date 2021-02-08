@@ -56,9 +56,8 @@ const setup = async (req, res) => {
 const data_setup = async (req, res) => {
 	try {
 		const { MongoClient } = require("mongodb");
-		const client = new MongoClient(connection_string);
-		await client.connect();
-		const db = client.db(client.s.options.dbName);
+		const client = await MongoClient.connect(connection_string);
+		const db = client.db(client.databaseName);
 		const data = req.body;
 		const results = {};
 		for (let collection in data) {
