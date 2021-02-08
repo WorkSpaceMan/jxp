@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const path = require("path");
 const config = require("config");
 const JXPHelper = require('jxp-helper');
+const modeldir = require("./modeldir");
+
 // Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
 const jxp_settings = {};
 if (config.apikey) jxp_settings.apikey = config.apikey;
@@ -17,7 +19,7 @@ global.ObjectId = mongoose.Schema.Types.ObjectId;
 global.Mixed = mongoose.Schema.Types.Mixed;
 // Add this to the top of your model to avoid eslint warnings: /* global ObjectId Mixed */
 
-const model_dir = config.model_dir || path.join(__dirname, "../models");
+const model_dir = modeldir.findModelDir(path.dirname(process.argv[1]));
 
 const getModelFileFromRef = ref => {
     return path.join(model_dir, `${String(ref).toLowerCase()}_model`);

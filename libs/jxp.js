@@ -12,7 +12,7 @@ const morgan = require("morgan");
 const ws = require("./ws");
 const Apicache = require("apicache");
 const apicache = Apicache.middleware;
-const glob = require("glob");
+const modeldir = require("./modeldir");
 
 var models = {};
 
@@ -674,19 +674,9 @@ const changeUrlParams = (req, key, val) => {
 
 global.JXPSchema = require("./schema");
 
-const findModelDir = (dir) => {
-	if (dir === "/") throw("Model dir not found");
-	let result = glob.sync(path.join(dir, "**/user_model.js"));
-	if (result.length) {
-		return path.dirname(result.pop());
-	}
-	const found = findModelDir(path.join(dir, "../"));
-	return found;
-}
-
 const JXP = function(options) {
 	const server = restify.createServer();
-	const model_dir = findModelDir(path.dirname(process.argv[1]));
+	const model_dir = modeldir.findModelDir(path.dirname(process.argv[1]));
 	console.log({model_dir});
 	//Set up config with default
 	var config = {
