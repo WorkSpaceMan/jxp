@@ -252,6 +252,7 @@ const actionPut = async (req, res, next) => {
 		_versionItem(item);
 		if (res.user) {
 			item.__user = res.user;
+			item._updated_by_id = res.user._id;
 		}
 		const data = await item.save();
 		let silence = req.params._silence;

@@ -24,6 +24,7 @@ describe('Test', () => {
 	var apikey = null;
 	var token = null;
 	var refresh_token = null;
+	var user_id = null;
 
 	describe("login", () => {
 		it("it should login", (done) => {
@@ -40,6 +41,7 @@ describe('Test', () => {
 					res.body.should.have.property('refresh_token_expires');
 					apikey = res.body.apikey;
 					token = res.body.token;
+					user_id = res.body.user_id;
 					done();
 				});
 		});
@@ -225,6 +227,7 @@ describe('Test', () => {
 				res.body.data.should.have.property("_id");
 				res.body.data.should.have.property("foo")
 				res.body.data.foo.should.eql("Foo1");
+				res.body.data._updated_by_id.should.eql(user_id);
 				done();
 			});
 		});
