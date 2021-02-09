@@ -61,10 +61,11 @@ const data_setup = async (req, res) => {
 		const db = client.db(client.databaseName);
 		const data = req.body;
 		const results = {};
-		const _id_reg = new RegExp(".+_id$");
+		const _id_reg = new RegExp("_id$");
 		for (let collection in data) {
 			for (let row of data[collection]) {
 				row.createdAt = new Date();
+				row._deleted = false;
 				// Ensure all _id's are of type id
 				for (let field in row) {
 					if (_id_reg.test(field)) {
