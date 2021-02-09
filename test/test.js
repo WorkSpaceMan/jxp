@@ -716,4 +716,82 @@ describe('Test', () => {
 				});
 		});
 	});
+
+	describe("Delete", () => {
+		it("should soft-delete an item", (done) => {
+			chai.request(server)
+				.del(`/api/test/${post_id}`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.status.should.equal('ok');
+					done();
+				});
+		});
+		it("should show item as deleted", (done) => {
+			chai.request(server)
+				.get(`/api/test/${post_id}`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(404);
+					res.body.message.should.equal('Document is deleted');
+					res.body.status.should.equal('error');
+					done();
+				});
+		});
+		it("should show item", (done) => {
+			chai.request(server)
+				.get(`/api/test/${post_id}?showDeleted=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data._deleted.should.equal(true);
+					res.body.data.bar.should.equal("Bar");
+					done();
+				});
+		});
+		it("should undeleted item", (done) => {
+			chai.request(server)
+				.put(`/api/test/${post_id}`)
+				.send({
+					_deleted: false
+				})
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.status.should.equal('ok');
+					done();
+				});
+		});
+		it("should show item", (done) => {
+			chai.request(server)
+				.get(`/api/test/${post_id}`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data._deleted.should.equal(false);
+					res.body.data.bar.should.equal("Bar");
+					done();
+				});
+		});
+		it("should permanently delete item", (done) => {
+			chai.request(server)
+				.del(`/api/test/${post_id}?_permaDelete=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.status.should.equal('ok');
+					done();
+				});
+		});
+		it("should fail to find item", (done) => {
+			chai.request(server)
+				.get(`/api/test/${post_id}?showDeleted=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(404);
+					done();
+				});
+		});
+	});
 });

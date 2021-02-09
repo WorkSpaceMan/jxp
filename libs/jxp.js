@@ -200,9 +200,9 @@ const actionGetOne = async (req, res) => {
 		console.error(new Date(), err);
 		console.timeEnd(opname);
 		if (err.msg) {
-			res.send(500, { status: "error", message: err.msg });
+			res.send(err.code || 500, { status: "error", message: err.msg });
 		} else {
-			res.send(500, { status: "error", message: err.toString() });
+			res.send(err.code || 500, { status: "error", message: err.toString() });
 		}
 	}
 };
@@ -276,8 +276,8 @@ const actionPut = async (req, res, next) => {
 };
 
 const actionDelete = async (req, res, next) => {
-	let silence = req.params._silence;
-	if (req.body && req.body._silence) silence = true;
+	const permaDelete = req.query._permaDelete;
+	let silence = req.query._silence || (req.body && req.body._silence);
 	const opname = `del ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
@@ -290,7 +290,7 @@ const actionDelete = async (req, res, next) => {
 		if (res.user) {
 			item.__user = res.user;
 		}
-		if (Object.prototype.hasOwnProperty.call(req.Model.schema.paths, "_deleted")) {
+		if (Object.prototype.hasOwnProperty.call(req.Model.schema.paths, "_deleted") && !(permaDelete)) {
 			item._deleted = true;
 			_versionItem(item);
 			await item.save();
@@ -543,11 +543,11 @@ const getOne = async (Model, item_id, params) => {
 	try {
 		var item = await query.exec();
 		if (!item) {
-			console.error("Could not find document");
+			// console.error("Could not find document");
 			return Promise.reject({ code: 404, msg: "Could not find document" });
 		}
 		if (item._deleted && !params.showDeleted) {
-			console.error("Document is deleted");
+			// console.error("Document is deleted");
 			return Promise.reject({ code: 404, msg: "Document is deleted" });
 		}
 		item = item.toObject();
@@ -677,7 +677,6 @@ global.JXPSchema = require("./schema");
 const JXP = function(options) {
 	const server = restify.createServer();
 	const model_dir = modeldir.findModelDir(path.dirname(process.argv[1]));
-	console.log({model_dir});
 	//Set up config with default
 	var config = {
 		model_dir: path.join(model_dir),

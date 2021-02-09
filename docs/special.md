@@ -21,3 +21,7 @@ If you replace `/api` with `/csv` on an endpoint, you will get the data in comma
 ## Soft deleting
 
 Instead of deleting records from the database, we mark them as `_deleted: true`. In this case, the API will report them deleted if you try to GET them. If you need to see the deleted items, add `?showDeleted=true` to your url. If you want to undelete an item, PUT `_deleted: false` to the record.
+
+## Permanently deleting
+
+You can permanently delete a document by passing the parameter `?_permaDelete=1` to the endpoint.
