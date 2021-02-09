@@ -36,7 +36,8 @@ class Schema extends mongoose.Schema {
         // Set default defiitions
         definition = Object.assign({
             _deleted: { type: Boolean, default: false, index: true },
-            _owner_id: { type: ObjectId, link: "User", map_to: "_owner" }
+            _owner_id: { type: ObjectId, link: "User", map_to: "_owner" },
+            _updated_by_id: { type: ObjectId, link: "User", map_to: "_updated_by" },
         }, definition);
         // construct our parent
         super(definition, opts);
@@ -59,6 +60,7 @@ class Schema extends mongoose.Schema {
     }
 
     generateLinks() {
+        let loaded_files = [];
         // Find the links in our definitions and create virtuals for non-destructive populating
         // Example: link_id: { type: ObjectId, link: "link", }
         // Example with a custom key: link_id: { type: ObjectId, link: "link", map_to: "custom_name" }
@@ -71,7 +73,10 @@ class Schema extends mongoose.Schema {
             }
             if (!def.link) continue;
             const virtual_name = def.map_to || def.virtual || String(def.link).toLowerCase();
-            require(getModelFileFromRef(def.link));
+            if (!loaded_files.includes(def.link)) {
+                require(getModelFileFromRef(def.link));
+                loaded_files.push(def.link);
+            }
             this.virtual(virtual_name, {
                 ref: def.link,
                 localField: key,
