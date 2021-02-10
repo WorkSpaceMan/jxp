@@ -10,8 +10,6 @@ const querystring = require("querystring");
 const fs = require("fs");
 const morgan = require("morgan");
 const ws = require("./ws");
-const Apicache = require("apicache");
-const apicache = Apicache.middleware;
 const modeldir = require("./modeldir");
 
 var models = {};
@@ -46,13 +44,6 @@ const middlewareCheckAdmin = (req, res, next) => {
 	req.params.admin = false;
 	next();
 };
-
-const apicacheClear = (req, res, next) => {
-	let s = "/api";
-	if (req.params.modelname) s+=`/${req.params.modelname}`;
-	if (req.params.item_id) s+=`/${req.params.item_id}`;
-	Apicache.clear(s);
-}
 
 // Outputs whatever is in res.result as JSON
 const outputJSON = (req, res) => {
@@ -808,7 +799,6 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		// apicache(config.cache_timeout),
 		actionGet,
 		outputJSON
 	);
@@ -818,7 +808,6 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.getOne,
-		// apicache(config.cache_timeout),
 		actionGetOne
 	);
 	server.post(
@@ -832,7 +821,6 @@ const JXP = function(options) {
 		(req, res, next) => {
 			next();
 		},
-		apicacheClear,
 	);
 	server.put(
 		"/api/:modelname/:item_id",
@@ -843,7 +831,6 @@ const JXP = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.put,
 		actionPut,
-		apicacheClear,
 	);
 	server.del(
 		"/api/:modelname/:item_id",
@@ -852,7 +839,6 @@ const JXP = function(options) {
 		security.auth,
 		config.pre_hooks.delete,
 		actionDelete,
-		apicacheClear,
 	);
 
 	// CSV endpoints
@@ -862,7 +848,6 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		// apicache(config.cache_timeout),
 		actionGet,
 		outputCSV
 	);
@@ -874,7 +859,6 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		// apicache(config.cache_timeout),
 		actionQuery,
 	);
 
@@ -884,7 +868,6 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		// apicache(config.cache_timeout),
 		actionAggregate
 	);
 
@@ -895,7 +878,6 @@ const JXP = function(options) {
 		security.bulkAuth,
 		config.pre_hooks.get,
 		actionBulkWrite,
-		apicacheClear
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
@@ -942,7 +924,6 @@ const JXP = function(options) {
 		security.admin_only,
 		_fixArrays,
 		groups.actionPut,
-		apicacheClear,
 	);
 	server.post(
 		"/groups/:user_id",
@@ -950,10 +931,9 @@ const JXP = function(options) {
 		security.admin_only,
 		_fixArrays,
 		groups.actionPost,
-		apicacheClear,
 	);
 	server.get("/groups/:user_id", security.login, groups.actionGet);
-	server.del("/groups/:user_id", security.login, security.admin_only, groups.actionDelete, apicacheClear);
+	server.del("/groups/:user_id", security.login, security.admin_only, groups.actionDelete);
 
 	/* Meta */
 	server.get("/model/:modelname", middlewareModel, docs.metaModel.bind(docs));
@@ -967,15 +947,6 @@ const JXP = function(options) {
 	server.get("/setup", setup.checkUserDoesNotExist, setup.setup);
 	server.post("/setup", setup.checkUserDoesNotExist, setup.setup);
 	server.post("/setup/data", setup.checkUserDoesNotExist, setup.data_setup);
-
-	/* Cache */
-	server.get("/cache/performance", (req, res) => {
-		res.send(Apicache.getPerformance());
-	})
-
-	server.get("/cache/index", (req, res) => {
-		res.send(Apicache.getIndex());
-	})
 
 	/* Websocket */
 	server.on("upgrade", ws.upgrade)
