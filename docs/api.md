@@ -92,6 +92,8 @@ You can paginate with the `page=<page number>` parameter. Page count starts at 1
 
 If you go beyond the total number of pages, you will get an empty `data` array.
 
+*Note* If you have more than 100,000 items in your collection, `count` will return as -1, else doing a full-dataset filtered count becomes too expensive and can cause serious performance issues.
+
 ### Populating
 
 This is one of the most useful features of this API. You can automatically populate the results with linked objects.

@@ -116,6 +116,8 @@ const actionGet = async (req, res, next) => {
 		let count = await req.Model.estimatedDocumentCount();
 		if (count < 100000 && Object.keys(countquery).length !== 0) {
 			count = await qcount.countDocuments();
+		} else {
+			count = -1;
 		}
 		const result = { count };
 		const limit = parseInt(req.query.limit);
@@ -269,8 +271,11 @@ const actionPut = async (req, res, next) => {
 
 const actionDelete = async (req, res, next) => {
 	const permaDelete = req.query._permaDelete;
+	const cascade = req.query._cascade;
 	let silence = req.query._silence || (req.body && req.body._silence);
 	const opname = `del ${req.modelname}/${req.params.item_id} ${ops++}`;
+	console.log(req.Model.modelName);
+	// console.dir( models.apikey.schema.definition );
 	console.time(opname);
 	try {
 		let item = await req.Model.findById(req.params.item_id);
@@ -278,6 +283,38 @@ const actionDelete = async (req, res, next) => {
 			console.error(new Date(), "Couldn't find item for delete");
 			res.send(404, "Could not find document");
 			return;
+		}
+		// Get linked models
+		const linked_models = [];
+		const link_modelnames = Object.getOwnPropertyNames(models);
+		for (let link_modelname of link_modelnames) {
+			const link_definitions = Object.getOwnPropertyNames(models[link_modelname].schema.definition);
+			for (let link_definition of link_definitions) {
+				if (req.Model.modelName === models[link_modelname].schema.definition[link_definition].link) {
+					linked_models.push({
+						modelname: link_modelname,
+						field: link_definition
+					});
+				}
+			}
+		}
+		// Test that none of our linked models have this ID we're trying to delete
+		for (let linked_model of linked_models) {
+			const q = {};
+			q[linked_model.field] = item._id;
+			const check = await models[linked_model.modelname].countDocuments(q);
+			if (check) {
+				if (cascade) {
+					if (permaDelete) {
+						await models[linked_model.modelname].deleteMany(q);
+					} else {
+						await models[linked_model.modelname].updateMany(q, { _deleted: true });
+					}
+				} else {
+					res.send(409, { status: "error", message: `Parent link item exists in ${linked_model.modelname}/${linked_model.field}` });
+					return;
+				}
+			}
 		}
 		if (res.user) {
 			item.__user = res.user;

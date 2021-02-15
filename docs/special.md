@@ -25,3 +25,9 @@ Instead of deleting records from the database, we mark them as `_deleted: true`.
 ## Permanently deleting
 
 You can permanently delete a document by passing the parameter `?_permaDelete=1` to the endpoint.
+
+## Cascade deleting
+
+You can delete all of the rows that reference a row you're deleting by adding `?_cascade=1` to your endpoint.
+
+You can combine permanent and cascade deleting.

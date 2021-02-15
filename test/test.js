@@ -796,5 +796,151 @@ describe('Test', () => {
 					done();
 				});
 		});
+		let link_id = null;
+		let test_with_links_id = null;
+		it("should add a LINK item", done => {
+			let data = {
+				name: "deltest_name",
+				val: "deltest_val",
+				bar: "Gloop"
+			}
+			chai.request(server)
+			.post("/api/link")
+			.auth(init.email, init.password)
+			.send(data)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("_id");
+				res.body.data.should.have.property("name")
+				res.body.data.name.should.eql("deltest_name");
+				link_id = res.body.data._id;
+				done();
+			});
+		});
+		it("should link a LINK item to a TEST", done => {
+			chai.request(server)
+			.post("/api/test")
+			.auth(init.email, init.password)
+			.send({
+				link_id
+			})
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("link_id")
+				res.body.data.link_id.should.eql(link_id);
+				test_with_links_id = res.body.data._id;
+				done();
+			});
+		});
+		it("should fail because a parent item exists", (done) => {
+			chai.request(server)
+				.del(`/api/link/${link_id}`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(409);
+					res.body.message.should.equal(`Parent link item exists in test/link_id`);
+					res.body.status.should.equal('error');
+					done();
+				});
+		});
+		it("should cascade delete", (done) => {
+			chai.request(server)
+				.del(`/api/link/${link_id}?_cascade=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					console.log(res.body, res.status);
+					res.should.have.status(200);
+					res.body.status.should.equal('ok');
+					done();
+				});
+		});
+		it("link item should no longer exist", (done) => {
+			chai.request(server)
+				.get(`/api/test/${test_with_links_id}`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(404);
+					res.body.status.should.equal('error');
+					done();
+				});
+		});
+		it("link item should be soft-deleted", (done) => {
+			chai.request(server)
+				.get(`/api/test/${test_with_links_id}?showDeleted=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					done();
+				});
+		});
+		it("should add a LINK item", done => {
+			let data = {
+				name: "permdeltest_name",
+				val: "permdeltest_val",
+				bar: "Yoop"
+			}
+			chai.request(server)
+			.post("/api/link")
+			.auth(init.email, init.password)
+			.send(data)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("_id");
+				res.body.data.should.have.property("name")
+				res.body.data.name.should.eql("permdeltest_name");
+				link_id = res.body.data._id;
+				done();
+			});
+		});
+		it("should link a LINK item to a TEST", done => {
+			chai.request(server)
+			.post("/api/test")
+			.auth(init.email, init.password)
+			.send({
+				link_id,
+				bar: "link1"
+			})
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.be.an('object');
+				res.body.data.should.have.property("link_id")
+				res.body.data.link_id.should.eql(link_id);
+				test_with_links_id = res.body.data._id;
+				done();
+			});
+		});
+		it("should fail because a parent item exists", (done) => {
+			chai.request(server)
+				.del(`/api/link/${link_id}`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(409);
+					res.body.message.should.equal(`Parent link item exists in test/link_id`);
+					res.body.status.should.equal('error');
+					done();
+				});
+		});
+		it("should cascade delete", (done) => {
+			chai.request(server)
+				.del(`/api/link/${link_id}?_cascade=1&_permaDelete=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.status.should.equal('ok');
+					done();
+				});
+		});
+		it("link item should be permanently deleted", (done) => {
+			chai.request(server)
+				.get(`/api/test/${test_with_links_id}?showDeleted=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(404);
+					done();
+				});
+		});
 	});
 });

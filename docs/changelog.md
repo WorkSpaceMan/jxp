@@ -49,3 +49,8 @@
 - Replace home-grown cache with apicache
 - Major performance boost when getting large collections (50secs to < 1 sec)
 - /setup/data endpoint for scaffolding a complete system
+
+## 2.7.x
+
+- Permanent Delete
+- Cascade Delete
