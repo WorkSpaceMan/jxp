@@ -8,7 +8,9 @@ nav:
   - Restful API: api.md
   - Roles and Permissions: permissions.md
   - Hooks: hooks.md
-  - Advanced Usage: advanced.md
+  - Aggregations: aggregations.md
+  - Bulk Writes: bulk_writes.md
+  - Queries: queries.md
   - Websocket: websocket.md
   - Special Features: special.md
   - Changelog: changelog.md

@@ -15,9 +15,8 @@ JXP is an opinionated API framework that you can change just by defining schemas
 * Ability to handle business logic
 * Simple to deploy
 * Lightning-fast
-* Logging, done
 * Stateless
-* Websocket Integration
+* Subscribe to changes through Websocket
 
 ## Links
 
