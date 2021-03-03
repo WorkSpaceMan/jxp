@@ -25,6 +25,7 @@ describe('Test', () => {
 	var token = null;
 	var refresh_token = null;
 	var user_id = null;
+	var objectid = null;
 
 	describe("login", () => {
 		it("it should login", (done) => {
@@ -578,6 +579,7 @@ describe('Test', () => {
 					res.body.data[0].bar.should.be.a("string");
 					res.body.data[0].foo.should.eql("Foo1");
 					res.body.data[0].bar.should.eql("Bar");
+					objectid = res.body.data[0]._id;
 					done();
 				});
 			});
@@ -593,6 +595,76 @@ describe('Test', () => {
 				.send({ query })
 				.end((err, res) => {
 					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("count");
+					res.body.data[0].count.should.eql(1);
+					done();
+				});
+			});
+		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate query but not embedded in query", (done) => {
+				var query = [
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+				.post("/aggregate/test")
+				.auth(init.email, init.password)
+				.send(query)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("count");
+					res.body.data[0].count.should.eql(1);
+					done();
+				});
+			});
+		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate query with calculated Date", (done) => {
+				var query = [
+					{ 
+						$match: {
+							"createdAt": {
+								"$gte": "new Date(\"2020-01-01\")"
+							}
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+				.post("/aggregate/test")
+				.auth(init.email, init.password)
+				.send({ query })
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("count");
+					res.body.data[0].count.should.eql(1);
+					done();
+				});
+			});
+		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate query with calculated ObjectId", (done) => {
+				var query = [
+					{ 
+						$match: {
+							"_id": `ObjectId(\"${objectid}\")`
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+				.post("/aggregate/test")
+				.auth(init.email, init.password)
+				.send({ query })
+				.end((err, res) => {
+					res.should.have.status(200);
+					console.log(res.body);
 					res.body.data.should.be.an('array');
 					res.body.data[0].should.have.property("_id");
 					res.body.data[0].should.have.property("count");

@@ -22,7 +22,22 @@ POST the query as JSON, and wrap it with a "query" variable, like so:
 
 Because we can't define ObjectIds in our aggregate functions, we need to send the ObjectIds as strings and then convert them in the pipeline.
 
-Eg.
+There are two ways of doing this. We can embed `"ObjectId(\"<your object id>\")"` or you can convert in the pipeline. Embedding will be faster on execution.
+
+Embedding:
+```JSON
+{
+    "query": [
+        {
+            "$match": {
+                "$campaign_id", "ObjectId(\"5fd45d05f2b93af8d59588fb\")"
+            }
+        }
+    ]
+}
+```
+
+Using a pipeline to add a field:
 ```JSON
 {
     "query": [
@@ -48,8 +63,26 @@ Eg.
 
 ### Aggregations with dates
 
-Since we can't send a "Date" object, we need to create the date inline. Unfortunately this is slower than using a Date object.
+Because we can't define Date objects in our aggregate functions, we need to send the dates as strings and then convert them in the pipeline.
 
+There are two ways of doing this. We can embed `"new Date(\"<your date>\")"` or you can convert in the pipeline. Embedding will be faster on execution.
+
+Embedding:
+```JSON
+{
+    "query": [
+        {
+            "$match": {
+                "$timestamp": {
+                    "$gte": "new Date(\"2021-03-03T00:00:00.0Z\")"
+                }
+            }
+        }
+    ]
+}
+```
+
+Using a pipeline to add a date field:
 ```JSON
 {
     "query": [

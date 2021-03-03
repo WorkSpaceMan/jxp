@@ -11,6 +11,8 @@ const fs = require("fs");
 const morgan = require("morgan");
 const ws = require("./ws");
 const modeldir = require("./modeldir");
+const traverse = require("traverse");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 var models = {};
 
@@ -468,13 +470,29 @@ const actionQuery = async (req, res) => {
 
 // Actions (verbs)
 const actionAggregate = async (req, res) => {
-	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
-		console.error("query missing or not of type object")
-		return res.send(500, { status: "error", message: "query missing or not of type object" });
+	const fix_aggregate_query = query => {
+		const cleaned = traverse(query).map(function(val) {
+			const date_parts = /^(new Date\(\")([\d\.\-\+Z]*)(\"\))/g.exec(val);
+			if (date_parts) {
+				val = new Date(date_parts[2]);
+				this.update(val);
+			}
+			const objectid_parts = /^(ObjectId\(\")([a-zA-Z\d]*)(\"\))/g.exec(val);
+			if (objectid_parts) {
+				objval = ObjectId(objectid_parts[2]);
+				this.update(objval, true);
+			}
+		})
+		return cleaned;
 	}
+	let query = (req.body.query) ? req.body.query : req.body; // Don't require to embed in query anymore
+	if (!query || !Array.isArray(query)) {
+		console.error("query missing or not of type array")
+		return res.send(500, { status: "error", message: "query missing or not of type array" });
+	}
+	query = fix_aggregate_query(query);
 	const opname = `aggregate ${req.modelname} ${ops++}`;
 	console.time(opname);
-	let query = req.body.query;
 	try {
 		let result = {};
 		if (req.query.allowDiskUse) {
