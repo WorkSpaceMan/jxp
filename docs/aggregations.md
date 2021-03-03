@@ -2,7 +2,7 @@
 
 You can apply an aggregation pipeline through the `/aggregate/<modelname>` endpoint. See [MongoDB's aggregation documentation](https://docs.mongodb.com/manual/aggregation/).
 
-POST the query as JSON, and wrap it with a "query" variable, like so:
+POST the query as JSON, and wrap it with a "query" variable, like so *:
 ```JSON
 {
     "query": [
@@ -17,6 +17,8 @@ POST the query as JSON, and wrap it with a "query" variable, like so:
     ]
 }
 ```
+
+* Note that embedding in a "query" is no longer necessary
 
 ### Aggregations with ObjectIds
 

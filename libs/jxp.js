@@ -472,7 +472,7 @@ const actionQuery = async (req, res) => {
 const actionAggregate = async (req, res) => {
 	const fix_aggregate_query = query => {
 		const cleaned = traverse(query).map(function(val) {
-			const date_parts = /^(new Date\(\")([\d\.\-\+Z]*)(\"\))/g.exec(val);
+			const date_parts = /^(new Date\(\")([\d\.\-\+zZT\:]*)(\"\))/g.exec(val);
 			if (date_parts) {
 				val = new Date(date_parts[2]);
 				this.update(val);
