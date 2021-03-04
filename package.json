@@ -1,7 +1,7 @@
 {
   "name": "jxp",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "2.7.7",
+  "version": "2.7.8",
   "private": false,
   "main": "libs/jxp.js",
   "scripts": {

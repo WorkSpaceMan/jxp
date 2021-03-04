@@ -110,6 +110,25 @@ Using a pipeline to add a date field:
 }
 ```
 
+### Relative dates
+
+Say you want to use a date relative to today's date, you can use `relative_date(offset, offset_unit, startof_unit, endof_unit)`, similar to the method of embedding in a string above. It will also take `null` as a value.
+
+Eg. to get the beginning of this month:
+```JSON
+{
+    "query": [
+        {
+            "$match": {
+                "$timestamp": {
+                    "$gte": "relative_date(null, null, \"month\")"
+                }
+            }
+        }
+    ]
+}
+```
+
 ### AllowDiskUse
 
 ***Tip*** Aggregates can use a lot of memory. If you're unable to complete your query, try using the disk. To enable allowDiskUse, add `?allowDiskUse=true` as a query parameter to the calling url.

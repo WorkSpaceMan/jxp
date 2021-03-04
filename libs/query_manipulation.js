@@ -14,9 +14,9 @@ const relative_date = (offset, offset_unit, startof_unit, endof_unit) => {
             }
         } else {
             if (offset_unit) {
-                m.subtract(offset, offset_unit);
+                m.subtract(Math.abs(offset), offset_unit);
             } else {
-                m.subtract(offset)
+                m.subtract(Math.abs(offset))
             }
         }
     }
@@ -30,7 +30,7 @@ const relative_date = (offset, offset_unit, startof_unit, endof_unit) => {
 }
 
 const fix_params = s => {
-    return s.split(",").map(i => r = i.trim().replace('"', "")).map(i => (i === "null") ? null : i);
+    return s.split(",").map(i => r = i.trim().replace(/\"/g, "")).map(i => (i === "null") ? null : i);
 }
 
 const fix_query = query => {
@@ -45,9 +45,10 @@ const fix_query = query => {
             const newval = ObjectId(objectid_parts[2]);
             this.update(newval, true);
         }
-        const startof_parts = /^(relative_date\(\")(.*)(\"\))/g.exec(val);
+        const startof_parts = /^(relative_date\()(.*)(\))/g.exec(val);
         if (startof_parts) {
-            const newval = relative_date.call(null, fix_params(startof_parts[2]));
+            const params = fix_params(startof_parts[2]);
+            const newval = relative_date.apply(null, params);
             this.update(newval, true);
         }
     })

@@ -649,6 +649,33 @@ describe('Test', () => {
 			});
 		});
 		describe("/POST aggregate", () => {
+			it("it should POST an aggregate query with calculated relative_date", (done) => {
+				var query = [
+					{ 
+						$match: {
+							"createdAt": {
+								"$gte": "relative_date(-1, \"days\")",
+								"$lte": "relative_date(null, null, null, \"month\")",
+							}
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+				.post("/aggregate/test")
+				.auth(init.email, init.password)
+				.send({ query })
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('array');
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("count");
+					res.body.data[0].count.should.eql(1);
+					done();
+				});
+			});
+		});
+		describe("/POST aggregate", () => {
 			it("it should POST an aggregate query with calculated ObjectId", (done) => {
 				var query = [
 					{ 
