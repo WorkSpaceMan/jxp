@@ -17,6 +17,8 @@ var models = {};
 
 var ops = 0;
 
+var debug = false;
+
 // Middleware
 const middlewareModel = (req, res, next) => {
 	const modelname = req.params.modelname;
@@ -174,11 +176,11 @@ const actionGet = async (req, res, next) => {
 		}
 		result.data = await q.exec();
 		res.result = result;
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		next();
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
@@ -189,10 +191,10 @@ const actionGetOne = async (req, res) => {
 	try {
 		const data = await getOne(req.Model, req.params.item_id, req.query);
 		res.send({ data });
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		if (err.msg) {
 			res.send(err.code || 500, { status: "error", message: err.msg });
 		} else {
@@ -223,11 +225,11 @@ const actionPost = async (req, res, next) => {
 			message: req.modelname + " created",
 			data: item
 		});
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		next();
 	} catch (err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
@@ -260,11 +262,11 @@ const actionPut = async (req, res, next) => {
 			message: req.modelname + " updated",
 			data: data
 		});
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		next();
 	} catch (err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
@@ -275,8 +277,6 @@ const actionDelete = async (req, res, next) => {
 	const cascade = req.query._cascade;
 	let silence = req.query._silence || (req.body && req.body._silence);
 	const opname = `del ${req.modelname}/${req.params.item_id} ${ops++}`;
-	console.log(req.Model.modelName);
-	// console.dir( models.apikey.schema.definition );
 	console.time(opname);
 	try {
 		let item = await req.Model.findById(req.params.item_id);
@@ -342,11 +342,11 @@ const actionDelete = async (req, res, next) => {
 			status: "ok",
 			message: `${req.modelname}/${ req.params.item_id } deleted`
 		});
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		next();
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 		return;
 	}
@@ -458,11 +458,11 @@ const actionQuery = async (req, res) => {
 		}
 		result.data = await q.exec();
 		res.result = result;
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch(err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
@@ -485,11 +485,11 @@ const actionAggregate = async (req, res) => {
 			result.data = await req.Model.aggregate(query);
 		}
 		res.result = result;
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch (err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
@@ -508,12 +508,12 @@ const actionBulkWrite = async (req, res, next) => {
 		let result = {};
 		result.data = await req.Model.bulkWrite(query);
 		res.result = result;
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.json(result);
 		next();
 	} catch (err) {
 		console.error(new Date(), err);
-		console.timeEnd(opname);
+		if (debug) console.timeEnd(opname);
 		res.send(500, { status: "error", message: err.toString() });
 	}
 };
@@ -542,7 +542,7 @@ const actionBulkWrite = async (req, res, next) => {
 // 			// websocket.emit(modelname, { method: "post", _id: result._id });
 // 			console.log({ action_id: 8, action: "Batch insert", type: req.modelname, count: items.length, user: filterLogUser(res.user) });
 // 			res.send({ message: req.modelname + " created ", data: items.length });
-// 			console.timeEnd("BATCH " + req.modelname);
+// 			if (debug) console.timeEnd("BATCH " + req.modelname);
 // 			return;
 // 		}
 // 	});
@@ -775,6 +775,8 @@ const JXP = function(options) {
 			}
 		}
 	}
+
+	if (config.debug) debug = true;
 
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);
