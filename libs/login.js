@@ -141,7 +141,7 @@ const oauth_callback = async (req, res, next) => {
 	}
 }
 
-const login = async (req, res) => {
+const login = async (req, res, next) => {
 	const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 	let email = req.params.email || req.body.email;
 	let password = req.params.password || req.body.password;
@@ -164,7 +164,7 @@ const login = async (req, res) => {
 		const token = await security.refreshToken(user._id);
 		const refreshtoken = await security.ensureRefreshToken(user._id);
 		const apikey = await security.generateApiKey(user._id)
-		res.send({
+		res.result = ({
 			user_id: user._id,
 			token: token.access_token,
 			apikey: apikey.apikey,
@@ -172,6 +172,7 @@ const login = async (req, res) => {
 			refresh_token: refreshtoken.refresh_token,
 			refresh_token_expires: security.tokenExpires(refreshtoken)
 		});
+		next();
 	} catch (err) {
 		res.send(401, { status: "fail", message: "Authentication failed", err });
 		console.error(new Date(), `Authentication failed`, ip, err);

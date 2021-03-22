@@ -6,6 +6,9 @@ We've used callbacks to add parameters on `get` and `getOne` to our queries to l
 
 ```javascript
 config.pre_hooks = {
+	login: (req, res, next) => {
+		next();
+	},
 	get: (req, res, next) => {
 		next();
 	},
@@ -22,6 +25,15 @@ config.pre_hooks = {
 		next();
 	},
 };
+```
+
+For _login_ there's also a post-hook, eg. if you need to inject more information into the login result.
+
+```javascript
+config.post_hooks = (req, res, next) => {
+	res.result.some_field = "Some Value";
+	next();
+}
 ```
 
 To suppress a callback, pass `_silence=true` as a parameter. This helps avoid infinite loops, for instance when your PUT updates the same model.

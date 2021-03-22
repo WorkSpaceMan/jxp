@@ -721,6 +721,9 @@ const JXP = function(options) {
 		},
 		log: "access.log",
 		pre_hooks: {
+			login: (req, res, next) => {
+				next();
+			},
 			get: (req, res, next) => {
 				next();
 			},
@@ -738,16 +741,9 @@ const JXP = function(options) {
 			}
 		},
 		post_hooks: {
-			// eslint-disable-next-line no-unused-vars
-			get: (modelname, result) => {},
-			// eslint-disable-next-line no-unused-vars
-			getOne: (modelname, id, result) => {},
-			// eslint-disable-next-line no-unused-vars
-			post: (modelname, id, data, result) => {},
-			// eslint-disable-next-line no-unused-vars
-			put: (modelname, id, data, result) => {},
-			// eslint-disable-next-line no-unused-vars
-			delete: (modelname, id, data, result) => {}
+			login: async (req, res, next) => {
+				next();
+			},
 		},
 		cache_timeout: "5 minutes",
 	};
@@ -954,7 +950,7 @@ const JXP = function(options) {
 	server.get("/logout", security.login, login.logout);
 	server.get("/login/oauth/:provider", login.oauth);
 	server.get("/login/oauth/callback/:provider", login.oauth_callback);
-	server.post("/login", login.login);
+	server.post("/login", config.pre_hooks.login, login.login, config.post_hooks.login, outputJSON);
 	server.post("/refresh", security.refresh);
 	server.post("/login/refresh", security.refresh);
 

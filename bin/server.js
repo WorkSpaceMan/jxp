@@ -209,6 +209,10 @@ config.callbacks = {
 };
 
 config.pre_hooks = {
+	login: (req, res, next) => {
+		console.log("Here");
+		next();
+	},
 	get: (req, res, next) => {
 		next();
 	},
