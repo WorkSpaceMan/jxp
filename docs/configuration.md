@@ -13,6 +13,10 @@ The `port` key defines the port you want the server to run on. The default is `4
 "port": 4001,
 ```
 
+## Model Directory
+
+JXP will search for a model directory with "user_model.js" in it, else you can override this with the config parameter `model_dir`. (This should be an absolute directory.)
+
 ## MongoDB
 
 The `connection_string` can include port, username and password, options, and other fancy stuff. If you have advanced needs, you can find out more (here)[https://docs.mongodb.com/manual/reference/connection-string/].

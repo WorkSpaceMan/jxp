@@ -707,7 +707,7 @@ global.JXPSchema = require("./schema");
 
 const JXP = function(options) {
 	const server = restify.createServer();
-	const model_dir = modeldir.findModelDir(path.dirname(process.argv[1]));
+	const model_dir = options.model_dir || modeldir.findModelDir(path.dirname(process.argv[1]));
 	//Set up config with default
 	var config = {
 		model_dir: path.join(model_dir),
