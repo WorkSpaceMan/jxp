@@ -197,7 +197,7 @@ const ensureRefreshToken = async user_id => {
 }
 
 const revokeRefreshToken = async user_id => {
-	await RefreshToken.deleteOne({ user_id });
+	await RefreshToken.deleteMany({ user_id });
 	return true;
 }
 
