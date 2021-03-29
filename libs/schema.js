@@ -36,8 +36,8 @@ class Schema extends mongoose.Schema {
         // Set default defiitions
         definition = Object.assign({
             _deleted: { type: Boolean, default: false, index: true },
-            _owner_id: { type: ObjectId, link: "User", map_to: "_owner" },
-            _updated_by_id: { type: ObjectId, link: "User", map_to: "_updated_by" },
+            _owner_id: { type: ObjectId, link: "User", map_to: "_owner", index: true },
+            _updated_by_id: { type: ObjectId, link: "User", map_to: "_updated_by", index: true },
         }, definition);
         // construct our parent
         super(definition, opts);
@@ -45,6 +45,8 @@ class Schema extends mongoose.Schema {
         this.opts = opts;
         this.definition = definition;
         // Action!
+        this.index({ createdAt: -1 });
+        this.index({ updatedAt: -1 });
         this.setPerms();
         this.generateLinks();
     }
