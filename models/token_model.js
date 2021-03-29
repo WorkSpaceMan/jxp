@@ -6,7 +6,7 @@ var TokenSchema = new JXPSchema({
 	provider: String,
 	access_token: { type: String, index: true },
 	token_type: String,
-	expires_in: { type: Number, default: config.token_expiry || 86400 }, // In seconds
+	expires_in: { type: Number, default: config.token_expiry || 86400, required: true }, // In seconds
 	last_accessed: { type: Date, default: Date.now, index: true },
 },
 {

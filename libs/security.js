@@ -158,7 +158,7 @@ const generateToken = async user_id => {
 };
 
 const ensureToken = async user_id => {
-	const token = await Token.findOne({ user_id }).exec();
+	const token = await Token.findOne({ user_id }).sort({ createdAt: -1 }).exec();
 	if (tokenIsValid(token)) {
 		return token;
 	}
@@ -189,7 +189,7 @@ const generateRefreshToken = async user_id => {
 };
 
 const ensureRefreshToken = async user_id => {
-	const refreshtoken = await RefreshToken.findOne({ user_id }).exec();
+	const refreshtoken = await RefreshToken.findOne({ user_id }).sort({ createdAt: -1 }).exec();
 	if (tokenIsValid(refreshtoken)) {
 		return refreshtoken;
 	}
