@@ -1042,4 +1042,34 @@ describe('Test', () => {
 				});
 		});
 	});
+
+	describe("/Filter with +", () => {
+		let plus_user_id = null;
+		it("it should POST a user with a + in email", (done) => {
+			var user = {
+				name: "Plus User",
+				email: "plus+user@gmail.com"
+			};
+			chai.request(server)
+			.post("/api/user")
+			.auth(init.admin_email, init.admin_password)
+			.send(user)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data.should.have.property("_id");
+				plus_user_id = res.body.data._id;
+				done();
+			});
+		});
+		it("it should GET a user with a + in email", (done) => {
+			chai.request(server)
+			.get("/api/user?filter[email]=plus%2Buser@gmail.com")
+			.auth(init.admin_email, init.admin_password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.data[0].should.have.property("_id");
+				done();
+			});
+		});
+	});
 });
