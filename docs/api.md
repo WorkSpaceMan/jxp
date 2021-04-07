@@ -94,6 +94,23 @@ If you go beyond the total number of pages, you will get an empty `data` array.
 
 *Note* If you have more than 100,000 items in your collection, `count` will return as -1, else doing a full-dataset filtered count becomes too expensive and can cause serious performance issues.
 
+### Counting
+
+To get a count of a collection, use the endpoint `/count/<model>`. This works even on large collections that wouldn't otherwise return a count due to size of over 100,000 items. Filters can be applied, but `search` does not work. 
+
+Eg. 
+
+```
+GET /count/test
+```
+
+Response:
+```
+{
+    count: 1
+}
+```
+
 ### Populating
 
 This is one of the most useful features of this API. You can automatically populate the results with linked objects.

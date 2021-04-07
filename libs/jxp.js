@@ -352,6 +352,43 @@ const actionDelete = async (req, res, next) => {
 	}
 };
 
+const actionCount = async (req, res, next) => {
+	const opname = `count ${req.modelname} ${ops++}`;
+	console.time(opname);
+	const parseSearch = function(search) {
+		let result = {};
+		for (let i in search) {
+			result[i] = new RegExp(search[i], "i");
+		}
+		return result;
+	};
+	let filters = {};
+	try {
+		filters = parseFilter(req.query.filter);
+	} catch (err) {
+		console.trace(new Date(), err);
+		res.send(500, { status: "error", error: err, message: err.toString() });
+		return;
+	}
+	let search = parseSearch(req.query.search);
+	for (let i in search) {
+		filters[i] = search[i];
+	}
+	if (!req.query.showDeleted) {
+		filters = Object.assign({ $or: [{ _deleted: false }, { _deleted: null }] }, filters);
+	}
+	try {
+		const count = await req.Model.countDocuments(filters).exec();
+		res.result = { count };
+		if (debug) console.timeEnd(opname);
+		next();
+	} catch(err) {
+		console.error(new Date(), err);
+		if (debug) console.timeEnd(opname);
+		res.send(500, { status: "error", message: err.toString() });
+	}
+};
+
 const actionCall = async (req, res) => {
 	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(res.user) });
 	req.body = req.body || {};
@@ -876,6 +913,17 @@ const JXP = function(options) {
 		security.auth,
 		config.pre_hooks.delete,
 		actionDelete,
+	);
+
+	// Count
+	server.get(
+		"/count/:modelname",
+		middlewareModel,
+		security.login,
+		security.auth,
+		config.pre_hooks.get,
+		actionCount,
+		outputJSON
 	);
 
 	// CSV endpoints

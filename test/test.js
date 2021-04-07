@@ -179,6 +179,20 @@ describe('Test', () => {
 		});
 	});
 
+	describe("/GET test count", () => {
+		it("it should count all the tests", (done) => {
+			Test.deleteMany(() => {
+				chai.request(server)
+				.get("/count/test")
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.count.should.be.eql(0);
+					done();
+				});
+			});
+		});
+	});
+
 	var post_id = null;
 	describe("/POST test", () => {
 		it("it should POST a new test", (done) => {
@@ -208,6 +222,18 @@ describe('Test', () => {
 				res.body.data.foo.length.should.be.eql(3);
 				res.body.data.foo.length.should.not.be.eql("password");
 				post_id = res.body.data._id;
+				done();
+			});
+		});
+	});
+
+	describe("/GET test count", () => {
+		it("it should count all the tests", (done) => {
+			chai.request(server)
+			.get("/count/test")
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.body.count.should.be.eql(1);
 				done();
 			});
 		});
