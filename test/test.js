@@ -40,6 +40,8 @@ describe('Test', () => {
 					res.body.should.have.property('token_expires');
 					res.body.should.have.property('refresh_token');
 					res.body.should.have.property('refresh_token_expires');
+					res.body.should.have.property('provider');
+					res.body.provider.should.be.eql('https://api.workspaceman.nl');
 					apikey = res.body.apikey;
 					token = res.body.token;
 					user_id = res.body.user_id;

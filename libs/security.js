@@ -6,6 +6,7 @@ var Token = null;
 var Groups = null;
 var User = null;
 var RefreshToken = null;
+var provider = "https://api.workspaceman.nl";
 
 const init = function(config) {
 	APIKey = require(path.join(config.model_dir, "apikey_model"));
@@ -13,6 +14,7 @@ const init = function(config) {
 	User = require(path.join(config.model_dir, "user_model"));
 	Token = require(path.join(config.model_dir, "token_model"));
 	RefreshToken = require(path.join(config.model_dir, "refreshtoken_model"));
+	if (config.url) provider = config.url;
 };
 
 const fail = function (res, code, message) {
@@ -68,7 +70,7 @@ const bearerAuthData = req => {
 const bearerAuth = async t => {
 	try {
 		if (!t) throw("Token invalid");
-		const token = await Token.findOne({ access_token: t }).exec();
+		const token = await Token.findOne({ access_token: t, provider }).exec();
 		if (!token) {
 			throw(`Token ${t} not found`);
 		}
@@ -149,6 +151,7 @@ const generateToken = async user_id => {
 		var token = new Token();
 		token.user_id = user_id;
 		token.access_token = randToken.generate(16);
+		token.provider = provider;
 		await token.save();
 		return token;
 	} catch (err) {
@@ -158,7 +161,7 @@ const generateToken = async user_id => {
 };
 
 const ensureToken = async user_id => {
-	const token = await Token.findOne({ user_id }).sort({ createdAt: -1 }).exec();
+	const token = await Token.findOne({ user_id, provider }).sort({ createdAt: -1 }).exec();
 	if (tokenIsValid(token)) {
 		return token;
 	}
@@ -171,7 +174,7 @@ const refreshToken = async user_id => {
 }
 
 const revokeToken = async user_id => {
-	await Token.deleteOne({ user_id });
+	await Token.deleteOne({ user_id, provider });
 	return true;
 }
 

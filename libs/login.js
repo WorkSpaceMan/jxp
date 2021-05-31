@@ -170,7 +170,8 @@ const login = async (req, res, next) => {
 			apikey: apikey.apikey,
 			token_expires: security.tokenExpires(token),
 			refresh_token: refreshtoken.refresh_token,
-			refresh_token_expires: security.tokenExpires(refreshtoken)
+			refresh_token_expires: security.tokenExpires(refreshtoken),
+			provider: token.provider,
 		});
 		next();
 	} catch (err) {
