@@ -638,25 +638,25 @@ const parseFilter = (filter) => {
 			if (filter[key] === "true") filter[key] = true;
 			if (val.indexOf) {
 				if (val.indexOf(":") !== -1) {
-					var tmp = val.split(":");
+					let tmp = val.split(":");
 					filter[key] = {};
-					var tmpkey = tmp.shift();
+					let tmpkey = tmp.shift();
 					let tmpval = tmp.join(":");
 					if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) { // Could be an array for a $in or similar
 						let arr = tmpval.slice(1, tmpval.length - 1).split(",");
 						tmpval = arr;
 					}
+					filter[key][tmpkey] = tmpval;
 					if (tmpkey === "$regex" && tmpval[0] === "/") {
-						var match = tmpval.match(new RegExp('^/(.*?)/([gimy]*)$'));
-						var regex = new RegExp(match[1], match[2]);
+						let match = tmpval.match(new RegExp('^/(.*?)/([gimy]*)$'));
+						let regex = new RegExp(match[1], match[2]);
 						filter[key][tmpkey] = regex;
 					}
-					filter[key][tmpkey] = tmpval;
 				}
 				if (typeof val == "object") {
 					let result = parseFilter(val);
 					filter[key] = {};
-					for (var x = 0; x < result.length; x++) {
+					for (let x = 0; x < result.length; x++) {
 						filter[key][Object.keys(result[x])[0]] =
 							result[x][Object.keys(result[x])[0]];
 					}
@@ -678,10 +678,10 @@ const _deSerialize = (data) => {
 		}
 		obj[keyPath[lastKeyIndex]] = value;
 	}
-	for (var datum in data) {
-		var matches = datum.match(/\[(.+?)\]/g);
+	for (let datum in data) {
+		const matches = datum.match(/\[(.+?)\]/g);
 		if (matches) {
-			var params = matches.map(function(match) {
+			const params = matches.map(function(match) {
 				return match.replace(/[[\]]/g, "");
 			});
 			if (isNaN(params[0])) {
