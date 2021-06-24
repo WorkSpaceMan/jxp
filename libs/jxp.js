@@ -646,6 +646,11 @@ const parseFilter = (filter) => {
 						let arr = tmpval.slice(1, tmpval.length - 1).split(",");
 						tmpval = arr;
 					}
+					if (tmpkey === "$regex" && tmpval[0] === "/") {
+						var match = tmpval.match(new RegExp('^/(.*?)/([gimy]*)$'));
+						var regex = new RegExp(match[1], match[2]);
+						filter[key][tmpkey] = regex;
+					}
 					filter[key][tmpkey] = tmpval;
 				}
 				if (typeof val == "object") {

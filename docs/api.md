@@ -129,7 +129,9 @@ Use `filter[fieldname]=blah` to filter.
 
 You can also filter for greater than, less than, greater than or equals and less than or equals for stuff like dates and numbers.
 
-`filter[start_date]=gte:12345678` (Pro tip: use Unix time to filter on dates.)
+`filter[start_date]=$gte:12345678` (Pro tip: use Unix time to filter on dates.)
+
+You can also pass a Regex expression JXP will convert it to a real Regex for you: `filter[name]=$regex:/blah/i`.
 
 ### Searching
 
