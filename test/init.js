@@ -11,14 +11,6 @@ const Test = require(path.join(model_dir, "test_model"));
 
 const security = require("../libs/security");
 
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const should = chai.should();
-
-const server = require(path.join(__dirname, "../bin/server.js"));
-
-chai.use(chaiHttp);
-
 const empty = async model => {
 	try {
 		const result = await model.deleteMany({});
