@@ -7,13 +7,6 @@ const config = require("config");
 const JXPHelper = require('jxp-helper');
 const modeldir = require("./modeldir");
 
-// Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
-const jxp_settings = {};
-if (config.apikey) jxp_settings.apikey = config.apikey;
-if (config.server) jxp_settings.server = config.server;
-if (jxp_settings.apikey && jxp_settings.server) global.jxphelper = new JXPHelper(jxp_settings);
-
-
 // Set some global types
 global.ObjectId = mongoose.Schema.Types.ObjectId;
 global.Mixed = mongoose.Schema.Types.Mixed;
@@ -39,6 +32,13 @@ class Schema extends mongoose.Schema {
             _owner_id: { type: ObjectId, link: "User", map_to: "_owner", index: true },
             _updated_by_id: { type: ObjectId, link: "User", map_to: "_updated_by", index: true },
         }, definition);
+        // Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
+        if (!global.jxphelper) {
+            const jxp_settings = {};
+            if (config.apikey) jxp_settings.apikey = config.apikey;
+            if (config.server) jxp_settings.server = config.server;
+            if (jxp_settings.apikey && jxp_settings.server) global.jxphelper = new JXPHelper(jxp_settings);
+        }
         // construct our parent
         super(definition, opts);
         // Some properties

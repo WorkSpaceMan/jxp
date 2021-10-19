@@ -861,6 +861,11 @@ const JXP = function(options) {
 
 	if (config.debug) debug = true;
 
+	// Set apikey and server globally to inject into schemas
+	global.apikey = config.apikey;
+	global.server = config.server;
+	global.model_dir = model_dir;
+	
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);
 	let modelnames = files.filter(function(fname) {
