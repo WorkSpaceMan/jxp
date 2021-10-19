@@ -272,6 +272,47 @@ const actionPut = async (req, res, next) => {
 	}
 };
 
+const actionUpdate = async (req, res, next) => {
+	const opname = `update ${req.modelname}/${req.params.item_id} ${ops++}`;
+	console.time(opname);
+	try {
+		// let item = await req.Model.findById(req.params.item_id);
+		// if (!item) {
+		// 	console.error(new Date(), "Document not found");
+		// 	res.send(404, { status: "error", message: "Document not found" });
+		// 	return;
+		// }
+		// _populateItem(item, datamunging.deserialize(req.body));
+		// _versionItem(item);
+		// if (res.user) {
+		// 	item.__user = res.user;
+		// 	item._updated_by_id = res.user._id;
+		// }
+		// const data = await item.save();
+		console.log({ body: req.body });
+		let body_data =  datamunging.deserialize(req.body);
+		const data = await req.Model.update({ _id: req.params.item_id }, body_data);
+		let silence = req.params._silence;
+		if (req.body && req.body._silence) silence = true;
+		if (!silence) {
+			req.config.callbacks.put.call(null, req.modelname, data, res.user );
+			ws.putHook.call(null, req.modelname, data, res.user);
+		}
+		res.json({
+			status: "ok",
+			message: req.modelname + " updateed",
+			data
+		});
+		if (debug) console.timeEnd(opname);
+		next();
+	} catch (err) {
+		console.error(new Date(), err);
+		if (debug) console.timeEnd(opname);
+		res.send(500, { status: "error", message: err.toString() });
+		return;
+	}
+};
+
 const actionDelete = async (req, res, next) => {
 	const permaDelete = req.query._permaDelete;
 	const cascade = req.query._cascade;
@@ -759,7 +800,8 @@ const JXP = function(options) {
 			post: function() {},
 			delete: function() {},
 			get: function() {},
-			getOne: function() {}
+			getOne: function() {},
+			update: function() {},
 		},
 		log: "access.log",
 		pre_hooks: {
@@ -776,6 +818,9 @@ const JXP = function(options) {
 				next();
 			},
 			put: (req, res, next) => {
+				next();
+			},
+			update: (req, res, next) => {
 				next();
 			},
 			delete: (req, res, next) => {
@@ -968,6 +1013,17 @@ const JXP = function(options) {
 		security.bulkAuth,
 		config.pre_hooks.get,
 		actionBulkWrite,
+	);
+
+	server.post(
+		"/update/:modelname/:item_id",
+		middlewareModel,
+		security.login,
+		security.auth,
+		middlewarePasswords,
+		middlewareCheckAdmin,
+		config.pre_hooks.update,
+		actionUpdate,
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */

@@ -832,6 +832,21 @@ describe('Test', () => {
 					});
 			});
 		});
+		it("should $push to an array", done => {
+			chai.request(server)
+				.patch("/api/test/" + post_id)
+				.auth(init.email, init.password)
+				.send({ $push: { shmack: "fah" } })
+				.end((err, res) => {
+					console.log(res.body.data);
+					res.should.have.status(200);
+					res.body.data.should.be.an('object');
+					res.body.data.should.have.property("shmack")
+					res.body.data.shmack.should.be.an("array");
+					res.body.data.shmack.should.have.length(4);
+					done();
+				});
+		});
 	});
 
 	describe("Models", () => {
