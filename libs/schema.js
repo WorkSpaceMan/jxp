@@ -35,8 +35,8 @@ class Schema extends mongoose.Schema {
         // Set up our jxp-helper so that we call call the API from within the API (if we've set config.apikey)
         if (!global.jxphelper) {
             const jxp_settings = {};
-            if (config.apikey) jxp_settings.apikey = config.apikey;
-            if (config.server) jxp_settings.server = config.server;
+            if (global.apikey) jxp_settings.apikey = global.apikey;
+            if (global.server) jxp_settings.server = global.server;
             if (jxp_settings.apikey && jxp_settings.server) global.jxphelper = new JXPHelper(jxp_settings);
         }
         // construct our parent
