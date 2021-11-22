@@ -195,6 +195,7 @@ Add the parameter `_silence` to supress callbacks. Useful to avoid infinite loop
 const mongoose = require("mongoose");
 const JXP = require("../libs/jxp");
 const config = require("config");
+require("dotenv").config();
 
 config.callbacks = {
 	post: function(modelname, item, user) {
@@ -232,15 +233,16 @@ config.pre_hooks = {
 //DB connection
 // ES6 promises
 mongoose.Promise = Promise;
+if (!config.mongo) config.mongo = {};
 if (!config.mongo.options) config.mongo.options = {};
 const mongo_options = Object.assign(config.mongo.options, {
-	promiseLibrary: global.Promise,
 	useNewUrlParser: true,
-	useCreateIndex: true
+	useUnifiedTopology: true
 });
 
-// mongodb connection
-mongoose.connect(config.mongo.connection_string, mongo_options);
+const connection_string = require("../libs/connection_string");
+console.log(`Connecting to ${connection_string}`);
+mongoose.connect(connection_string, mongo_options);
 
 const db = mongoose.connection;
 
@@ -254,7 +256,9 @@ db.once('open', () => {
 
 var server = new JXP(config);
 
-server.listen(config.port || 4001, function() {
+let port = process.env.NODE_DOCKER_PORT || process.env.PORT || config.port || 4001;
+if (process.env.NODE_ENV === "test") port = 4005;
+server.listen(port, function() {
 	console.log('%s listening at %s', server.name, server.url);
 });
 

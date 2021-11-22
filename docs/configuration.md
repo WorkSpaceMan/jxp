@@ -1,5 +1,7 @@
 # Configuring JXP
 
+### NB: The `config` methodology will be deprecated in future versions in favour of dotenv. See the .env.sample for an example.
+
 The config files are stored in `/config` in strict JSON format. (Remember to enclose your keys in inverted commas!) Typically, you'd use `/config/default.json` for a simple configuration, or `/config/development.json` and `/config/production.json` for separating development and production. 
 
 If you used the `jxp-setup` command for setting everything up, you should have a basic `/config/default.json` file ready to go.

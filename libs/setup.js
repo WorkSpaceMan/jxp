@@ -3,11 +3,10 @@ const path = require("path");
 const security = require("./security");
 const ObjectID = require('mongodb').ObjectID;
 var User = null;
-var connection_string = null;
+const connection_string = require("./connection_string");
 
 const init = config => {
 	User = require(path.join(config.model_dir, "user_model"));
-	connection_string = config.mongo.connection_string;
 }
 
 const checkUserDoesNotExist = async (req, res, next) => {

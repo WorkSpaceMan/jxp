@@ -4,13 +4,17 @@ JXP would typically run as a stand-alone server, although you can include it as 
 
 ## Requirements
 
-JXP runs on [Node JS](https://nodejs.org/en/). We support Node v10 and above, and recommend Node v12.
+JXP runs on [Node JS](https://nodejs.org/en/). We support Node v10 and above, and recommend Node v16. It has been tested up to Node v17.
 
 JXP requires a [Mongo](https://www.mongodb.com/) database server to connect to. You can host your own, or we also support connecting to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas), which has a free tier if you don't want to have Mongo running locally. 
 
 JXP will also take advantage of Memcache if you have it installed, although it's not a requirement. We can use a local or external Memcache server.
 
 If you want to send out forgotten password links, you'll need an SMTP server you can connect to.
+
+## Running on Docker
+
+You can run JXP on Docker using Docker Compose. Just run `docker-compose up -d` and it should Just Work (tm).
 
 ## Installing the easy way
 
