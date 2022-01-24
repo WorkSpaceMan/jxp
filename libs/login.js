@@ -122,10 +122,7 @@ const oauth_callback = async (req, res, next) => {
 		}
 		user[provider] = data;
 		await user.save();
-		var apikey = new APIKey();
-		apikey.user_id = user._id;
-		apikey.apikey = require('rand-token').generate(16);
-		await apikey.save();
+		const apikey = await security.generateApiKey(user._id)
 		var jwt_token = jwt.sign({ apikey: apikey.apikey, user: user }, req.config.shared_secret, {
 			expiresIn: "1m"
 		});
