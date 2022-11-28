@@ -49,12 +49,13 @@ const middlewareCheckAdmin = (req, res, next) => {
 };
 
 // Outputs whatever is in res.result as JSON
-const outputJSON = (req, res) => {
+const outputJSON = (req, res, next) => {
 	res.send(res.result);
+	next();
 }
 
 // Outputs whatever is in res.result as CSV
-const outputCSV = (req, res) => {
+const outputCSV = (req, res, next) => {
 	const json2csv = require('json2csv').parse;
 	const opts = { "flatten": true };
 	if (!res.result.data) {
@@ -71,6 +72,7 @@ const outputCSV = (req, res) => {
 		});
 		const csv = json2csv(data, opts);
 		res.end(csv);
+		next();
 	} catch (err) {
 		console.error(err);
 		res.send(500, { status: "error", error: err, message: err.toString() });
@@ -78,7 +80,7 @@ const outputCSV = (req, res) => {
 }
 
 // Actions (verbs)
-const actionGet = async (req, res, next) => {
+const actionGet = async (req, res) => {
 	const opname = `get ${req.modelname} ${ops++}`;
 	console.time(opname);
 	try {
@@ -184,7 +186,6 @@ const actionGet = async (req, res, next) => {
 		result.data = await q.exec();
 		res.result = result;
 		if (debug) console.timeEnd(opname);
-		next();
 	} catch(err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -213,7 +214,7 @@ const actionGetOne = async (req, res) => {
 	}
 };
 
-const actionPost = async (req, res, next) => {
+const actionPost = async (req, res) => {
 	const opname = `post ${req.modelname} ${ops++}`;
 	console.time(opname);
 	try {
@@ -236,7 +237,6 @@ const actionPost = async (req, res, next) => {
 			data: item
 		});
 		if (debug) console.timeEnd(opname);
-		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -244,7 +244,7 @@ const actionPost = async (req, res, next) => {
 	}
 };
 
-const actionPut = async (req, res, next) => {
+const actionPut = async (req, res) => {
 	const opname = `put ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
@@ -273,7 +273,6 @@ const actionPut = async (req, res, next) => {
 			data: data
 		});
 		if (debug) console.timeEnd(opname);
-		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -282,24 +281,10 @@ const actionPut = async (req, res, next) => {
 	}
 };
 
-const actionUpdate = async (req, res, next) => {
+const actionUpdate = async (req, res) => {
 	const opname = `update ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		// let item = await req.Model.findById(req.params.item_id);
-		// if (!item) {
-		// 	console.error(new Date(), "Document not found");
-		// 	res.send(404, { status: "error", message: "Document not found" });
-		// 	return;
-		// }
-		// _populateItem(item, datamunging.deserialize(req.body));
-		// _versionItem(item);
-		// if (res.user) {
-		// 	item.__user = res.user;
-		// 	item._updated_by_id = res.user._id;
-		// }
-		// const data = await item.save();
-		console.log({ body: req.body });
 		let body_data =  datamunging.deserialize(req.body);
 		const data = await req.Model.update({ _id: req.params.item_id }, body_data);
 		let silence = req.params._silence;
@@ -314,7 +299,6 @@ const actionUpdate = async (req, res, next) => {
 			data
 		});
 		if (debug) console.timeEnd(opname);
-		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -323,7 +307,7 @@ const actionUpdate = async (req, res, next) => {
 	}
 };
 
-const actionDelete = async (req, res, next) => {
+const actionDelete = async (req, res) => {
 	const permaDelete = req.query._permaDelete;
 	const cascade = req.query._cascade;
 	let silence = req.query._silence || (req.body && req.body._silence);
@@ -394,7 +378,6 @@ const actionDelete = async (req, res, next) => {
 			message: `${req.modelname}/${ req.params.item_id } deleted`
 		});
 		if (debug) console.timeEnd(opname);
-		next();
 	} catch(err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -403,7 +386,7 @@ const actionDelete = async (req, res, next) => {
 	}
 };
 
-const actionCount = async (req, res, next) => {
+const actionCount = async (req, res) => {
 	const opname = `count ${req.modelname} ${ops++}`;
 	console.time(opname);
 	const parseSearch = function(search) {
@@ -432,7 +415,6 @@ const actionCount = async (req, res, next) => {
 		const count = await req.Model.countDocuments(filters).exec();
 		res.result = { count };
 		if (debug) console.timeEnd(opname);
-		next();
 	} catch(err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -453,29 +435,21 @@ const actionCall = async (req, res) => {
 	}
 };
 
-const actionCallItem = (req, res) => {
-	req.Model.findById(req.params.item_id, function(err, item) {
+const actionCallItem = async (req, res) => {
+	try {
+		const item = req.Model.findById(req.params.item_id);
 		if (!item) {
 			res.send(404, "Document not found for " + req.params.method_name);
 			return;
 		}
-		if (err) {
-			console.trace(err);
-			res.send(500, { status: "error", message: err.toString() });
-			return;
-		}
 		req.params.__user = res.user || null;
-		req.Model[req.params.method_name](item).then(
-			function(item) {
-				// console.log({ action_id: 7, action: "Method called", type: req.modelname, id: item._id, method: req.params.method_name, user: filterLogUser(res.user) });
-				res.json(item);
-			},
-			function(err) {
-				console.trace(err);
-				res.send(500, { status: "error", message: err.toString() });
-			}
-		);
-	});
+		const result = await req.Model[req.params.method_name](item);
+		res.json(result);
+			
+	} catch(err) {
+		console.trace(err);
+		res.send(500, { status: "error", message: err.toString() });
+	}
 };
 
 // Actions (verbs)
@@ -583,7 +557,7 @@ const actionAggregate = async (req, res) => {
 };
 
 // Actions (verbs)
-const actionBulkWrite = async (req, res, next) => {
+const actionBulkWrite = async (req, res) => {
 	if (!req.body || !Array.isArray(req.body)) {
 		console.error("query missing or not of type array")
 		return res.send(500, { status: "error", message: "query missing or not of type array" });
@@ -598,7 +572,6 @@ const actionBulkWrite = async (req, res, next) => {
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 		res.json(result);
-		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
@@ -838,8 +811,7 @@ const JXP = function(options) {
 			}
 		},
 		post_hooks: {
-			login: async (req, res, next) => {
-				next();
+			login: async () => {
 			},
 		},
 		cache_timeout: "5 minutes",

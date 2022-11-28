@@ -204,7 +204,7 @@ const revokeRefreshToken = async user_id => {
 	return true;
 }
 
-const refresh = async (req, res, next) => {
+const refresh = async (req, res) => {
 	try {
 		if(req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("bearer") === 0) {
 			const refresh_token = await RefreshToken.findOne({ refresh_token: bearerAuthData(req) }).exec();
@@ -221,27 +221,24 @@ const refresh = async (req, res, next) => {
 				refresh_token: new_refresh_token.refresh_token,
 				refresh_token_expires: tokenExpires(new_refresh_token)
 			});
-			next();
 		} else {
 			throw("Missing refresh token")
 		}
-		next();
 	} catch (err) {
 		console.error(err);
 		return fail(res, 403, err);
 	}
 }
 
-const login = async (req, res, next) => {
+const login = async (req, res) => {
 	try {
 		const authenticate_result = await authenticate(req);
 		if (!authenticate_result) {
 			res.user = null;
 			res.groups = [];
-			return next();
+			return;
 		}
 		res = Object.assign(res, authenticate_result);
-		next();
 	} catch(err) {
 		console.error(err);
 		return fail(res, 403, err);
@@ -282,7 +279,7 @@ const authenticate = async req => {
 	}
 }
 
-const auth = async (req, res, next) => {
+const auth = async (req, res) => {
 	// Check against model as to whether we're allowed to edit this model
 	if (!req.Model) {
 		console.error("Model missing");
@@ -304,7 +301,6 @@ const auth = async (req, res, next) => {
 			return fail(res, 500, "Unsupported operation: " + req.method);
 		}
 		await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
-		next();
 	} catch(err) {
 		console.error(err);
 		return fail(res, 403, { status: "Unauthorized", error: err });
@@ -312,13 +308,12 @@ const auth = async (req, res, next) => {
 };
 
 // Bulk auth requires all CRUD permissions
-const bulkAuth = async (req, res, next) => {
+const bulkAuth = async (req, res,) => {
 	try {
 		await check_perms(res.user, res.groups, req.Model, "c");
 		await check_perms(res.user, res.groups, req.Model, "r");
 		await check_perms(res.user, res.groups, req.Model, "u");
 		await check_perms(res.user, res.groups, req.Model, "d");
-		next();
 	} catch (err) {
 		console.error(err);
 		return fail(res, 403, { status: "Unauthorized", error: err });

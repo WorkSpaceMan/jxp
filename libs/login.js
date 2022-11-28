@@ -83,7 +83,7 @@ const oauth = (req, res, next) => { // Log in through an OAuth2 provider, define
 	res.redirect(uri, next);
 }
 
-const oauth_callback = async (req, res, next) => {
+const oauth_callback = async (req, res) => {
 	const provider = req.params.provider;
 	const provider_config = req.config.oauth[provider];
 	const code = req.query.code;
@@ -126,19 +126,19 @@ const oauth_callback = async (req, res, next) => {
 		var jwt_token = jwt.sign({ apikey: apikey.apikey, user: user }, req.config.shared_secret, {
 			expiresIn: "1m"
 		});
-		res.redirect(`${req.config.oauth.success_uri}?token=${jwt_token}`, next);
+		res.redirect(`${req.config.oauth.success_uri}?token=${jwt_token}`);
 	} catch (err) {
 		console.error(err);
 		if (typeof err === 'string' || err instanceof String) {
-			res.redirect(`${req.config.oauth.fail_uri}?error=${err}&provider=${provider}`, next);
+			res.redirect(`${req.config.oauth.fail_uri}?error=${err}&provider=${provider}`);
 		} else {
-			res.redirect(`${req.config.oauth.fail_uri}?error=unknown&provider=${provider}`, next);
+			res.redirect(`${req.config.oauth.fail_uri}?error=unknown&provider=${provider}`);
 		}
 		return;
 	}
 }
 
-const login = async (req, res, next) => {
+const login = async (req, res) => {
 	const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 	let email = req.params.email || req.body.email;
 	let password = req.params.password || req.body.password;
@@ -170,7 +170,6 @@ const login = async (req, res, next) => {
 			refresh_token_expires: security.tokenExpires(refreshtoken),
 			provider: token.provider,
 		});
-		next();
 	} catch (err) {
 		res.send(401, { status: "fail", message: "Authentication failed", err });
 		console.error(new Date(), `Authentication failed`, ip, err);
@@ -178,7 +177,7 @@ const login = async (req, res, next) => {
 	}
 }
 
-const getJWT = (req, res) => {
+const getJWT = async (req, res) => {
 	var user = null;
 	if (!res.user.admin) {
 		res.send(403, { status: "fail", message: "Unauthorized" });
@@ -189,27 +188,26 @@ const getJWT = (req, res) => {
 		res.send(400, { status: "fail", message: "Email required" });
 		return;
 	}
-	User.findOne({ email: email }, function (err, result) {
-		if (err) {
-			res.send(500, { status: "error", error: err });
-			return;
-		}
+	try {
+		const result = await User.findOne({ email: email });
 		if (!result || !result._id) {
 			res.send(404, { status: "fail", message: "User not found" });
 			return;
 		}
 		user = result;
-		security.generateApiKey(user._id)
-			.then(function (result) {
-				var token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, {
-					expiresIn: "2d"
-				});
-				res.send({ email: user.email, token: token });
-			}, function () {
-				res.send(403, { status: "fail", message: "Unauthorized" });
+		try {
+			const apikey = await security.generateApiKey(user._id)
+			var token = jwt.sign({ apikey: apikey.apikey, email: user.email, id: user._id }, req.config.shared_secret, {
+				expiresIn: "2d"
 			});
-	});
-	return;
+			res.send({ email: user.email, token: token });
+		} catch (err) {
+			res.send(403, { status: "fail", message: "Unauthorized" });
+			return;
+		}
+	} catch (err) {
+		res.send(500, { status: "error", error: err });
+	}
 }
 
 const Login = {

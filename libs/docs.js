@@ -46,29 +46,32 @@ class Docs {
         }
     }
 
-    metaModel(req, res) {
+    metaModel(req, res, next) {
         try {
             if (!req.Model) {
                 return res.send(404, { status: "error", error: "Model not found" })
             }
             res.send(req.Model.schema.paths);
+            next();
         } catch (err) {
             console.error(err);
             return res.send(500, { status: "error", error: err, message: err.toString() });
         }
     }
 
-    dbDiagram(req, res) {
+    dbDiagram(req, res, next) {
         try {
             res.send(this.models);
+            next();
         } catch(err) {
             res.send(500, { status: "error", error: err, message: err.toString() });
         }
     }
 
-    frontPage(req, res) {
+    frontPage(req, res, next) {
         try {
             this.renderTemplate(res, "index", {});
+            next();
         } catch(err) {
             res.send(500, { status: "error", error: err, message: err.toString() });
         }
@@ -84,7 +87,7 @@ class Docs {
         }
     }
 
-    model(req, res) {
+    model(req, res, next) {
         try {
             const model = this.models[req.params.modelname];
             console.dir(model.schema.opts);
@@ -92,6 +95,7 @@ class Docs {
             fields.sort();
             const perms = model.schema.opts.perms;
             this.renderTemplate(res, "model", { model, fields, perms });
+            next();
         } catch(err) {
             res.send(500, { status: "error", error: err, message: err.toString() });
         }
