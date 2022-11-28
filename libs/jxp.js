@@ -81,6 +81,13 @@ const outputCSV = (req, res) => {
 const actionGet = async (req, res, next) => {
 	const opname = `get ${req.modelname} ${ops++}`;
 	console.time(opname);
+	try {
+		if (res.user) {
+			req.Model.__user = res.user;
+		}
+	} catch(err) {
+		console.error(err);
+	}
 	const parseSearch = function(search) {
 		let result = {};
 		for (let i in search) {
@@ -189,6 +196,9 @@ const actionGetOne = async (req, res) => {
 	const opname = `getOne ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
+		if (res.user) {
+			req.Model.__user = res.user;
+		}
 		const data = await getOne(req.Model, req.params.item_id, req.query);
 		res.send({ data });
 		if (debug) console.timeEnd(opname);
