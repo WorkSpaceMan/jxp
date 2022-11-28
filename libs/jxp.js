@@ -83,13 +83,6 @@ const outputCSV = (req, res, next) => {
 const actionGet = async (req, res) => {
 	const opname = `get ${req.modelname} ${ops++}`;
 	console.time(opname);
-	try {
-		if (res.user) {
-			req.Model.__user = res.user;
-		}
-	} catch(err) {
-		console.error(err);
-	}
 	const parseSearch = function(search) {
 		let result = {};
 		for (let i in search) {
@@ -123,6 +116,9 @@ const actionGet = async (req, res) => {
 		q = req.Model.find({ $text: { $search: req.query.search }}, { score : { $meta: "textScore" } }).sort( { score: { $meta : "textScore" } } );
 		countquery = Object.assign({ $text: { $search: req.query.search }}, countquery);
 		qcount = req.Model.find({ $text: { $search: req.query.search }});
+	}
+	if (res.user) {
+		q.options({ user: res.user });
 	}
 	try {
 		let count = await req.Model.estimatedDocumentCount();
@@ -197,10 +193,7 @@ const actionGetOne = async (req, res) => {
 	const opname = `getOne ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		if (res.user) {
-			req.Model.__user = res.user;
-		}
-		const data = await getOne(req.Model, req.params.item_id, req.query);
+		const data = await getOne(req.Model, req.params.item_id, req.query, { user: res.user });
 		res.send({ data });
 		if (debug) console.timeEnd(opname);
 	} catch(err) {
@@ -613,8 +606,8 @@ const actionBulkWrite = async (req, res) => {
 
 // Utitlities
 
-const getOne = async (Model, item_id, params) => {
-	const query = Model.findById(item_id);
+const getOne = async (Model, item_id, params, options) => {
+	const query = Model.findById(item_id, {}, options);
 	if (params.populate) {
 		if ((typeof params.populate === "object")  && !Array.isArray(params.populate)) {
 			for (let i in params.populate) {
