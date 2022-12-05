@@ -36,3 +36,7 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
 * [Hooks](https://jxp.readthedocs.io/en/v2.0.0/hooks)
 * [Special Features](https://jxp.readthedocs.io/en/v2.0.0/special)
 * [Changelog](https://jxp.readthedocs.io/en/v2.0.0/changelog)
+
+## Installing from source
+
+`npm i --legacy-peer-deps`
