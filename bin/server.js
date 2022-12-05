@@ -196,17 +196,23 @@ const mongoose = require("mongoose");
 const JXP = require("../libs/jxp");
 const config = require("config");
 require("dotenv").config();
+const pkg = require("../package.json");
 
 config.callbacks = {
-	post: function(modelname, item, user) {
-		// console.log("Post callback");
-	},
-	put: function(modelname, item, user) {
-		// console.log("Put callback");
-	},
-	delete: function(modelname, item, user, opts) {
-		// console.log("Delete callback");
-	}
+	// Examples:
+	// post: function(modelname, item, user) {
+	// 	console.log("Post callback");
+	// },
+	// put: function(modelname, item, user) {
+	// 	console.log("Put callback");
+	// },
+	// delete: function(modelname, item, user, opts) {
+	// 	console.log("Delete callback");
+	// }
+
+	post: function() {},
+	put: function() {},
+	delete: function() {}
 };
 
 config.pre_hooks = {
@@ -259,7 +265,7 @@ var server = new JXP(config);
 let port = process.env.NODE_DOCKER_PORT || process.env.PORT || config.port || 4001;
 if (process.env.NODE_ENV === "test") port = 4005;
 server.listen(port, function() {
-	console.log('%s listening at %s', server.name, server.url);
+	console.log('%s listening at %s', `${pkg.name} v${pkg.version}`, server.url);
 });
 
 module.exports = server; // For testing
