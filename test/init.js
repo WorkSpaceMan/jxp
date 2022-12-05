@@ -13,7 +13,7 @@ const security = require("../libs/security");
 
 const empty = async model => {
 	try {
-		const result = await model.deleteMany({});
+		await model.deleteMany({});
 	} catch(err) {
 		console.error(err);
 		throw(err);

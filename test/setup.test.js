@@ -3,14 +3,13 @@ const config = require("config");
 const path = require("path");
 
 var model_dir = config.model_dir || path.join(process.cwd(), "./models");
-const Test = require(path.join(model_dir, "test_model"));
+require(path.join(model_dir, "test_model"));
 
 var chai = require('chai');
 var chaiHttp = require('chai-http');
 var should = chai.should();
 
 var init = require("./init");
-
 var server = require("../bin/server");
 
 chai.use(chaiHttp);
@@ -27,6 +26,7 @@ const mock_data = {
 describe('Setup', () => {
     beforeEach(async function() {
         await init.empty_user_collections();
+        console.log("Emptied collections");
     })
 
 	describe("setup", () => {
@@ -35,6 +35,7 @@ describe('Setup', () => {
 				.post("/setup")
 				.send({ email: init.email, password: init.password })
 				.end((err, res) => {
+                    // console.log(res);
 					res.should.have.status(200);
 					res.body.status.should.equal('success');
                     res.body.name.should.equal('admin');

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const randToken = require("rand-token");
 const path = require("path");
+const errors = require("restify-errors");
 var APIKey = null;
 var Token = null;
 var Groups = null;
@@ -15,10 +16,6 @@ const init = function(config) {
 	Token = require(path.join(config.model_dir, "token_model"));
 	RefreshToken = require(path.join(config.model_dir, "refreshtoken_model"));
 	if (config.url) provider = config.url;
-};
-
-const fail = function (res, code, message) {
-	res.send(code, { status: "error", message });
 };
 
 const basicAuthData = function(req) {
@@ -51,7 +48,7 @@ const basicAuth = async ba => {
 		return user;
 	} catch(err) {
 		console.error(new Date(), err);
-		return Promise.reject(err);
+		throw err;
 	}
 };
 
@@ -84,7 +81,7 @@ const bearerAuth = async t => {
 		return user;
 	} catch (err) {
 		console.error(err);
-		return Promise.reject(err);
+		throw err;
 	}
 }
 
@@ -98,7 +95,7 @@ const apiKeyAuth = async apikey => {
 		return user;
 	} catch(err) {
 		console.error(new Date(), err);
-		return Promise.reject(err);
+		throw err;
 	}
 };
 
@@ -109,7 +106,7 @@ const getGroups = async user_id => {
 		return groups;
 	} catch(err) {
 		console.error(new Date(), err);
-		return Promise.reject(err);
+		throw err;
 	}
 };
 
@@ -131,7 +128,7 @@ const generateApiKey = async user_id => {
 		return apikey;
 	} catch(err) {
 		console.error(new Date(), err);
-		return Promise.reject(err);
+		throw err;
 	}
 };
 
@@ -156,16 +153,21 @@ const generateToken = async user_id => {
 		return token;
 	} catch (err) {
 		console.error(new Date(), err);
-		return Promise.reject(err);
+		throw err;
 	}
 };
 
 const ensureToken = async user_id => {
-	const token = await Token.findOne({ user_id, provider }).sort({ createdAt: -1 }).exec();
-	if (tokenIsValid(token)) {
-		return token;
+	try {
+		const token = await Token.findOne({ user_id, provider }).sort({ createdAt: -1 }).exec();
+		if (tokenIsValid(token)) {
+			return token;
+		}
+		return await generateToken(user_id);
+	} catch (err) {
+		console.error(new Date(), err);
+		throw err;
 	}
-	return await generateToken(user_id);
 }
 
 const refreshToken = async user_id => {
@@ -187,7 +189,7 @@ const generateRefreshToken = async user_id => {
 		return refreshtoken;
 	} catch (err) {
 		console.error(new Date(), err);
-		return Promise.reject(err);
+		throw err;
 	}
 };
 
@@ -226,7 +228,8 @@ const refresh = async (req, res) => {
 		}
 	} catch (err) {
 		console.error(err);
-		return fail(res, 403, err);
+		if (err.code) throw err;
+		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
 	}
 }
 
@@ -241,7 +244,8 @@ const login = async (req, res) => {
 		res = Object.assign(res, authenticate_result);
 	} catch(err) {
 		console.error(err);
-		return fail(res, 403, err);
+		if (err.code) throw err;
+		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
 	}
 };
 
@@ -250,40 +254,37 @@ const authenticate = async req => {
 	if (!req.query.apikey && !req.headers.authorization && !(req.headers["X-API-Key"] || req.headers["x-api-key"])) {
 		return false;
 	}
-	try {
-		if (req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("basic") === 0) {
-			// Basic Auth
-			user = await basicAuth(basicAuthData(req));
-		} else if (req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("bearer") === 0) {
-			// Token Auth
-			user = await bearerAuth(bearerAuthData(req));
-		} else if (req.query.apikey) {
-			user = await apiKeyAuth(req.query.apikey);
-		} else if (req.headers["X-API-Key"] || req.headers["x-api-key"]) {
-			// API Key
-			user = await apiKeyAuth(req.query.apikey || req.headers["X-API-Key"] || req.headers["x-api-key"])
-		} else {
-			throw ("Could not find any way to authenticate");
-		}
-		if (!user) {
-			throw ("Could not find user");
-		}
-		return {
-			token: await ensureToken(user._id),
-			refresh_token: await ensureRefreshToken(user._id),
-			groups: await getGroups(user._id),
-			user
-		}
-	} catch (err) {
-		return Promise.reject(err);
+	if (req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("basic") === 0) {
+		// Basic Auth
+		user = await basicAuth(basicAuthData(req));
+	} else if (req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("bearer") === 0) {
+		// Token Auth
+		user = await bearerAuth(bearerAuthData(req));
+	} else if (req.query.apikey) {
+		user = await apiKeyAuth(req.query.apikey);
+	} else if (req.headers["X-API-Key"] || req.headers["x-api-key"]) {
+		// API Key
+		user = await apiKeyAuth(req.query.apikey || req.headers["X-API-Key"] || req.headers["x-api-key"])
+	} else {
+		throw ("Could not find any way to authenticate");
 	}
+	if (!user) {
+		throw ("Could not find user");
+	}
+	return {
+		token: await ensureToken(user._id),
+		refresh_token: await ensureRefreshToken(user._id),
+		groups: await getGroups(user._id),
+		user
+	}
+	
 }
 
 const auth = async (req, res) => {
 	// Check against model as to whether we're allowed to edit this model
 	if (!req.Model) {
 		console.error("Model missing");
-		return fail(res, 500, "Model missing");
+		throw new errors.InternalServerError("Model missing", { message: "Model missing" });
 	}
 	try {
 		var method = null;
@@ -298,12 +299,13 @@ const auth = async (req, res) => {
 			method = "d";
 		} else {
 			console.error("Unsupported operation", req.method);
-			return fail(res, 500, "Unsupported operation: " + req.method);
+			throw new errors.InternalServerError("Unsupported operation", { message: "Unsupported operation: " + req.method});
 		}
-		await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
+		return await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
 	} catch(err) {
 		console.error(err);
-		return fail(res, 403, { status: "Unauthorized", error: err });
+		if (err.code) throw err;
+		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
 	}
 };
 
@@ -316,7 +318,8 @@ const bulkAuth = async (req, res,) => {
 		await check_perms(res.user, res.groups, req.Model, "d");
 	} catch (err) {
 		console.error(err);
-		return fail(res, 403, { status: "Unauthorized", error: err });
+		if (err.code) throw err;
+		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
 	}
 };
 
@@ -326,17 +329,17 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		//If no perms are set, then this isn't an available model
 		if (!perms.admin) {
 			console.error("Model permissions not set correctly - add an admin section");
-			throw("Model permissions not set correctly - add an admin section");
+			throw new errors.InternalServerError("Model permissions not set correctly - add an admin section", { message: "Model permissions not set correctly - add an admin section" });
 		}
 		//First check if "all" is able to do this. If so, let's get on with it.
-		if (perms.all) {
+		if (perms.all && perms.all.length) {
 			if (perms.all.indexOf(method) !== -1) {
 				return true;
 			}
 		}
 		//This isn't an 'all' situation, so let's bail if the user isn't logged in
 		if (!user) {
-			throw("Unauthorized");
+			throw new errors.ForbiddenError("User not logged in", { message: "User not logged in" });
 		}
 		//Let's check perms in this order - admin, user, group, owner
 		//Admin check
@@ -362,16 +365,17 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		if (item && item._owner_id && item._owner_id.toString() == user._id.toString() && (perms.owner && perms.owner.includes(method))) return true;
 		throw ("Authorization failed");
 	} catch (err) {
-		return Promise.reject(err);
+		if (err.code) throw err;
+		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
 	}
 }
 
 const admin_only = (req, res, next) => { // Chain after login
 	if (!res.user) {
-		return fail(res, 403, "Unauthorized");
+		throw new errors.ForbiddenError("Unauthorized", { message: "Unauthorized" });
 	}
 	if (!res.user.admin) {
-		return fail(res, 403, "Unauthorized");
+		throw new errors.ForbiddenError("Unauthorized", { message: "Unauthorized" });
 	}
 	next();
 }

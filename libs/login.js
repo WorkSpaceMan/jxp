@@ -3,13 +3,12 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const security = require("../libs/security");
 const nodemailer = require('nodemailer');
+const errors = require("restify-errors");
 const smtpTransport = require('nodemailer-smtp-transport');
-var User = null;
-var APIKey = null;
+const path = require("path");
+let User = null;
 
 var init = function (config) {
-	var path = require("path");
-	APIKey = require(path.join(config.model_dir, 'apikey_model'));
 	User = require(path.join(config.model_dir, 'user_model'));
 	security.init(config);
 };
@@ -30,12 +29,11 @@ const recover = async (req, res) => {
 		const email = req.body.email;
 		if (!email) {
 			console.error("Missing email parameter");
-			res.send(400, { status: "fail", message: "Missing email parameter" });
-			return;
+			throw new errors.BadRequestError("Bad Request", { status: "fail", message: "Missing email parameter" });
 		}
 		const user = await User.findOne({ email });
 		if (!user) {
-			throw ("Could not find email");
+			throw new errors.NotFoundError("User Not Found", { status: "fail", message: "User not found" });
 		}
 		const result = await security.generateApiKey(user._id);
 		const token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, { expiresIn: "2d" });
@@ -57,26 +55,27 @@ const recover = async (req, res) => {
 		});
 		res.send({ status: "ok", message: "Sent recovery email" });
 	} catch (err) {
-		res.send(403, { status: "fail", message: "Unauthorized", err });
+		if (err.code) throw err;
+		throw new errors.UnauthorizedError("Unauthorized", { status: "fail", message: "Unauthorized", info: err });
 	}
 }
 
 const logout = async (req, res) => {
 	try {
-		if (!res.user) throw("You don't seem to be logged in");
+		if (!res.user) throw new errors.ForbiddenError("Forbidden", { message: "You don't seem to be logged in" });
 		await security.revokeToken(res.user._id);
 		res.send({ status: "ok", message: "User logged out" });
 	} catch(err) {
 		console.error(err);
-		res.send(500, { status: "error", error: err });
+		if (err.code) throw err;
+		throw new errors.InternalServerError("Server Error", { status: "error", message: err.toString() });
 	}
 }
 
 const oauth = (req, res, next) => { // Log in through an OAuth2 provider, defined in config.js
 	const provider_config = req.config.oauth[req.params.provider];
 	if (!provider_config) {
-		res.send(500, req.params.provider + " config not defined");
-		return;
+		throw new errors.InternalServerError("Internal Server Error", { message: req.params.provider + " config not defined" });
 	}
 	const state = Math.random().toString(36).substring(7);
 	const uri = `${provider_config.auth_uri}?client_id=${provider_config.app_id}&redirect_uri=${req.config.url}/login/oauth/callback/${req.params.provider}&scope=${provider_config.scope}&state=${state}&response_type=code`;
@@ -149,8 +148,7 @@ const login = async (req, res) => {
 	}
 	if ((!password) || (!email)) {
 		console.error(new Date(), "Missing email or password parameters");
-		res.send(404, { status: "fail", message: "Missing email or password parameters" });
-		return;
+		return errors.ForbiddenError({ status: "fail", message: "Missing email or password parameters" });
 	}
 	try {
 		const user = await User.findOne({ email });
@@ -171,28 +169,25 @@ const login = async (req, res) => {
 			provider: token.provider,
 		});
 	} catch (err) {
-		res.send(401, { status: "fail", message: "Authentication failed", err });
 		console.error(new Date(), `Authentication failed`, ip, err);
-		return;
+		if (err.code) throw err;
+		return errors.ForbiddenError({ status: "fail", message: "Authentication failed" });
 	}
 }
 
 const getJWT = async (req, res) => {
 	var user = null;
 	if (!res.user.admin) {
-		res.send(403, { status: "fail", message: "Unauthorized" });
-		return;
+		throw new errors.UnauthorizedError("Unauthorized", { status: "fail", message: "Unauthorized" });
 	}
 	var email = req.params.email || req.body.email;
 	if (!email) {
-		res.send(400, { status: "fail", message: "Email required" });
-		return;
+		throw new errors.BadRequestError("Bad Request", { status: "fail", message: "Email required" });
 	}
 	try {
 		const result = await User.findOne({ email: email });
 		if (!result || !result._id) {
-			res.send(404, { status: "fail", message: "User not found" });
-			return;
+			throw new errors.NotFoundError("Not Found", { status: "fail", message: "User not found" });
 		}
 		user = result;
 		try {
@@ -202,11 +197,11 @@ const getJWT = async (req, res) => {
 			});
 			res.send({ email: user.email, token: token });
 		} catch (err) {
-			res.send(403, { status: "fail", message: "Unauthorized" });
-			return;
+			throw new errors.UnauthorizedError("Unauthorized", { status: "fail", message: "Unauthorized" });
 		}
 	} catch (err) {
-		res.send(500, { status: "error", error: err });
+		if (err.code) throw err;
+		throw new errors.InternalServerError("Internal Server Error", { status: "error", message: err.toString() });
 	}
 }
 

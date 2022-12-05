@@ -9,7 +9,7 @@ const getModelFileContents = (model_dir) => {
                     return reject(err);
                 }
                 let models = [];
-                for (file of files) {
+                for (const file of files) {
                     const modelname = path.basename(file, ".js").replace("_model", "");
                     try {
                         const modelobj = require(path.join(model_dir, file));

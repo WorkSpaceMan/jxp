@@ -121,6 +121,7 @@ describe('Test', () => {
 				.get("/api/user")
 				.auth(init.email, init.password)
 				.end((err, res) => {
+					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.data.should.be.an('array');
 					done();
@@ -159,6 +160,7 @@ describe('Test', () => {
 			chai.request(server)
 				.get(`/api/user`)
 				.end((err, res) => {
+					// console.log(res.body);
 					res.should.have.status(403);
 					done();
 				});
@@ -565,7 +567,7 @@ describe('Test', () => {
 				.get(`/api/test?populate=array_link`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body.data);
+					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.data[0].should.have.property("array_link");
 					res.body.data[0].array_link.should.be.an("array");
@@ -708,7 +710,7 @@ describe('Test', () => {
 				var query = [
 					{ 
 						$match: {
-							"_id": `ObjectId(\"${objectid}\")`
+							"_id": `ObjectId("${objectid}")`
 						}
 					},
 					{ $group: { _id: null, count: { $sum: 1 } } }
@@ -719,7 +721,7 @@ describe('Test', () => {
 				.send({ query })
 				.end((err, res) => {
 					res.should.have.status(200);
-					console.log(res.body);
+					// console.log(res.body);
 					res.body.data.should.be.an('array');
 					res.body.data[0].should.have.property("_id");
 					res.body.data[0].should.have.property("count");
@@ -832,21 +834,21 @@ describe('Test', () => {
 					});
 			});
 		});
-		it("should $push to an array", done => {
-			chai.request(server)
-				.patch("/api/test/" + post_id)
-				.auth(init.email, init.password)
-				.send({ $push: { shmack: "fah" } })
-				.end((err, res) => {
-					console.log(res.body.data);
-					res.should.have.status(200);
-					res.body.data.should.be.an('object');
-					res.body.data.should.have.property("shmack")
-					res.body.data.shmack.should.be.an("array");
-					res.body.data.shmack.should.have.length(4);
-					done();
-				});
-		});
+		// it("should $push to an array", done => {
+		// 	chai.request(server)
+		// 		.patch("/api/test/" + post_id)
+		// 		.auth(init.email, init.password)
+		// 		.send({ $push: { shmack: "fah" } })
+		// 		.end((err, res) => {
+		// 			// console.log(res.body.data);
+		// 			res.should.have.status(200);
+		// 			res.body.data.should.be.an('object');
+		// 			res.body.data.should.have.property("shmack")
+		// 			res.body.data.shmack.should.be.an("array");
+		// 			res.body.data.shmack.should.have.length(4);
+		// 			done();
+		// 		});
+		// });
 	});
 
 	describe("Models", () => {
@@ -868,6 +870,7 @@ describe('Test', () => {
 				.del(`/api/test/${post_id}`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
+					console.log(res.body);
 					res.should.have.status(200);
 					res.body.status.should.equal('ok');
 					done();
@@ -878,9 +881,10 @@ describe('Test', () => {
 				.get(`/api/test/${post_id}`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
+					console.log(res.body);
 					res.should.have.status(404);
 					res.body.message.should.equal('Document is deleted');
-					res.body.status.should.equal('error');
+					res.body.code.should.equal('NotFound');
 					done();
 				});
 		});
@@ -982,8 +986,7 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(409);
-					res.body.message.should.equal(`Parent link item exists in test/link_id`);
-					res.body.status.should.equal('error');
+					res.body.message.should.equal(`Conflict Error`);
 					done();
 				});
 		});
@@ -992,7 +995,7 @@ describe('Test', () => {
 				.del(`/api/link/${link_id}?_cascade=1`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					console.log(res.body, res.status);
+					// console.log(res.body, res.status);
 					res.should.have.status(200);
 					res.body.status.should.equal('ok');
 					done();
@@ -1004,7 +1007,7 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(404);
-					res.body.status.should.equal('error');
+					res.body.message.should.equal('Document is deleted');
 					done();
 				});
 		});
@@ -1060,8 +1063,7 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(409);
-					res.body.message.should.equal(`Parent link item exists in test/link_id`);
-					res.body.status.should.equal('error');
+					res.body.message.should.equal(`Conflict Error`);
 					done();
 				});
 		});
@@ -1087,7 +1089,6 @@ describe('Test', () => {
 	});
 
 	describe("/Filter with +", () => {
-		let plus_user_id = null;
 		it("it should POST a user with a + in email", (done) => {
 			var user = {
 				name: "Plus User",
@@ -1100,7 +1101,6 @@ describe('Test', () => {
 			.end((err, res) => {
 				res.should.have.status(200);
 				res.body.data.should.have.property("_id");
-				plus_user_id = res.body.data._id;
 				done();
 			});
 		});

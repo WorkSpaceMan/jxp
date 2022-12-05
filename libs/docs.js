@@ -6,6 +6,7 @@ const md = require('jstransformer')(require('jstransformer-markdown-it'));
 const util = require('util');
 const readFile = util.promisify(fs.readFile);
 const schema_description = require("./schema_description");
+const errors = require("restify-errors");
 
 class Docs {
     constructor(opts) {
@@ -32,7 +33,7 @@ class Docs {
             res.end();
         } catch(err) {
             console.error(err);
-            return res.send(500, { status: "error", error: err, message: err.toString() });
+            return errors.InternalServerError({ message: err.toString() });
         }
     }
 
@@ -42,20 +43,20 @@ class Docs {
             res.send(models);
         } catch (err) {
             console.error(err);
-            return res.send(500, { status: "error", error: err, message: err.toString() });
+            return errors.InternalServerError({ message: err.toString() });
         }
     }
 
     metaModel(req, res, next) {
         try {
             if (!req.Model) {
-                return res.send(404, { status: "error", error: "Model not found" })
+                return errors.NotFoundError({ status: "error", error: "Model not found" })
             }
             res.send(req.Model.schema.paths);
             next();
         } catch (err) {
             console.error(err);
-            return res.send(500, { status: "error", error: err, message: err.toString() });
+            return errors.InternalServerError({ message: err.toString() });
         }
     }
 
@@ -64,7 +65,7 @@ class Docs {
             res.send(this.models);
             next();
         } catch(err) {
-            res.send(500, { status: "error", error: err, message: err.toString() });
+            errors.InternalServerError({ message: err.toString() });
         }
     }
 
@@ -73,7 +74,7 @@ class Docs {
             this.renderTemplate(res, "index", {});
             next();
         } catch(err) {
-            res.send(500, { status: "error", error: err, message: err.toString() });
+            errors.InternalServerError({ message: err.toString() });
         }
     }
 
@@ -83,7 +84,7 @@ class Docs {
             const md_contents = md.render(body.toString()).body;
             this.renderTemplate(res, "md", { md_contents });
         } catch(err) {
-            res.send(500, { status: "error", error: err, message: err.toString() });
+            errors.InternalServerError({ message: err.toString() });
         }
     }
 
@@ -97,7 +98,7 @@ class Docs {
             this.renderTemplate(res, "model", { model, fields, perms });
             next();
         } catch(err) {
-            res.send(500, { status: "error", error: err, message: err.toString() });
+            errors.InternalServerError({ message: err.toString() });
         }
     }
 }

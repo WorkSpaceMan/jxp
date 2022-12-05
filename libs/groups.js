@@ -1,4 +1,6 @@
-var Groups = null;
+const errors = require("restify-errors");
+
+let Groups = null;
 
 const init = config => {
 	const path = require("path");
@@ -10,13 +12,11 @@ const actionPut = async (req, res) => {
 	const group = req.body.group;
 	if (!group) {
 		console.error("Group required");
-		res.send(400, "Group required");
-		return;
+		return errors.BadRequestError("Group required");
 	}
 	if (!user_id) {
 		console.error("user_id required");
-		res.send(400, "user_id required");
-		return;
+		return errors.BadRequestError("user_id required", { message: "user_id is required" });
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id: user_id });
@@ -39,8 +39,7 @@ const actionPut = async (req, res) => {
 		res.send(await userGroup.save());
 	} catch(err) {
 			console.error(err);
-			res.send(500, err);
-			return;
+			return errors.InternalServerError({ message: err.toString()});
 	}
 };
 
@@ -49,13 +48,11 @@ const actionPost = async (req, res) => {
 	const group = req.body.group;
 	if (!group) {
 		console.error("Group required");
-		res.send(400, "Group required");
-		return;
+		return errors.BadRequestError("Group required");
 	}
 	if (!user_id) {
 		console.error("user_id required");
-		res.send(400, "user_id required");
-		return;
+		return errors.BadRequestError("user_id required", { message: "user_id is required" });
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id: user_id });
@@ -78,8 +75,7 @@ const actionPost = async (req, res) => {
 		res.send(await userGroup.save());
 	} catch (err) {
 		console.error(err);
-		res.send(500, err);
-		return;
+		return errors.InternalServerError({ message: err.toString()});
 	}
 };
 
@@ -87,8 +83,7 @@ const actionGet = async (req, res) => {
 	var user_id = req.params.user_id;
 	if (!user_id) {
 		console.error("user_id required");
-		res.send(400, "user_id required");
-		return;
+		return errors.BadRequestError("user_id required", { message: "user_id is required" });
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id });
@@ -99,8 +94,7 @@ const actionGet = async (req, res) => {
 		res.send(userGroup);
 	} catch (err) {
 		console.error(err);
-		res.send(500, err);
-		return;
+		return errors.InternalServerError({ message: err.toString()});
 	}
 };
 
@@ -108,19 +102,16 @@ const actionDelete = async (req, res) => {
 	const user_id = req.params.user_id;
 	const group = req.query.group;
 	if (!group) {
-		res.send(400, "Group required");
-		return;
+		return errors.BadRequestError("Group required");
 	}
 	if (!user_id) {
 		console.error("user_id required");
-		res.send(400, "user_id required");
-		return;
+		return errors.BadRequestError("user_id required", { message: "user_id is required" });
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id });
 		if (!userGroup) {
-			res.send(400, "User not found");
-			return;
+			return errors.BadRequestError("User not found");
 		}
 		let i = userGroup.groups.indexOf(group);
 		if (i > -1) {
@@ -129,8 +120,7 @@ const actionDelete = async (req, res) => {
 		res.send(await userGroup.save());
 	} catch (err) {
 		console.error(err);
-		res.send(500, err);
-		return;
+		return errors.InternalServerError({ message: err.toString() });
 	}
 };
 
