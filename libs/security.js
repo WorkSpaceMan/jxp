@@ -177,7 +177,7 @@ const refreshToken = async user_id => {
 
 const revokeToken = async user_id => {
 	await Token.deleteOne({ user_id, provider });
-	return true;
+	return;
 }
 
 const generateRefreshToken = async user_id => {
@@ -203,7 +203,7 @@ const ensureRefreshToken = async user_id => {
 
 const revokeRefreshToken = async user_id => {
 	await RefreshToken.deleteMany({ user_id });
-	return true;
+	return;
 }
 
 const refresh = async (req, res) => {
@@ -334,7 +334,7 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		//First check if "all" is able to do this. If so, let's get on with it.
 		if (perms.all && perms.all.length) {
 			if (perms.all.indexOf(method) !== -1) {
-				return true;
+				return;
 			}
 		}
 		//This isn't an 'all' situation, so let's bail if the user isn't logged in
@@ -345,24 +345,24 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		//Admin check
 		if (user.admin && perms.admin && perms.admin.includes(method)) {
 			// console.log("Matched permission 'admin':" + method);
-			return true;
+			return;
 		}
 		//User check
 		if (perms.user && perms.user.includes(method)) {
 			// console.log("Matched permission 'user':" + method);
-			return true;
+			return;
 		}
 		//Group check
 		for (let group of groups) {
 			if (perms[group] && perms[group].includes(method) ) {
 				// console.log("Matched permission '" + group + "':" + method);
-				return true;
+				return;
 			}
 		}
 		//Owner check
 		if (!item_id) throw (`Authorization failed - ${method}`);
 		const item = await model.findById(item_id);
-		if (item && item._owner_id && item._owner_id.toString() == user._id.toString() && (perms.owner && perms.owner.includes(method))) return true;
+		if (item && item._owner_id && item._owner_id.toString() == user._id.toString() && (perms.owner && perms.owner.includes(method))) return;
 		throw ("Authorization failed");
 	} catch (err) {
 		if (err.code) throw err;
