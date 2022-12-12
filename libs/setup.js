@@ -14,11 +14,12 @@ const checkUserDoesNotExist = async () => {
 	try {
 		const count = await User.countDocuments();
 		if (count) {
-			throw new errors.ConflictError("Conflict Error", { status: "failed", error: "Cannot setup if user exists" });
+			throw new errors.ConflictError("Cannot setup if user exists");
 		}
 	} catch(err) {
 		console.error(err);
-		throw new errors.InternalServerError("Internal Server Error", { status: "error", error: err.message });
+		if (err.code) throw err;
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -47,7 +48,7 @@ const setup = async (req, res) => {
 		});
 	} catch(err) {
 		console.error(err);
-		throw new errors.InternalServerError("Internal Server Error", { status: "error", error: err.message });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -77,7 +78,7 @@ const data_setup = async (req, res) => {
 		res.send({ status: "success", results });
 	} catch(err) {
 		console.error(err);
-		throw new errors.InternalServerError("Internal Server Error", { status: "error", error: err.message });
+		throw new errors.InternalServerError(err.toString());
 	}
 }
 

@@ -13,6 +13,9 @@ const morgan = require("morgan");
 const ws = require("./ws");
 const modeldir = require("./modeldir");
 const query_manipulation = require("./query_manipulation");
+const corsMiddleware = require('restify-cors-middleware2');
+const json2csv = require('json2csv').parse;
+global.JXPSchema = require("./schema");
 
 var models = {};
 
@@ -30,7 +33,7 @@ const middlewareModel = (req, res, next) => {
 		return next();
 	} catch (err) {
 		console.error(new Date, err);
-		throw new errors.NotFoundError("Not Found", { message: `Model ${modelname} not found` });
+		throw new errors.NotFoundError(`Model ${modelname} not found`);
 	}
 };
 
@@ -56,16 +59,15 @@ const outputJSON = (req, res, next) => {
 		next();
 	} catch (err) {
 		console.error(new Date(), err);
-		throw new errors.InternalServerError("Error generating output", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 }
 
 // Outputs whatever is in res.result as CSV
 const outputCSV = (req, res, next) => {
-	const json2csv = require('json2csv').parse;
 	const opts = { "flatten": true };
 	if (!res.result.data) {
-		throw new errors.InternalServerError("Error generating output", { message: "Not CSVable data" });
+		throw new errors.InternalServerError("Error generating CSV");
 	}
 	try {
 		const data = res.result.data.map(row => row._doc);
@@ -81,7 +83,7 @@ const outputCSV = (req, res, next) => {
 		next();
 	} catch (err) {
 		console.error(err);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 }
 
@@ -101,7 +103,7 @@ const actionGet = async (req, res) => {
 		filters = parseFilter(req.query.filter);
 	} catch (err) {
 		console.trace(new Date(), err);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 	let search = parseSearch(req.query.search);
 	for (let i in search) {
@@ -191,7 +193,7 @@ const actionGet = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -206,7 +208,7 @@ const actionGetOne = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -236,7 +238,8 @@ const actionPost = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		if (err.code) throw err;
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -247,7 +250,7 @@ const actionPut = async (req, res) => {
 		let item = await req.Model.findById(req.params.item_id);
 		if (!item) {
 			console.error(new Date(), "Document not found");
-			throw new errors.NotFoundError("Not Found", { message: "Document not found" });
+			throw new errors.NotFoundError(`Document ${req.params.item_id} not found on ${req.modelname}`);
 		}
 		_populateItem(item, datamunging.deserialize(req.body));
 		_versionItem(item);
@@ -271,7 +274,8 @@ const actionPut = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		if (err.code) throw err;
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -289,14 +293,15 @@ const actionUpdate = async (req, res) => {
 		}
 		res.json({
 			status: "ok",
-			message: req.modelname + " updateed",
+			message: req.modelname + " updated",
 			data
 		});
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		if (err.code) throw err;
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -309,8 +314,7 @@ const actionDelete = async (req, res) => {
 	try {
 		let item = await req.Model.findById(req.params.item_id);
 		if (!item) {
-			console.error(new Date(), "Couldn't find item for delete");
-			throw new errors.NotFoundError("Not Found", { message: "Couldn't find item for delete" });
+			throw new errors.NotFoundError(`Couldn't find item ${req.params.item_id} for delete on ${req.modelname}`);
 		}
 		// Get linked models
 		const linked_models = [];
@@ -339,7 +343,7 @@ const actionDelete = async (req, res) => {
 						await models[linked_model.modelname].updateMany(q, { _deleted: true });
 					}
 				} else {
-					throw new errors.ConflictError("Conflict Error", { message: `Parent link item exists in ${linked_model.modelname}/${linked_model.field}` });
+					throw new errors.ConflictError(`Parent link item exists in ${linked_model.modelname}/${linked_model.field}`);
 				}
 			}
 		}
@@ -373,7 +377,7 @@ const actionDelete = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -392,7 +396,7 @@ const actionCount = async (req, res) => {
 		filters = parseFilter(req.query.filter);
 	} catch (err) {
 		console.trace(new Date(), err);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 	let search = parseSearch(req.query.search);
 	for (let i in search) {
@@ -409,7 +413,7 @@ const actionCount = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -423,7 +427,7 @@ const actionCall = async (req, res) => {
 	} catch(err) {
 		console.error(new Date(), err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -431,7 +435,7 @@ const actionCallItem = async (req, res) => {
 	try {
 		const item = req.Model.findById(req.params.item_id);
 		if (!item) {
-			throw new errors.NotFoundError("Not Found", { message: "Couldn't find item for call" });
+			throw new errors.NotFoundError(`Couldn't find item ${req.params.item_id} on ${req.modelname} for call`);
 		}
 		req.params.__user = res.user || null;
 		const result = await req.Model[req.params.method_name](item);
@@ -439,15 +443,14 @@ const actionCallItem = async (req, res) => {
 	} catch(err) {
 		console.trace(err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
 // Actions (verbs)
 const actionQuery = async (req, res) => {
 	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
-		console.error("query missing or not of type object")
-		throw new errors.InternalServerError("Query missing", { message: "query missing or not of type object" });
+		throw new errors.BadRequestError("Query missing or not of type object");
 	}
 	const opname = `query ${req.modelname} ${ops++}`;
 	console.time(opname);
@@ -517,7 +520,7 @@ const actionQuery = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -526,7 +529,7 @@ const actionAggregate = async (req, res) => {
 	let query = (req.body.query) ? req.body.query : req.body; // Don't require to embed in query anymore
 	if (!query || !Array.isArray(query)) {
 		console.error("query missing or not of type array")
-		throw new errors.InternalServerError("Query missing", { message: "query missing or not of type array" });
+		throw new errors.BadRequestError("Query missing or not of type array");
 	}
 	query = query_manipulation.fix_query(query);
 	const opname = `aggregate ${req.modelname} ${ops++}`;
@@ -544,7 +547,7 @@ const actionAggregate = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -552,7 +555,7 @@ const actionAggregate = async (req, res) => {
 const actionBulkWrite = async (req, res) => {
 	if (!req.body || !Array.isArray(req.body)) {
 		console.error("query missing or not of type array")
-		throw new errors.InternalServerError("Query Missing", { message: "query missing or not of type array" });
+		throw new errors.BadRequestError("Query missing or not of type array");
 	}
 	const opname = `bulkwrite ${req.modelname} ${ops++}`;
 	console.time(opname);
@@ -567,7 +570,7 @@ const actionBulkWrite = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -628,11 +631,11 @@ const getOne = async (Model, item_id, params, options) => {
 		var item = await query.exec();
 		if (!item) {
 			// console.error("Could not find document");
-			throw new errors.NotFoundError("Could not find document", { message: "Could not find document" });
+			throw new errors.NotFoundError(`Could not find document ${item_id} on ${Model.modelName}`);
 		}
 		if (item._deleted && !params.showDeleted) {
 			// console.error("Document is deleted");
-			throw new errors.NotFoundError("Document is deleted", { message: "Document is deleted" });
+			throw new errors.NotFoundError(`Document ${item_id} is deleted on ${Model.modelName}`);
 		}
 		item = item.toObject();
 		//Don't ever return passwords
@@ -641,7 +644,7 @@ const getOne = async (Model, item_id, params, options) => {
 	} catch(err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Error", { message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -762,8 +765,6 @@ const changeUrlParams = (req, key, val) => {
 	return req.config.url + req.path() + "?" + querystring.stringify(q);
 };
 
-global.JXPSchema = require("./schema");
-
 const JXP = function(options) {
 	const server = restify.createServer();
 	const model_dir = options.model_dir || modeldir.findModelDir(path.dirname(process.argv[1]));
@@ -872,8 +873,6 @@ const JXP = function(options) {
 	server.use(morgan("combined", { stream: accessLogStream }));
 
 	// CORS
-	const corsMiddleware = require('restify-cors-middleware');
-
 	const cors = corsMiddleware({
 		preflightMaxAge: 5, //Optional
 		origins: ['*'],
@@ -891,6 +890,12 @@ const JXP = function(options) {
 	// Bind our config to req.config
 	server.use((req, res, next) => {
 		req.config = config;
+		next();
+	});
+
+	// Set req.username = "anonymous" if not logged in
+	server.use((req, res, next) => {
+		if (!req.username) req.username = "anonymous";
 		next();
 	});
 

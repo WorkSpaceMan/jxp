@@ -1,4 +1,5 @@
 /* global JXPSchema ObjectId Mixed */
+const errors = require("restify-errors");
 
 const TestSchema = new JXPSchema({
     foo: String, // A normal string
@@ -32,6 +33,14 @@ const TestSchema = new JXPSchema({
 TestSchema.statics.test = function() {
     return "Testing OKAY!";
 };
+
+TestSchema.pre("save", function(next) {
+    // If we have the setting "error" set to true, we will throw an error
+    if (this.bar == "Throw an error") {
+        throw new errors.ImATeapotError("I'm a teapot");
+    }
+    next();
+});
 
 // Finally, we export our model. Make sure to change the name!
 const Test = JXPSchema.model('Test', TestSchema);

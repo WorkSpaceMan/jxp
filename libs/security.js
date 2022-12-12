@@ -229,7 +229,7 @@ const refresh = async (req, res) => {
 	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
+		throw new errors.ForbiddenError(err.toString());
 	}
 }
 
@@ -245,7 +245,7 @@ const login = async (req, res) => {
 	} catch(err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
+		throw new errors.ForbiddenError(err.toString());
 	}
 };
 
@@ -275,6 +275,7 @@ const authenticate = async req => {
 		token: await ensureToken(user._id),
 		refresh_token: await ensureRefreshToken(user._id),
 		groups: await getGroups(user._id),
+		username: user.email,
 		user
 	}
 	
@@ -283,8 +284,8 @@ const authenticate = async req => {
 const auth = async (req, res) => {
 	// Check against model as to whether we're allowed to edit this model
 	if (!req.Model) {
-		console.error("Model missing");
-		throw new errors.InternalServerError("Model missing", { message: "Model missing" });
+		// console.error("Model missing");
+		throw new errors.BadRequestError("Model missing");
 	}
 	try {
 		var method = null;
@@ -298,14 +299,14 @@ const auth = async (req, res) => {
 		} else if (req.method == "DELETE") {
 			method = "d";
 		} else {
-			console.error("Unsupported operation", req.method);
-			throw new errors.InternalServerError("Unsupported operation", { message: "Unsupported operation: " + req.method});
+			// console.error("Unsupported operation", req.method);
+			throw new errors.InternalServerError(`Unsupported operation: ${req.method}`);
 		}
 		return await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
 	} catch(err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
+		throw new errors.ForbiddenError(err.toString());
 	}
 };
 
@@ -319,7 +320,7 @@ const bulkAuth = async (req, res,) => {
 	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
+		throw new errors.ForbiddenError(err.toString());
 	}
 };
 
@@ -329,7 +330,7 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		//If no perms are set, then this isn't an available model
 		if (!perms.admin) {
 			console.error("Model permissions not set correctly - add an admin section");
-			throw new errors.InternalServerError("Model permissions not set correctly - add an admin section", { message: "Model permissions not set correctly - add an admin section" });
+			throw new errors.InternalServerError("Model permissions not set correctly - add an admin section");
 		}
 		//First check if "all" is able to do this. If so, let's get on with it.
 		if (perms.all && perms.all.length) {
@@ -339,7 +340,7 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		}
 		//This isn't an 'all' situation, so let's bail if the user isn't logged in
 		if (!user) {
-			throw new errors.ForbiddenError("User not logged in", { message: "User not logged in" });
+			throw new errors.ForbiddenError("User not logged in");
 		}
 		//Let's check perms in this order - admin, user, group, owner
 		//Admin check
@@ -366,16 +367,16 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		throw ("Authorization failed");
 	} catch (err) {
 		if (err.code) throw err;
-		throw new errors.ForbiddenError("Forbidden", { message: err.toString() });
+		throw new errors.ForbiddenError(err.toString());
 	}
 }
 
 const admin_only = (req, res, next) => { // Chain after login
 	if (!res.user) {
-		throw new errors.ForbiddenError("Unauthorized", { message: "Unauthorized" });
+		throw new errors.ForbiddenError("User not logged in");
 	}
 	if (!res.user.admin) {
-		throw new errors.ForbiddenError("Unauthorized", { message: "Unauthorized" });
+		throw new errors.ForbiddenError("User not admin");
 	}
 	next();
 }

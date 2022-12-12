@@ -29,11 +29,11 @@ const recover = async (req, res) => {
 		const email = req.body.email;
 		if (!email) {
 			console.error("Missing email parameter");
-			throw new errors.BadRequestError("Bad Request", { status: "fail", message: "Missing email parameter" });
+			throw new errors.BadRequestError("Missing email parameter");
 		}
 		const user = await User.findOne({ email });
 		if (!user) {
-			throw new errors.NotFoundError("User Not Found", { status: "fail", message: "User not found" });
+			throw new errors.NotFoundError(`User with email ${email} Not Found`);
 		}
 		const result = await security.generateApiKey(user._id);
 		const token = jwt.sign({ apikey: result.apikey, email: user.email, id: user._id }, req.config.shared_secret, { expiresIn: "2d" });
@@ -56,26 +56,26 @@ const recover = async (req, res) => {
 		res.send({ status: "ok", message: "Sent recovery email" });
 	} catch (err) {
 		if (err.code) throw err;
-		throw new errors.UnauthorizedError("Unauthorized", { status: "fail", message: "Unauthorized", info: err });
+		throw new errors.UnauthorizedError(err.toString());
 	}
 }
 
 const logout = async (req, res) => {
 	try {
-		if (!res.user) throw new errors.ForbiddenError("Forbidden", { message: "You don't seem to be logged in" });
+		if (!res.user) throw new errors.ForbiddenError("You don't seem to be logged in");
 		await security.revokeToken(res.user._id);
 		res.send({ status: "ok", message: "User logged out" });
 	} catch(err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Server Error", { status: "error", message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 }
 
 const oauth = (req, res, next) => { // Log in through an OAuth2 provider, defined in config.js
 	const provider_config = req.config.oauth[req.params.provider];
 	if (!provider_config) {
-		throw new errors.InternalServerError("Internal Server Error", { message: req.params.provider + " config not defined" });
+		throw new errors.InternalServerError(`oAuth ${req.params.provider} config not defined`);
 	}
 	const state = Math.random().toString(36).substring(7);
 	const uri = `${provider_config.auth_uri}?client_id=${provider_config.app_id}&redirect_uri=${req.config.url}/login/oauth/callback/${req.params.provider}&scope=${provider_config.scope}&state=${state}&response_type=code`;
@@ -148,7 +148,7 @@ const login = async (req, res) => {
 	}
 	if ((!password) || (!email)) {
 		console.error(new Date(), "Missing email or password parameters");
-		return errors.ForbiddenError({ status: "fail", message: "Missing email or password parameters" });
+		return new errors.ForbiddenError("Missing email or password parameters");
 	}
 	try {
 		const user = await User.findOne({ email });
@@ -171,23 +171,23 @@ const login = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), `Authentication failed`, ip, err);
 		if (err.code) throw err;
-		return errors.ForbiddenError({ status: "fail", message: "Authentication failed" });
+		return new errors.ForbiddenError(err.toString());
 	}
 }
 
 const getJWT = async (req, res) => {
 	var user = null;
 	if (!res.user.admin) {
-		throw new errors.UnauthorizedError("Unauthorized", { status: "fail", message: "Unauthorized" });
+		throw new errors.UnauthorizedError("Unauthorized");
 	}
 	var email = req.params.email || req.body.email;
 	if (!email) {
-		throw new errors.BadRequestError("Bad Request", { status: "fail", message: "Email required" });
+		throw new errors.BadRequestError("Email required");
 	}
 	try {
 		const result = await User.findOne({ email: email });
 		if (!result || !result._id) {
-			throw new errors.NotFoundError("Not Found", { status: "fail", message: "User not found" });
+			throw new errors.NotFoundError("User not found");
 		}
 		user = result;
 		try {
@@ -197,11 +197,11 @@ const getJWT = async (req, res) => {
 			});
 			res.send({ email: user.email, token: token });
 		} catch (err) {
-			throw new errors.UnauthorizedError("Unauthorized", { status: "fail", message: "Unauthorized" });
+			throw new errors.UnauthorizedError("Unauthorized");
 		}
 	} catch (err) {
 		if (err.code) throw err;
-		throw new errors.InternalServerError("Internal Server Error", { status: "error", message: err.toString() });
+		throw new errors.InternalServerError(err.toString());
 	}
 }
 

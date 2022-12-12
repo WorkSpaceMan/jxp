@@ -15,10 +15,16 @@ var server = require("../bin/server");
 
 chai.use(chaiHttp);
 
+const pause = ms => new Promise(res => setTimeout(res, ms));
+
 describe('Test', () => {
 	before(async function() {
 		await init.init();
     })
+
+	beforeEach(async function() {
+		await pause(0);
+	})
 
 
 	var apikey = null;
@@ -438,7 +444,7 @@ describe('Test', () => {
 			.get(`/api/test/${post_id}?populate=link`)
 			.auth(init.email, init.password)
 			.end((err, res) => {
-				// console.log(res.body);
+				console.log(res.body);
 				res.should.have.status(200);
 				res.body.should.have.property("data");
 				res.body.data.should.have.property("link")
@@ -870,7 +876,7 @@ describe('Test', () => {
 				.del(`/api/test/${post_id}`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					console.log(res.body);
+					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.status.should.equal('ok');
 					done();
@@ -881,9 +887,9 @@ describe('Test', () => {
 				.get(`/api/test/${post_id}`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					console.log(res.body);
+					// console.log(res.body);
 					res.should.have.status(404);
-					res.body.message.should.equal('Document is deleted');
+					res.body.message.should.equal(`Document ${post_id} is deleted on Test`);
 					res.body.code.should.equal('NotFound');
 					done();
 				});
@@ -986,7 +992,8 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(409);
-					res.body.message.should.equal(`Conflict Error`);
+					// console.log(res.body.message);
+					res.body.message.should.equal(`Parent link item exists in test/link_id`);
 					done();
 				});
 		});
@@ -1007,7 +1014,7 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(404);
-					res.body.message.should.equal('Document is deleted');
+					res.body.message.should.equal(`Document ${test_with_links_id} is deleted on Test`);
 					done();
 				});
 		});
@@ -1063,7 +1070,7 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(409);
-					res.body.message.should.equal(`Conflict Error`);
+					res.body.message.should.equal(`Parent link item exists in test/link_id`);
 					done();
 				});
 		});
@@ -1114,5 +1121,24 @@ describe('Test', () => {
 				done();
 			});
 		});
+	});
+
+	describe("Error Handling", () => {
+		it ("should get an error", (done) => {
+			chai.request(server)
+			.post("/api/test")
+			.auth(init.email, init.password)
+			.send({
+				error: true,
+				bar: "Throw an error"
+			})
+			.end((err, res) => {
+				// console.log(res.body);
+				console.log(res.headers);
+				res.should.have.status(418);
+				res.body.message.should.equal(`I'm a teapot`);
+				done();
+			});
+		})
 	});
 });

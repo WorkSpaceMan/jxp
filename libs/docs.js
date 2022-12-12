@@ -33,7 +33,7 @@ class Docs {
             res.end();
         } catch(err) {
             console.error(err);
-            return errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 
@@ -43,20 +43,20 @@ class Docs {
             res.send(models);
         } catch (err) {
             console.error(err);
-            return errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 
     metaModel(req, res, next) {
         try {
             if (!req.Model) {
-                return errors.NotFoundError({ status: "error", error: "Model not found" })
+                return new errors.NotFoundError("Model not found")
             }
             res.send(req.Model.schema.paths);
             next();
         } catch (err) {
             console.error(err);
-            return errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 
@@ -65,7 +65,7 @@ class Docs {
             res.send(this.models);
             next();
         } catch(err) {
-            errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 
@@ -74,7 +74,7 @@ class Docs {
             this.renderTemplate(res, "index", {});
             next();
         } catch(err) {
-            errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 
@@ -84,7 +84,7 @@ class Docs {
             const md_contents = md.render(body.toString()).body;
             this.renderTemplate(res, "md", { md_contents });
         } catch(err) {
-            errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 
@@ -98,7 +98,7 @@ class Docs {
             this.renderTemplate(res, "model", { model, fields, perms });
             next();
         } catch(err) {
-            errors.InternalServerError({ message: err.toString() });
+            return new errors.InternalServerError(err.toString());
         }
     }
 }

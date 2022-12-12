@@ -12,11 +12,11 @@ const actionPut = async (req, res) => {
 	const group = req.body.group;
 	if (!group) {
 		console.error("Group required");
-		return errors.BadRequestError("Group required");
+		return new errors.BadRequestError("Group required");
 	}
 	if (!user_id) {
 		console.error("user_id required");
-		return errors.BadRequestError("user_id required", { message: "user_id is required" });
+		return new errors.BadRequestError("user_id is required");
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id: user_id });
@@ -39,7 +39,7 @@ const actionPut = async (req, res) => {
 		res.send(await userGroup.save());
 	} catch(err) {
 			console.error(err);
-			return errors.InternalServerError({ message: err.toString()});
+			return new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -48,11 +48,11 @@ const actionPost = async (req, res) => {
 	const group = req.body.group;
 	if (!group) {
 		console.error("Group required");
-		return errors.BadRequestError("Group required");
+		return new errors.BadRequestError("Group required");
 	}
 	if (!user_id) {
 		console.error("user_id required");
-		return errors.BadRequestError("user_id required", { message: "user_id is required" });
+		return new errors.BadRequestError("user_id required");
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id: user_id });
@@ -75,7 +75,7 @@ const actionPost = async (req, res) => {
 		res.send(await userGroup.save());
 	} catch (err) {
 		console.error(err);
-		return errors.InternalServerError({ message: err.toString()});
+		return new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -83,7 +83,7 @@ const actionGet = async (req, res) => {
 	var user_id = req.params.user_id;
 	if (!user_id) {
 		console.error("user_id required");
-		return errors.BadRequestError("user_id required", { message: "user_id is required" });
+		return new errors.BadRequestError("user_id required");
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id });
@@ -94,7 +94,7 @@ const actionGet = async (req, res) => {
 		res.send(userGroup);
 	} catch (err) {
 		console.error(err);
-		return errors.InternalServerError({ message: err.toString()});
+		return new errors.InternalServerError(err.toString());
 	}
 };
 
@@ -102,16 +102,16 @@ const actionDelete = async (req, res) => {
 	const user_id = req.params.user_id;
 	const group = req.query.group;
 	if (!group) {
-		return errors.BadRequestError("Group required");
+		return new errors.BadRequestError("Group required");
 	}
 	if (!user_id) {
 		console.error("user_id required");
-		return errors.BadRequestError("user_id required", { message: "user_id is required" });
+		return new errors.BadRequestError("user_id required");
 	}
 	try {
 		let userGroup = await Groups.findOne({ user_id });
 		if (!userGroup) {
-			return errors.BadRequestError("User not found");
+			return new errors.BadRequestError("User not found");
 		}
 		let i = userGroup.groups.indexOf(group);
 		if (i > -1) {
@@ -120,7 +120,7 @@ const actionDelete = async (req, res) => {
 		res.send(await userGroup.save());
 	} catch (err) {
 		console.error(err);
-		return errors.InternalServerError({ message: err.toString() });
+		return new errors.InternalServerError(err.toString());
 	}
 };
 
