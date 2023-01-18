@@ -81,8 +81,9 @@ async function main() {
 		await mkdir(path.join(destination_path, "models"));
 		await mkdir(path.join(destination_path, "config"));
 		await mkdir(path.join(destination_path, "logs"));
+		await mkdir(path.join(destination_path, "libs"));
 		await cp_replace("../config_sample.json", path.join(destination_path, "config/default.json"), opts, "{", "}");
-		await cp_replace("./server.js", path.join(destination_path, "bin/server.js"), { "../libs/jxp": "jxp" });
+		await cp_replace("./server.js", path.join(destination_path, "bin/server.js"), { "../libs/jxp": "jxp/libs/jxp", "../libs/connection_string": "jxp/libs/connection_string" });
 		for (let model of models) {
 			await cp("../models/" + model + "_model.js", path.join(destination_path, "models/" + model + "_model.js"));
 		}
@@ -149,7 +150,7 @@ async function main() {
  * Copy from to replacing text as we go
  *
  */
-function cp_replace(from, to, opts, startEnclosure, endEnclosure) {
+function cp_replace(from, to, opts, startEnclosure = "", endEnclosure = "") {
 	startEnclosure = startEnclosure || "";
 	endEnclosure = endEnclosure || "";
 	from = path.join(__dirname, from);
