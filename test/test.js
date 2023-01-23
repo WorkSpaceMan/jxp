@@ -127,7 +127,6 @@ describe('Test', () => {
 				.get("/api/user")
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.data.should.be.an('array');
 					done();
@@ -166,7 +165,6 @@ describe('Test', () => {
 			chai.request(server)
 				.get(`/api/user`)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(403);
 					done();
 				});
@@ -374,7 +372,6 @@ describe('Test', () => {
 			.get(`/api/test/${post_id}?populate=link`)
 			.auth(init.email, init.password)
 			.end((err, res) => {
-				// console.log(res.body);
 				res.should.have.status(200);
 				res.body.should.have.property("data");
 				res.body.data.should.have.property("link");
@@ -391,7 +388,6 @@ describe('Test', () => {
 				.get(`/api/test/${post_id}?populate=other_link`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.should.have.property("data");
 					res.body.data.should.have.property("other_link")
@@ -408,7 +404,6 @@ describe('Test', () => {
 			.get(`/api/test?autopopulate=true`)
 			.auth(init.email, init.password)
 			.end((err, res) => {
-				// console.log(res.body);
 				res.should.have.status(200);
 				res.body.data[0].should.have.property("link")
 				res.body.data[0].link.should.be.an('object');
@@ -426,7 +421,6 @@ describe('Test', () => {
 				.get(`/api/test/${post_id}?autopopulate=true`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.data.should.have.property("link")
 					res.body.data.link.should.be.an('object');
@@ -444,7 +438,6 @@ describe('Test', () => {
 			.get(`/api/test/${post_id}?populate=link`)
 			.auth(init.email, init.password)
 			.end((err, res) => {
-				console.log(res.body);
 				res.should.have.status(200);
 				res.body.should.have.property("data");
 				res.body.data.should.have.property("link")
@@ -573,7 +566,6 @@ describe('Test', () => {
 				.get(`/api/test?populate=array_link`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.data[0].should.have.property("array_link");
 					res.body.data[0].array_link.should.be.an("array");
@@ -727,7 +719,6 @@ describe('Test', () => {
 				.send({ query })
 				.end((err, res) => {
 					res.should.have.status(200);
-					// console.log(res.body);
 					res.body.data.should.be.an('array');
 					res.body.data[0].should.have.property("_id");
 					res.body.data[0].should.have.property("count");
@@ -876,7 +867,6 @@ describe('Test', () => {
 				.del(`/api/test/${post_id}`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(200);
 					res.body.status.should.equal('ok');
 					done();
@@ -887,7 +877,6 @@ describe('Test', () => {
 				.get(`/api/test/${post_id}`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body);
 					res.should.have.status(404);
 					res.body.message.should.equal(`Document ${post_id} is deleted on Test`);
 					res.body.code.should.equal('NotFound');
@@ -992,7 +981,6 @@ describe('Test', () => {
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(409);
-					// console.log(res.body.message);
 					res.body.message.should.equal(`Parent link item exists in test/link_id`);
 					done();
 				});
@@ -1002,7 +990,6 @@ describe('Test', () => {
 				.del(`/api/link/${link_id}?_cascade=1`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					// console.log(res.body, res.status);
 					res.should.have.status(200);
 					res.body.status.should.equal('ok');
 					done();
@@ -1133,10 +1120,64 @@ describe('Test', () => {
 				bar: "Throw an error"
 			})
 			.end((err, res) => {
-				// console.log(res.body);
-				console.log(res.headers);
 				res.should.have.status(418);
 				res.body.message.should.equal(`I'm a teapot`);
+				done();
+			});
+		})
+	});
+
+	describe("Caching", () => {
+		it ("should give us cache stats", (done) => {
+			chai.request(server)
+			.get("/cache/stats")
+			.end((err, res) => {
+				// console.log(res.body);
+				res.should.have.status(200);
+				res.body.should.have.property("hits");
+				done();
+			});
+		})
+		it ("should clear the cache stats", (done) => {
+			chai.request(server)
+			.get("/cache/clear")
+			.end((err, res) => {
+				console.log(res.body);
+				res.should.have.status(200);
+				done();
+			});
+		});
+		it ("should get an uncached request", (done) => {
+			chai.request(server)
+			.get("/api/test")
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.headers.should.have.property("jxp-cache");
+				res.headers["jxp-cache"].should.equal("miss");
+				done();
+			});
+		});
+		it ("should get an cached request", (done) => {
+			chai.request(server)
+			.get("/api/test")
+			.auth(init.email, init.password)
+			.end((err, res) => {
+				res.should.have.status(200);
+				res.headers.should.have.property("jxp-cache");
+				res.headers["jxp-cache"].should.equal("hit");
+				done();
+			});
+		});
+		it ("should give us cache stats", (done) => {
+			chai.request(server)
+			.get("/cache/stats")
+			.end((err, res) => {
+				// console.log(res.body);
+				res.should.have.status(200);
+				res.body.should.have.property("hits");
+				res.body.hits.should.equal(1);
+				res.body.misses.should.equal(1);
 				done();
 			});
 		})

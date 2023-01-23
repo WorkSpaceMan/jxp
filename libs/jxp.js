@@ -15,6 +15,7 @@ const modeldir = require("./modeldir");
 const query_manipulation = require("./query_manipulation");
 const corsMiddleware = require('restify-cors-middleware2');
 const json2csv = require('json2csv').parse;
+const cache = require("./cache");
 global.JXPSchema = require("./schema");
 
 var models = {};
@@ -202,7 +203,7 @@ const actionGetOne = async (req, res) => {
 	console.time(opname);
 	try {
 		const data = await getOne(req.Model, req.params.item_id, req.query, { user: res.user });
-		res.send({ data });
+		res.result = { data };
 		if (debug) console.timeEnd(opname);
 	} catch(err) {
 		console.error(new Date(), err);
@@ -908,7 +909,9 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
+		cache.get,
 		actionGet,
+		cache.set,
 		outputJSON
 	);
 	server.get(
@@ -916,8 +919,12 @@ const JXP = function(options) {
 		middlewareModel,
 		security.login,
 		security.auth,
+		cache.get,
 		config.pre_hooks.getOne,
-		actionGetOne
+		cache.get,
+		actionGetOne,
+		cache.set,
+		outputJSON
 	);
 	server.post(
 		"/api/:modelname",
@@ -927,6 +934,7 @@ const JXP = function(options) {
 		middlewarePasswords,
 		config.pre_hooks.post,
 		actionPost,
+		cache.clear,
 		(req, res, next) => {
 			next();
 		},
@@ -940,6 +948,7 @@ const JXP = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.put,
 		actionPut,
+		cache.clear,
 	);
 	server.del(
 		"/api/:modelname/:item_id",
@@ -948,6 +957,7 @@ const JXP = function(options) {
 		security.auth,
 		config.pre_hooks.delete,
 		actionDelete,
+		cache.clear,
 	);
 
 	// Count
@@ -957,7 +967,9 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
+		cache.get,
 		actionCount,
+		cache.set,
 		outputJSON
 	);
 
@@ -1009,6 +1021,7 @@ const JXP = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.update,
 		actionUpdate,
+		cache.clear,
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
@@ -1020,21 +1033,24 @@ const JXP = function(options) {
 		middlewareModel,
 		security.login,
 		security.auth,
-		actionCall
+		actionCall,
+		cache.clear,
 	);
 	server.post(
 		"/call/:modelname/:method_name",
 		middlewareModel,
 		security.login,
 		security.auth,
-		actionCall
+		actionCall,
+		cache.clear,
 	);
 	server.get(
 		"/call/:modelname/:item_id/:method_name",
 		middlewareModel,
 		security.login,
 		security.auth,
-		actionCallItem
+		actionCallItem,
+		cache.clear,
 	);
 
 	/* Login and authentication */
@@ -1081,6 +1097,11 @@ const JXP = function(options) {
 
 	/* Websocket */
 	server.on("upgrade", ws.upgrade)
+
+	/* Cache */
+	server.get("/cache/stats", cache.stats, outputJSON);
+	server.get("/cache/clear", cache.clear, outputJSON);
+
 	return server;
 };
 

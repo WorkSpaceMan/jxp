@@ -15,5 +15,9 @@
 		"setHeaders": true,
 		"username": true,
 		"ip": false
+	},
+	"cache": {
+		"enabled": true,
+		"ttl": 600
 	}
 }
