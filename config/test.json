@@ -18,6 +18,7 @@
 	},
 	"cache": {
 		"enabled": true,
+		"debug": false,
 		"ttl": 600
 	}
 }

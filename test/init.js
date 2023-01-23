@@ -8,6 +8,7 @@ global.JXPSchema = require("../libs/schema");
 const User = require(path.join(model_dir, "user_model"));
 const Apikey = require(path.join(model_dir, "apikey_model"));
 const Test = require(path.join(model_dir, "test_model"));
+const cache = require("../libs/cache");
 
 const security = require("../libs/security");
 
@@ -38,6 +39,7 @@ const admin_password = "SecretPassword";
 
 const init = async () => {
 	try {
+		await cache.clearAll();
 		await empty_user_collections();
 		await post(User, { name: "Admin User", email: admin_email, password: security.encPassword(admin_password), urlid: "admin-user", admin: true });
 		await post(User, { name: "Test User", email, password: security.encPassword(password), urlid: "test-user" });

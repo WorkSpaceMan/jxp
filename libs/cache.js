@@ -3,45 +3,74 @@ const config = require('config');
 const cache = new NodeCache({ stdTTL: config.cache?.ttl || 5 * 60 });
 
 const generateKey = (req) => {
-    const url = req.url
-    return url
+    let key = `${req.modelname}/`;
+    if (req.params.item_id) {
+        key += `${req.params.item_id}`
+    }
+    if (req.query) {
+        key += `?${JSON.stringify(req.query)}`
+    }
+    return key;
 }
 
-const set = (req, res, next) => {
-    if (!config.cache?.enabled) return next();
+const set = async (req, res) => {
+    if (!config.cache?.enabled) return;
     const key = generateKey(req)
     cache.set(key, res.result)
-    next()
+    if (config.cache?.debug) {
+        console.log('cache set', key)
+    }
 }
 
-const get = (req, res, next) => {
-    if (!config.cache?.enabled) return next();
+const get = async (req, res) => {
+    if (!config.cache?.enabled) return;
     const key = generateKey(req)
+    res.header('jxp-cache-key', key);
     const cached = cache.get(key)
     if (cached) {
+        if (config.cache?.debug) {
+            console.log('cache hit', key)
+        }
         res.header('jxp-cache', 'hit')
         res.result = cached
         return res.send(res.result)
     }
+    if (config.cache?.debug) {
+        console.log('cache miss', key)
+    }
     res.header('jxp-cache', 'miss')
-    next()
 }
 
-const clear = (req, res, next) => {
-    if (!config.cache?.enabled) return next();
+const clear = async (req, res) => {
+    if (!config.cache?.enabled) return;
+    const keys = cache.keys()
+    keys.forEach(key => {
+        if (key.startsWith(`${req.modelname}/`)) {
+            if (config.cache?.debug) {
+                console.log('cache del', key)
+            }
+            cache.del(key)
+        }
+    })
+}
+
+const clearAll = async () => {
+    if (!config.cache?.enabled) return;
+    if (config.cache?.debug) {
+        console.log('cache flushAll')
+    }
     cache.flushAll()
-    next()
 }
 
-const stats = (req, res, next) => {
+const stats = async (req, res) => {
     if (!config.cache?.enabled) return {};
     res.result = cache.getStats()
-    next()
 }
 
 module.exports = {
     set,
     get,
     clear,
-    stats
+    clearAll,
+    stats,
 }

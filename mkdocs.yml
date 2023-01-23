@@ -11,6 +11,7 @@ nav:
   - Aggregations: aggregations.md
   - Bulk Writes: bulk_writes.md
   - Queries: queries.md
+  - Caching: caching.md
   - Websocket: websocket.md
   - Special Features: special.md
   - Changelog: changelog.md

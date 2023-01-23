@@ -54,10 +54,9 @@ const middlewareCheckAdmin = (req, res, next) => {
 };
 
 // Outputs whatever is in res.result as JSON
-const outputJSON = (req, res, next) => {
+const outputJSON = async (req, res) => {
 	try {
 		res.send(res.result);
-		next();
 	} catch (err) {
 		console.error(new Date(), err);
 		throw new errors.InternalServerError(err.toString());
@@ -919,7 +918,6 @@ const JXP = function(options) {
 		middlewareModel,
 		security.login,
 		security.auth,
-		cache.get,
 		config.pre_hooks.getOne,
 		cache.get,
 		actionGetOne,
@@ -949,6 +947,9 @@ const JXP = function(options) {
 		config.pre_hooks.put,
 		actionPut,
 		cache.clear,
+		(req, res, next) => {
+			next();
+		},
 	);
 	server.del(
 		"/api/:modelname/:item_id",
@@ -967,9 +968,9 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		config.pre_hooks.get,
-		cache.get,
+		// cache.get,
 		actionCount,
-		cache.set,
+		// cache.set,
 		outputJSON
 	);
 
