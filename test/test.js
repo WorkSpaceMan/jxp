@@ -1142,7 +1142,7 @@ describe('Test', () => {
 			chai.request(server)
 			.get("/cache/clear")
 			.end((err, res) => {
-				console.log(res.body);
+				// console.log(res.body);
 				res.should.have.status(200);
 				done();
 			});
@@ -1181,4 +1181,116 @@ describe('Test', () => {
 			});
 		})
 	});
+	describe("Cache invalidating", () => {
+		let test_id;
+		it("should get a test record", done => {
+			chai.request(server)
+				.get(`/api/test?populate=link&limit=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					// console.log(res.headers)
+					res.should.have.status(200);
+					res.body.data[0].should.have.property("_id");
+					test_id = res.body.data[0]._id;
+					res.body.data[0].should.have.property("link");
+					should.equal(res.body.data[0].link, null);
+					res.headers["jxp-cache"].should.equal("miss");
+					done();
+				});
+		});
+		it("should get a cached test record", done => {
+			chai.request(server)
+				.get(`/api/test?populate=link&limit=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					// console.log(res.headers)
+					res.should.have.status(200);
+					res.body.data[0].should.have.property("_id");
+					res.headers["jxp-cache"].should.equal("hit");
+					should.equal(res.body.data[0].link, null);
+					done();
+				});
+			});
+		let link_id;
+		it("should add a link record", done => {
+			chai.request(server)
+				.post(`/api/link`)
+				.auth(init.email, init.password)
+				.send({
+					name: "cache_test",
+					val: "YoYoYo"
+				})
+				.end((err, res) => {
+					// console.log(res.body)
+					res.should.have.status(200);
+					res.body.data.should.have.property("_id");
+					link_id = res.body.data._id;
+					done();
+				});
+		});
+		it("should put link_id into test record", done => {
+			chai.request(server)
+				.put(`/api/test/${test_id}`)
+				.auth(init.admin_email, init.admin_password)
+				.send({
+					link_id
+				})
+				.end((err, res) => {
+					// console.log(res.body)
+					res.should.have.status(200);
+					res.body.data.should.have.property("_id");
+					res.body.data.link_id.should.equal(link_id);
+					done();
+				});
+		});
+		it("should get a test record with link", done => {
+			chai.request(server)
+				.get(`/api/test?populate=link&limit=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					// console.log(res.body)
+					res.should.have.status(200);
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("link");
+					res.body.data[0].link.should.not.equal(null);
+					res.body.data[0].link._id.should.equal(link_id);
+					res.body.data[0].link.name.should.equal("cache_test");
+					res.body.data[0].link.val.should.equal("YoYoYo");
+					res.headers["jxp-cache"].should.equal("miss");
+					done();
+				});
+		});
+		it("should update link record", done => {
+			chai.request(server)
+				.put(`/api/link/${link_id}`)
+				.auth(init.admin_email, init.admin_password)
+				.send({
+					val: "YoYoYo2"
+				})
+				.end((err, res) => {
+					// console.log(res.body)
+					res.should.have.status(200);
+					res.body.data.should.have.property("_id");
+					res.body.data.val.should.equal("YoYoYo2");
+					done();
+				});
+		});
+		it("should get a test record with updated link", done => {
+			chai.request(server)
+				.get(`/api/test?populate=link&limit=1`)
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					// console.log(res.body.data[0].link)
+					res.should.have.status(200);
+					res.body.data[0].should.have.property("_id");
+					res.body.data[0].should.have.property("link");
+					res.body.data[0].link.should.not.equal(null);
+					res.body.data[0].link._id.should.equal(link_id);
+					res.body.data[0].link.name.should.equal("cache_test");
+					res.body.data[0].link.val.should.equal("YoYoYo2");
+					res.headers["jxp-cache"].should.equal("miss");
+					done();
+				});
+		});
+	})
 });

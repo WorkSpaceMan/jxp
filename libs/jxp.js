@@ -932,7 +932,7 @@ const JXP = function(options) {
 		middlewarePasswords,
 		config.pre_hooks.post,
 		actionPost,
-		cache.clear,
+		cache.clearAll,
 		(req, res, next) => {
 			next();
 		},
@@ -946,7 +946,7 @@ const JXP = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.put,
 		actionPut,
-		cache.clear,
+		cache.clearAll,
 		(req, res, next) => {
 			next();
 		},
@@ -958,7 +958,7 @@ const JXP = function(options) {
 		security.auth,
 		config.pre_hooks.delete,
 		actionDelete,
-		cache.clear,
+		cache.clearAll,
 	);
 
 	// Count
@@ -1022,7 +1022,7 @@ const JXP = function(options) {
 		middlewareCheckAdmin,
 		config.pre_hooks.update,
 		actionUpdate,
-		cache.clear,
+		cache.clearAll,
 	);
 
 	/* Batch routes - ROLLED BACK FOR NOW */
@@ -1035,7 +1035,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		actionCall,
-		cache.clear,
+		cache.clearAll,
 	);
 	server.post(
 		"/call/:modelname/:method_name",
@@ -1043,7 +1043,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		actionCall,
-		cache.clear,
+		cache.clearAll,
 	);
 	server.get(
 		"/call/:modelname/:item_id/:method_name",
@@ -1051,7 +1051,7 @@ const JXP = function(options) {
 		security.login,
 		security.auth,
 		actionCallItem,
-		cache.clear,
+		cache.clearAll,
 	);
 
 	/* Login and authentication */
@@ -1101,7 +1101,7 @@ const JXP = function(options) {
 
 	/* Cache */
 	server.get("/cache/stats", cache.stats, outputJSON);
-	server.get("/cache/clear", cache.clear, outputJSON);
+	server.get("/cache/clear", cache.clearAll, outputJSON);
 
 	return server;
 };
