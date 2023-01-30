@@ -1,6 +1,18 @@
 const NodeCache = require('node-cache');
-const config = require('config');
-const cache = new NodeCache({ stdTTL: config.cache?.ttl || 5 * 60 });
+let cache;
+
+const init = (config) => {
+    if (!config.cache || !config.cache.enabled) return;
+    cache = new NodeCache({ stdTTL: config.cache.ttl || 5 * 60 });
+    if (config.cache.debug) {
+        cache.on('expired', (key) => {
+            console.log('cache expired', key)
+        })
+        cache.on('flush', () => {
+            console.log('cache flush')
+        })
+    }
+}
 
 const generateKey = (req, res) => {
     if (res.jxp_cache_key) return res.jxp_cache_key;
@@ -16,40 +28,41 @@ const generateKey = (req, res) => {
 }
 
 const set = async (req, res) => {
-    if (!config.cache?.enabled) return;
+    if (!req.config || !req.config.cache.enabled) return;
     const key = generateKey(req, res)
     cache.set(key, res.result)
-    if (config.cache?.debug) {
+    if (!req.config.cache.debug) {
         console.log('cache set', key)
     }
 }
 
 const get = (req, res, next) => {
-    if (!config.cache?.enabled) return;
+    if (!req.config || !req.config.cache.enabled) return next();
     const key = generateKey(req, res)
     res.header('jxp-cache-key', key);
     const cached = cache.get(key)
     if (cached) {
-        if (config.cache?.debug) {
+        if (!req.config.cache.debug) {
             console.log('cache hit', key)
         }
         res.header('jxp-cache', 'hit')
         res.result = cached
-        return res.send(res.result)
+        res.send(res.result);
+        return;
     }
-    if (config.cache?.debug) {
+    if (!req.config.cache.debug) {
         console.log('cache miss', key)
     }
     res.header('jxp-cache', 'miss')
     next()
 }
 
-const clear = async (req, res) => {
-    if (!config.cache?.enabled) return;
+const clear = async (req) => {
+    if (!req.config || !req.config.cache.enabled) return;
     const keys = cache.keys()
     keys.forEach(key => {
         if (key.startsWith(`${req.modelname}/`)) {
-            if (config.cache?.debug) {
+            if (!req.config.cache.debug) {
                 console.log('cache del', key)
             }
             cache.del(key)
@@ -58,15 +71,11 @@ const clear = async (req, res) => {
 }
 
 const clearAll = async () => {
-    if (!config.cache?.enabled) return;
-    if (config.cache?.debug) {
-        console.log('cache flushAll')
-    }
     cache.flushAll()
 }
 
 const stats = async (req, res) => {
-    if (!config.cache?.enabled) {
+    if (!req.config || !req.config.cache.enabled) {
         res.result = { cache_enabled: false }
         return;
     }
@@ -74,6 +83,7 @@ const stats = async (req, res) => {
 }
 
 module.exports = {
+    init,
     set,
     get,
     clear,

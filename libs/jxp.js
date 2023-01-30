@@ -857,6 +857,7 @@ const JXP = function(options) {
 	login.init(config);
 	groups.init(config);
 	ws.init({models});
+	cache.init(config);
 	const docs = new Docs({config, models});
 
 	// Set up our API server
