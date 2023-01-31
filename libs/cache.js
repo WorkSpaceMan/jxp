@@ -28,7 +28,7 @@ const generateKey = (req, res) => {
 }
 
 const set = async (req, res) => {
-    if (!req.config || !req.config.cache.enabled) return;
+    if (!cache) return;
     const key = generateKey(req, res)
     cache.set(key, res.result)
     if (!req.config.cache.debug) {
@@ -37,7 +37,7 @@ const set = async (req, res) => {
 }
 
 const get = (req, res, next) => {
-    if (!req.config || !req.config.cache.enabled) return next();
+    if (!cache) return next();
     const key = generateKey(req, res)
     res.header('jxp-cache-key', key);
     const cached = cache.get(key)
@@ -58,7 +58,7 @@ const get = (req, res, next) => {
 }
 
 const clear = async (req) => {
-    if (!req.config || !req.config.cache.enabled) return;
+    if (!cache) return;
     const keys = cache.keys()
     keys.forEach(key => {
         if (key.startsWith(`${req.modelname}/`)) {
@@ -75,7 +75,7 @@ const clearAll = async () => {
 }
 
 const stats = async (req, res) => {
-    if (!req.config || !req.config.cache.enabled) {
+    if (!cache) {
         res.result = { cache_enabled: false }
         return;
     }
