@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/j-norwood-young/jexpress-2.git"
+    "url": "git://github.com/WorkSpaceMan/jxp.git"
   },
   "keywords": [
     "api",
@@ -26,7 +26,7 @@
   "author": "Jason Norwood-Young <jason@10layer.com> (https://github.com/j-norwood-young/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/j-norwood-young/jexpress-2/issues"
+    "url": "https://github.com/WorkSpaceMan/jxp/issues"
   },
   "dependencies": {
     "axios": "^1.4.0",
