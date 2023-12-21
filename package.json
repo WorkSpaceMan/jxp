@@ -1,7 +1,7 @@
 {
   "name": "jxp",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "2.14.3",
+  "version": "2.14.4",
   "private": false,
   "main": "libs/jxp.js",
   "scripts": {
@@ -29,9 +29,9 @@
     "url": "https://github.com/WorkSpaceMan/jxp/issues"
   },
   "dependencies": {
-    "axios": "^1.4.0",
+    "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
-    "commander": "^10.0.0",
+    "commander": "^11.1.0",
     "config": "^3.3.9",
     "dotenv": "^16.3.1",
     "glob": "8.1.0",
@@ -39,8 +39,8 @@
     "json2csv": "^5.0.7",
     "jsonwebtoken": "^9.0.1",
     "jstransformer-markdown-it": "^3.0.0",
-    "jxp-helper": "^1.4.2",
-    "mkdirp": "^2.1.3",
+    "jxp-helper": "^1.4.3",
+    "mkdirp": "^3.0.1",
     "moment": "^2.29.4",
     "mongoose": "6.8.4",
     "mongoose-friendly": "^0.1.4",
@@ -58,7 +58,7 @@
     "restify-errors": "^8.0.2",
     "traverse": "^0.6.7",
     "underscore": "^1.13.6",
-    "ws": "^8.13.0"
+    "ws": "^8.15.1"
   },
   "devDependencies": {
     "chai": "^4.3.7",
