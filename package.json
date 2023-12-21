@@ -42,7 +42,7 @@
     "jxp-helper": "^1.4.3",
     "mkdirp": "^3.0.1",
     "moment": "^2.29.4",
-    "mongoose": "6.8.4",
+    "mongoose": "6.11.3",
     "mongoose-friendly": "^0.1.4",
     "morgan": "^1.10.0",
     "node-cache": "^5.1.2",
