@@ -108,8 +108,6 @@ async function main() {
 				db: {
 					safe: true
 				},
-				useCreateIndex: true,
-				useNewUrlParser: true,
 			});
 		} catch(err) {
 			console.log("WARNING: We had a problem talking to the database")

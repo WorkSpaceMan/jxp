@@ -56,10 +56,7 @@ config.pre_hooks = {
 mongoose.Promise = Promise;
 if (!config.mongo) config.mongo = {};
 if (!config.mongo.options) config.mongo.options = {};
-const mongo_options = Object.assign(config.mongo.options, {
-	useNewUrlParser: true,
-	useUnifiedTopology: true
-});
+const mongo_options = Object.assign(config.mongo.options, {});
 
 const connection_string = require("../libs/connection_string");
 console.log(`Connecting to ${connection_string}`);

@@ -34,8 +34,6 @@ function main() {
 		db: {
 			safe:true
 		},
-		useCreateIndex: true,
-		useNewUrlParser: true,
 	}); // connect to our database
 	var user = new User();
 	user.email = email;
