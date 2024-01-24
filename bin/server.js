@@ -78,6 +78,7 @@ let port = process.env.NODE_DOCKER_PORT || process.env.PORT || config.port || 40
 if (process.env.NODE_ENV === "test") port = 4005;
 server.listen(port, function() {
 	console.log('%s listening at %s', `${pkg.name} v${pkg.version}`, server.url);
+	console.log(`Mongoose version ${mongoose.version}`);
 });
 
 module.exports = server; // For testing

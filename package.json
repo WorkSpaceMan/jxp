@@ -1,7 +1,7 @@
 {
   "name": "jxp",
   "description:": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-  "version": "2.14.5",
+  "version": "2.14.6",
   "private": false,
   "main": "libs/jxp.js",
   "scripts": {
@@ -29,24 +29,24 @@
     "url": "https://github.com/WorkSpaceMan/jxp/issues"
   },
   "dependencies": {
-    "axios": "^1.6.2",
+    "axios": "^1.6.5",
     "bcryptjs": "^2.4.3",
     "commander": "^11.1.0",
-    "config": "^3.3.9",
-    "dotenv": "^16.3.1",
-    "glob": "8.1.0",
+    "config": "^3.3.10",
+    "dotenv": "^16.4.0",
+    "glob": "10.3.10",
     "js-yaml": "4.1.0",
     "json2csv": "^5.0.7",
-    "jsonwebtoken": "^9.0.1",
+    "jsonwebtoken": "^9.0.2",
     "jstransformer-markdown-it": "^3.0.0",
     "jxp-helper": "^1.4.3",
     "mkdirp": "^3.0.1",
-    "moment": "^2.29.4",
-    "mongoose": "6.8.4",
+    "moment": "^2.30.1",
+    "mongoose": "6.12.6",
     "mongoose-friendly": "^0.1.4",
     "morgan": "^1.10.0",
     "node-cache": "^5.1.2",
-    "nodemailer": "^6.9.3",
+    "nodemailer": "^6.9.8",
     "nodemailer-smtp-transport": "^2.7.4",
     "path": "^0.12.7",
     "pug": "^3.0.2",
@@ -56,9 +56,9 @@
     "restify": "^11.1.0",
     "restify-cors-middleware2": "^2.2.1",
     "restify-errors": "^8.0.2",
-    "traverse": "^0.6.7",
+    "traverse": "^0.6.8",
     "underscore": "^1.13.6",
-    "ws": "^8.15.1"
+    "ws": "^8.16.0"
   },
   "devDependencies": {
     "chai": "^4.3.7",
