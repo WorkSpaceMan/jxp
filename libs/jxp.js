@@ -103,6 +103,10 @@ const actionGet = async (req, res) => {
 		filters = parseFilter(req.query.filter);
 	} catch (err) {
 		console.trace(new Date(), err);
+		// Preserve BadRequestError, convert others to InternalServerError
+		if (err instanceof errors.BadRequestError) {
+			throw err;
+		}
 		throw new errors.InternalServerError(err.toString());
 	}
 	let search = parseSearch(req.query.search);
@@ -192,6 +196,10 @@ const actionGet = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
+		// Preserve BadRequestError, convert others to InternalServerError
+		if (err instanceof errors.BadRequestError) {
+			throw err;
+		}
 		if (err.code) throw err;
 		throw new errors.InternalServerError(err.toString());
 	}
@@ -648,8 +656,20 @@ const getOne = async (Model, item_id, params, options) => {
 	}
 };
 
+// Helper function to check if a string is an ISO date string
+function isISODateString(str) {
+	if (typeof str !== 'string') return false;
+	const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+	if (!isoDateRegex.test(str)) return false;
+	const date = new Date(str);
+	if (isNaN(date.getTime())) {
+		throw new errors.BadRequestError("Invalid date format");
+	}
+	return true;
+}
+
 const parseFilter = (filter, depth = 0) => {
-	const MAX_DEPTH = 10; // Prevent infinite recursion
+	const MAX_DEPTH = 10;
 
 	if (!filter) return {};
 	if (depth > MAX_DEPTH) {
@@ -659,42 +679,102 @@ const parseFilter = (filter, depth = 0) => {
 
 	if (typeof filter !== "object" || filter === null) return filter;
 
-	Object.keys(filter).forEach(function (key) {
-		var val = filter[key];
-		if (filter[key] === "false") filter[key] = false;
-		if (filter[key] === "true") filter[key] = true;
-		if (val && val.indexOf) {
-			if (val.indexOf(":") !== -1) {
-				let tmp = val.split(":");
-				filter[key] = {};
-				let tmpkey = tmp.shift();
-				let tmpval = tmp.join(":");
-				if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) {
-					let arr = tmpval.slice(1, tmpval.length - 1).split(",");
-					tmpval = arr;
-				}
-				filter[key][tmpkey] = tmpval;
-				if (tmpkey === "$regex" && tmpval[0] === "/") {
-					let match = tmpval.match(new RegExp('^/(.*?)/([gimy]*)$'));
-					if (match) {
-						let regex = new RegExp(match[1], match[2]);
-						filter[key][tmpkey] = regex;
+	// Handle arrays by merging their operators
+	if (Array.isArray(filter)) {
+		const result = {};
+		filter.forEach(item => {
+			if (typeof item === "string" && item.includes(":")) {
+				const parts = item.split(":");
+				const key = parts[0];
+				const value = parts.slice(1).join(":");
+				if (key.startsWith("$")) {
+					try {
+						if (isISODateString(value)) {
+							result[key] = new Date(value);
+						} else {
+							result[key] = value;
+						}
+					} catch (err) {
+						if (err instanceof errors.BadRequestError) {
+							throw err;
+						}
+						throw new errors.BadRequestError("Invalid date format");
 					}
 				}
 			}
-			if (typeof val == "object") {
-				let result = parseFilter(val, depth + 1);
-				if (result && typeof result === 'object') {
-					filter[key] = {};
-					Object.keys(result).forEach(resultKey => {
-						filter[key][resultKey] = result[resultKey];
-					});
-				}
-			}
+		});
+		return result;
+	}
+
+	// Create a new object to avoid modifying the input
+	const parsedFilter = {};
+
+	for (let i in filter) {
+		if (filter[i] === "false") {
+			parsedFilter[i] = false;
+			continue;
 		}
-	});
-	return filter;
-}
+		if (filter[i] === "true") {
+			parsedFilter[i] = true;
+			continue;
+		}
+		if (typeof filter[i] === "string") {
+			try {
+				if (isISODateString(filter[i])) {
+					parsedFilter[i] = new Date(filter[i]);
+					continue;
+				}
+			} catch (err) {
+				if (err instanceof errors.BadRequestError) {
+					throw err;
+				}
+				throw new errors.BadRequestError("Invalid date format");
+			}
+			if (filter[i].includes(":")) {
+				const parts = filter[i].split(":");
+				const key = parts[0];
+				const value = parts.slice(1).join(":");
+				if (key.startsWith("$")) {
+					try {
+						if (isISODateString(value)) {
+							if (!parsedFilter[i]) parsedFilter[i] = {};
+							parsedFilter[i][key] = new Date(value);
+						} else if (value.startsWith("[") && value.endsWith("]")) {
+							if (!parsedFilter[i]) parsedFilter[i] = {};
+							parsedFilter[i][key] = value.slice(1, -1).split(",");
+						} else if (key === "$regex" && value.startsWith("/")) {
+							if (!parsedFilter[i]) parsedFilter[i] = {};
+							const match = value.match(/^\/(.+?)\/([gimy]*)$/);
+							if (match) {
+								parsedFilter[i][key] = new RegExp(match[1], match[2]);
+							}
+						} else {
+							if (!parsedFilter[i]) parsedFilter[i] = {};
+							parsedFilter[i][key] = value;
+						}
+					} catch (err) {
+						if (err instanceof errors.BadRequestError) {
+							throw err;
+						}
+						throw new errors.BadRequestError("Invalid date format");
+					}
+				} else {
+					parsedFilter[i] = filter[i];
+				}
+			} else {
+				parsedFilter[i] = filter[i];
+			}
+		} else if (Array.isArray(filter[i])) {
+			parsedFilter[i] = parseFilter(filter[i], depth + 1);
+		} else if (typeof filter[i] === "object") {
+			parsedFilter[i] = parseFilter(filter[i], depth + 1);
+		} else {
+			parsedFilter[i] = filter[i];
+		}
+	}
+
+	return parsedFilter;
+};
 
 const _deSerialize = (data) => {
 	function assign(obj, keyPath, value) {
