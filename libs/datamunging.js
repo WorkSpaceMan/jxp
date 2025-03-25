@@ -1,6 +1,6 @@
 var _ = require("underscore");
 
-var input1 = { 
+var input1 = {
 	due_date: '2016-02-01T00:00:00Z',
 	from_document: '',
 	allow_online_payment: 'false',
@@ -41,45 +41,51 @@ var input1 = {
 	id: '93490358',
 }
 
-var test1 = { due_date: '2016-02-01T00:00:00Z',
-  from_document: '',
-  allow_online_payment: 'false',
-  paid: 'true',
-  locked: 'false',
-  customer_id: '2446859',
-  modified: '2016-02-02T15:09:06.983',
-  created: '2016-02-01T21:09:37.873',
-  date: '2016-02-01T00:00:00Z',
-  inclusive: 'false',
-  discount_percentage: '0',
-  tax_reference: '',
-  discount: '0',
-  amount_due: '0',
-  printed: 'false',
-  editable: 'true',
-  has_attachments: 'false',
-  has_notes: 'false',
-  has_anticipated_date: 'false',
-  lines:
-   [ { SelectionId: '6824935',
-       TaxTypeId: '965302',
-       ID: '74465675',
-       LineType: '0',
-       Quantity: '1',
-       Unit: '',
-       TaxPercentage: '0.14',
-       DiscountPercentage: '0',
-       Discount: '0' },
-     { ID: '74465676',
-       LineType: '0',
-       Quantity: '4',
-       Unit: '',
-       TaxPercentage: '0.14',
-       DiscountPercentage: '0',
-       Discount: '0',
-       Comments: '' } ],
-  location: '547d506b184d110c0601314c',
-  id: '93490358' }
+var test1 = {
+	due_date: '2016-02-01T00:00:00Z',
+	from_document: '',
+	allow_online_payment: 'false',
+	paid: 'true',
+	locked: 'false',
+	customer_id: '2446859',
+	modified: '2016-02-02T15:09:06.983',
+	created: '2016-02-01T21:09:37.873',
+	date: '2016-02-01T00:00:00Z',
+	inclusive: 'false',
+	discount_percentage: '0',
+	tax_reference: '',
+	discount: '0',
+	amount_due: '0',
+	printed: 'false',
+	editable: 'true',
+	has_attachments: 'false',
+	has_notes: 'false',
+	has_anticipated_date: 'false',
+	lines:
+		[{
+			SelectionId: '6824935',
+			TaxTypeId: '965302',
+			ID: '74465675',
+			LineType: '0',
+			Quantity: '1',
+			Unit: '',
+			TaxPercentage: '0.14',
+			DiscountPercentage: '0',
+			Discount: '0'
+		},
+		{
+			ID: '74465676',
+			LineType: '0',
+			Quantity: '4',
+			Unit: '',
+			TaxPercentage: '0.14',
+			DiscountPercentage: '0',
+			Discount: '0',
+			Comments: ''
+		}],
+	location: '547d506b184d110c0601314c',
+	id: '93490358'
+}
 
 input2 = {
 	'test[0][Yo]': "0Yo",
@@ -161,39 +167,45 @@ var allMatch = /^[a-zA-Z\d_\-]+|\[[a-zA-Z\d_\-][a-zA-Z_\-\d]*\]|\[\d+\]/g;
 
 // Based conceptually on the _.extend() function in underscore.js ( see http://documentcloud.github.com/underscore/#extend for more details )
 
-function deepExtend(obj) {
-  var parentRE = /#{\s*?_\s*?}/,
-  slice = Array.prototype.slice;
+function deepExtend(obj, depth = 0) {
+	const MAX_DEPTH = 20; // Prevent infinite recursion
+	if (depth > MAX_DEPTH) {
+		console.warn('Maximum depth exceeded in deepExtend');
+		return obj;
+	}
 
-  _.each(slice.call(arguments, 1), function(source) {
-    for (var prop in source) {
-      if (_.isUndefined(obj[prop]) || _.isFunction(obj[prop]) || _.isNull(source[prop]) || _.isDate(source[prop])) {
-        obj[prop] = source[prop];
-      }
-      else if (_.isString(source[prop]) && parentRE.test(source[prop])) {
-        if (_.isString(obj[prop])) {
-          obj[prop] = source[prop].replace(parentRE, obj[prop]);
-        }
-      }
-      else if (_.isArray(obj[prop]) || _.isArray(source[prop])){
-        if (!_.isArray(obj[prop]) || !_.isArray(source[prop])){
-          throw new Error('Trying to combine an array with a non-array (' + prop + ')');
-        } else {
-          obj[prop] = _.reject(_.deepExtend(_.clone(obj[prop]), source[prop]), function (item) { return _.isNull(item);});
-        }
-      }
-      else if (_.isObject(obj[prop]) || _.isObject(source[prop])){
-        if (!_.isObject(obj[prop]) || !_.isObject(source[prop])){
-          throw new Error('Trying to combine an object with a non-object (' + prop + ')');
-        } else {
-          obj[prop] = _.deepExtend(_.clone(obj[prop]), source[prop]);
-        }
-      } else {
-        obj[prop] = source[prop];
-      }
-    }
-  });
-  return obj;
+	var parentRE = /#{\s*?_\s*?}/,
+		slice = Array.prototype.slice;
+
+	_.each(slice.call(arguments, 1), function (source) {
+		for (var prop in source) {
+			if (_.isUndefined(obj[prop]) || _.isFunction(obj[prop]) || _.isNull(source[prop]) || _.isDate(source[prop])) {
+				obj[prop] = source[prop];
+			}
+			else if (_.isString(source[prop]) && parentRE.test(source[prop])) {
+				if (_.isString(obj[prop])) {
+					obj[prop] = source[prop].replace(parentRE, obj[prop]);
+				}
+			}
+			else if (_.isArray(obj[prop]) || _.isArray(source[prop])) {
+				if (!_.isArray(obj[prop]) || !_.isArray(source[prop])) {
+					throw new Error('Trying to combine an array with a non-array (' + prop + ')');
+				} else {
+					obj[prop] = _.reject(_.deepExtend(_.clone(obj[prop]), source[prop], depth + 1), function (item) { return _.isNull(item); });
+				}
+			}
+			else if (_.isObject(obj[prop]) || _.isObject(source[prop])) {
+				if (!_.isObject(obj[prop]) || !_.isObject(source[prop])) {
+					throw new Error('Trying to combine an object with a non-object (' + prop + ')');
+				} else {
+					obj[prop] = _.deepExtend(_.clone(obj[prop]), source[prop], depth + 1);
+				}
+			} else {
+				obj[prop] = source[prop];
+			}
+		}
+	});
+	return obj;
 };
 
 _.mixin({ 'deepExtend': deepExtend });
@@ -259,7 +271,13 @@ function isArray(a) {
 	return Array.isArray(a);
 }
 
-var assignPropVal = function(parts, result, val) {
+var assignPropVal = function (parts, result, val, depth = 0) {
+	const MAX_DEPTH = 20; // Prevent infinite recursion
+	if (depth > MAX_DEPTH) {
+		console.warn('Maximum depth exceeded in assignPropVal');
+		return result;
+	}
+
 	var part = parts.shift().replace(/\[|\]/g, "");
 	if (parts.length) {
 		if (isNumeric(parts[0].replace(/\[|\]/g, ""))) {
@@ -267,14 +285,14 @@ var assignPropVal = function(parts, result, val) {
 		} else {
 			result[part] = {};
 		}
-		assignPropVal(parts, result[part], val);
+		assignPropVal(parts, result[part], val, depth + 1);
 	} else {
 		result[part] = val;
 	}
 	return result;
 }
 
-var deserialize = function(input) {
+var deserialize = function (input) {
 	// console.log("INPUT", input);
 	var result = {};
 	var newobj = {};
@@ -283,20 +301,19 @@ var deserialize = function(input) {
 		// console.log(prop, parts);
 		var val = input[prop];
 		if (parts) {
-			var tmp = assignPropVal(parts, result, val);
-			newobj = _.deepExtend(newobj, tmp);
+			var tmp = assignPropVal(parts, result, val, 0);
+			newobj = _.deepExtend(newobj, tmp, 0);
 		} else {
 			// console.log("NOT ARRAY", parts);
 			newobj[prop] = input[prop];
 		}
-		
 	}
 	// input = newobj;
 	// console.log("Munge!", newobj);
 	return newobj;
 }
 
-var runTest = function(name, input, test) {
+var runTest = function (name, input, test) {
 	var result = deserialize(input);
 	if (_.isEqual(result, test)) {
 		console.log("PASSED " + name);
@@ -306,7 +323,7 @@ var runTest = function(name, input, test) {
 	}
 }
 
-var test = function() {
+var test = function () {
 	runTest("Test 1", input1, test1);
 	runTest("Test 2", input2, test2);
 	runTest("Test 3", input3, test3);

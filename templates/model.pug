@@ -36,21 +36,40 @@ block content
                 th Default
                 th Indexed?
                 th Unique?
+                th Required?
         tbody
             each fieldname in fields
-                - let field = model.schema.paths[fieldname]
+                - let field = safeFields[fieldname]
                 if (field.path)
                     tr
                         td= field.path
-                        td= field.instance
+                        td
+                            if field.arrayType
+                                | Array of #{field.arrayType}
+                            else
+                                = field.instance
                         td= field.options.link
                         td= field.options.map_to
                         td= field.defaultValue
                         td= (field.options.index) ? "x" : ""
                         td= (field.options.unique) ? "x" : ""
+                        td= field.isRequired ? "x" : ""
     hr
-    h1 Raw definition
+    h2 Field Details
     each fieldname in fields
-        - let field = model.schema.paths[fieldname]
-        pre.pre= JSON.stringify(field, null, "\t")
+        - let field = safeFields[fieldname]
+        if field
+            .field-details
+                h3= field.path
+                pre.pre= JSON.stringify(field, null, 2)
+                if field.schema
+                    h4 Nested Schema
+                    ul
+                        each nestedField in field.schema
+                            li #{nestedField.path}: #{nestedField.type}
+                if field.validators && field.validators.length
+                    h4 Validators
+                    ul
+                        each validator in field.validators
+                            li #{validator.type}: #{validator.message}
 

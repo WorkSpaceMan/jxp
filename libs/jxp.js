@@ -72,7 +72,7 @@ const outputCSV = (req, res, next) => {
 	try {
 		const data = res.result.data.map(row => row._doc);
 		if (!data.length) {
-			throw("")
+			throw ("")
 		}
 		res.writeHead(200, {
 			'Content-Type': 'text/csv',
@@ -91,7 +91,7 @@ const outputCSV = (req, res, next) => {
 const actionGet = async (req, res) => {
 	const opname = `get ${req.modelname} ${ops++}`;
 	console.time(opname);
-	const parseSearch = function(search) {
+	const parseSearch = function (search) {
 		let result = {};
 		for (let i in search) {
 			result[i] = new RegExp(search[i], "i");
@@ -120,9 +120,9 @@ const actionGet = async (req, res) => {
 	}
 	if (req.query.search) {
 		// console.log({ search: req.query.search });
-		q = req.Model.find({ $text: { $search: req.query.search }}, { score : { $meta: "textScore" } }).sort( { score: { $meta : "textScore" } } );
-		countquery = Object.assign({ $text: { $search: req.query.search }}, countquery);
-		qcount = req.Model.find({ $text: { $search: req.query.search }});
+		q = req.Model.find({ $text: { $search: req.query.search } }, { score: { $meta: "textScore" } }).sort({ score: { $meta: "textScore" } });
+		countquery = Object.assign({ $text: { $search: req.query.search } }, countquery);
+		qcount = req.Model.find({ $text: { $search: req.query.search } });
 	}
 	if (res.user) {
 		q.options = ({ user: res.user });
@@ -164,7 +164,7 @@ const actionGet = async (req, res) => {
 			} else {
 				q.populate(req.query.populate);
 			}
-			result.populate = req.query.populate;	
+			result.populate = req.query.populate;
 		}
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
@@ -189,7 +189,7 @@ const actionGet = async (req, res) => {
 		result.data = await q.exec();
 		res.result = result;
 		if (debug) console.timeEnd(opname);
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
@@ -204,7 +204,7 @@ const actionGetOne = async (req, res) => {
 		const data = await getOne(req.Model, req.params.item_id, req.query, { user: res.user });
 		res.result = { data };
 		if (debug) console.timeEnd(opname);
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
@@ -262,7 +262,7 @@ const actionPut = async (req, res) => {
 		let silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
-			req.config.callbacks.put.call(null, req.modelname, item, res.user );
+			req.config.callbacks.put.call(null, req.modelname, item, res.user);
 			ws.putHook.call(null, req.modelname, item, res.user);
 		}
 		res.json({
@@ -283,12 +283,12 @@ const actionUpdate = async (req, res) => {
 	const opname = `update ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		let body_data =  datamunging.deserialize(req.body);
+		let body_data = datamunging.deserialize(req.body);
 		const data = await req.Model.update({ _id: req.params.item_id }, body_data);
 		let silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
-			req.config.callbacks.put.call(null, req.modelname, data, res.user );
+			req.config.callbacks.put.call(null, req.modelname, data, res.user);
 			ws.putHook.call(null, req.modelname, data, res.user);
 		}
 		res.json({
@@ -370,10 +370,10 @@ const actionDelete = async (req, res) => {
 		}
 		res.json({
 			status: "ok",
-			message: `${req.modelname}/${ req.params.item_id } deleted`
+			message: `${req.modelname}/${req.params.item_id} deleted`
 		});
 		if (debug) console.timeEnd(opname);
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
@@ -384,7 +384,7 @@ const actionDelete = async (req, res) => {
 const actionCount = async (req, res) => {
 	const opname = `count ${req.modelname} ${ops++}`;
 	console.time(opname);
-	const parseSearch = function(search) {
+	const parseSearch = function (search) {
 		let result = {};
 		for (let i in search) {
 			result[i] = new RegExp(search[i], "i");
@@ -409,7 +409,7 @@ const actionCount = async (req, res) => {
 		const count = await req.Model.countDocuments(filters).exec();
 		res.result = { count };
 		if (debug) console.timeEnd(opname);
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
@@ -424,7 +424,7 @@ const actionCall = async (req, res) => {
 	try {
 		const result = await req.Model[req.params.method_name](req.body);
 		res.json(result);
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(err.toString());
@@ -440,7 +440,7 @@ const actionCallItem = async (req, res) => {
 		req.params.__user = res.user || null;
 		const result = await req.Model[req.params.method_name](item);
 		res.json(result);
-	} catch(err) {
+	} catch (err) {
 		console.trace(err);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(err.toString());
@@ -493,7 +493,7 @@ const actionQuery = async (req, res) => {
 			} else {
 				q.populate(req.query.populate);
 			}
-			result.populate = req.query.populate;	
+			result.populate = req.query.populate;
 		}
 		if (req.query.autopopulate) {
 			for (let key in req.Model.schema.paths) {
@@ -516,7 +516,7 @@ const actionQuery = async (req, res) => {
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 		res.json(result);
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
@@ -611,7 +611,7 @@ const actionBulkWrite = async (req, res) => {
 const getOne = async (Model, item_id, params, options) => {
 	const query = Model.findById(item_id, {}, options);
 	if (params.populate) {
-		if ((typeof params.populate === "object")  && !Array.isArray(params.populate)) {
+		if ((typeof params.populate === "object") && !Array.isArray(params.populate)) {
 			for (let i in params.populate) {
 				query.populate(i, params.populate[i].replace(/,/g, " "));
 			}
@@ -641,56 +641,71 @@ const getOne = async (Model, item_id, params, options) => {
 		//Don't ever return passwords
 		delete item.password;
 		return item;
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(err.toString());
 	}
 };
 
-const parseFilter = (filter) => {
-	if (!filter)
-		return {};
-	if (typeof filter == "object") {
-		Object.keys(filter).forEach(function(key) {
-			var val = filter[key];
-			if (filter[key] === "false") filter[key] = false;
-			if (filter[key] === "true") filter[key] = true;
-			if (val.indexOf) {
-				if (val.indexOf(":") !== -1) {
-					let tmp = val.split(":");
-					filter[key] = {};
-					let tmpkey = tmp.shift();
-					let tmpval = tmp.join(":");
-					if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) { // Could be an array for a $in or similar
-						let arr = tmpval.slice(1, tmpval.length - 1).split(",");
-						tmpval = arr;
-					}
-					filter[key][tmpkey] = tmpval;
-					if (tmpkey === "$regex" && tmpval[0] === "/") {
-						let match = tmpval.match(new RegExp('^/(.*?)/([gimy]*)$'));
+const parseFilter = (filter, depth = 0) => {
+	const MAX_DEPTH = 10; // Prevent infinite recursion
+
+	if (!filter) return {};
+	if (depth > MAX_DEPTH) {
+		console.warn('Maximum filter depth exceeded');
+		return filter;
+	}
+
+	if (typeof filter !== "object" || filter === null) return filter;
+
+	Object.keys(filter).forEach(function (key) {
+		var val = filter[key];
+		if (filter[key] === "false") filter[key] = false;
+		if (filter[key] === "true") filter[key] = true;
+		if (val && val.indexOf) {
+			if (val.indexOf(":") !== -1) {
+				let tmp = val.split(":");
+				filter[key] = {};
+				let tmpkey = tmp.shift();
+				let tmpval = tmp.join(":");
+				if ((tmpval[0] === "[") && (tmpval[tmpval.length - 1] === "]")) {
+					let arr = tmpval.slice(1, tmpval.length - 1).split(",");
+					tmpval = arr;
+				}
+				filter[key][tmpkey] = tmpval;
+				if (tmpkey === "$regex" && tmpval[0] === "/") {
+					let match = tmpval.match(new RegExp('^/(.*?)/([gimy]*)$'));
+					if (match) {
 						let regex = new RegExp(match[1], match[2]);
 						filter[key][tmpkey] = regex;
 					}
 				}
-				if (typeof val == "object") {
-					let result = parseFilter(val);
+			}
+			if (typeof val == "object") {
+				let result = parseFilter(val, depth + 1);
+				if (result && typeof result === 'object') {
 					filter[key] = {};
-					for (let x = 0; x < result.length; x++) {
-						filter[key][Object.keys(result[x])[0]] =
-							result[x][Object.keys(result[x])[0]];
-					}
+					Object.keys(result).forEach(resultKey => {
+						filter[key][resultKey] = result[resultKey];
+					});
 				}
 			}
-		});
-	}
+		}
+	});
 	return filter;
 }
 
 const _deSerialize = (data) => {
 	function assign(obj, keyPath, value) {
-		// http://stackoverflow.com/questions/5484673/javascript-how-to-dynamically-create-nested-objects-using-object-names-given-by
+		const MAX_DEPTH = 20; // Prevent excessive nesting
 		const lastKeyIndex = keyPath.length - 1;
+
+		if (lastKeyIndex >= MAX_DEPTH) {
+			console.warn('Maximum nesting depth exceeded in _deSerialize');
+			return;
+		}
+
 		for (let i = 0; i < lastKeyIndex; ++i) {
 			let key = keyPath[i];
 			if (!(key in obj)) obj[key] = {};
@@ -698,10 +713,13 @@ const _deSerialize = (data) => {
 		}
 		obj[keyPath[lastKeyIndex]] = value;
 	}
+
+	if (!data || typeof data !== 'object') return;
+
 	for (let datum in data) {
 		const matches = datum.match(/\[(.+?)\]/g);
 		if (matches) {
-			const params = matches.map(function(match) {
+			const params = matches.map(function (match) {
 				return match.replace(/[[\]]/g, "");
 			});
 			if (isNaN(params[0])) {
@@ -765,7 +783,7 @@ const changeUrlParams = (req, key, val) => {
 	return req.config.url + req.path() + "?" + querystring.stringify(q);
 };
 
-const JXP = function(options) {
+const JXP = function (options) {
 	const server = restify.createServer();
 	const model_dir = options.model_dir || modeldir.findModelDir(path.dirname(process.argv[1]));
 	//Set up config with default
@@ -773,12 +791,12 @@ const JXP = function(options) {
 		model_dir: path.join(model_dir),
 		mongo: options.mongo,
 		callbacks: {
-			put: function() {},
-			post: function() {},
-			delete: function() {},
-			get: function() {},
-			getOne: function() {},
-			update: function() {},
+			put: function () { },
+			post: function () { },
+			delete: function () { },
+			get: function () { },
+			getOne: function () { },
+			update: function () { },
 		},
 		log: "access.log",
 		pre_hooks: {
@@ -841,13 +859,13 @@ const JXP = function(options) {
 	global.apikey = config.apikey;
 	global.server = config.server;
 	global.model_dir = model_dir;
-	
+
 	// Pre-load models
 	var files = fs.readdirSync(config.model_dir);
-	let modelnames = files.filter(function(fname) {
+	let modelnames = files.filter(function (fname) {
 		return fname.indexOf("_model.js") !== -1;
 	});
-	modelnames.forEach(function(fname) {
+	modelnames.forEach(function (fname) {
 		var modelname = fname.replace("_model.js", "");
 		models[modelname] = require(path.join(config.model_dir, fname));
 	});
@@ -856,9 +874,9 @@ const JXP = function(options) {
 	security.init(config);
 	login.init(config);
 	groups.init(config);
-	ws.init({models});
+	ws.init({ models });
 	cache.init(config);
-	const docs = new Docs({config, models});
+	const docs = new Docs({ config, models });
 
 	// Set up our API server
 
@@ -877,7 +895,7 @@ const JXP = function(options) {
 	const cors = corsMiddleware({
 		preflightMaxAge: 5, //Optional
 		origins: ['*'],
-		allowHeaders: ['X-Requested-With','Authorization'],
+		allowHeaders: ['X-Requested-With', 'Authorization'],
 		exposeHeaders: ['Authorization']
 	});
 
