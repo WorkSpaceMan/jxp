@@ -233,6 +233,29 @@ describe('Test', () => {
 					done();
 				});
 		});
+
+		it("it should POST a test with string_array", (done) => {
+			var test = {
+				foo: "FooArray",
+				bar: "BarArray",
+				string_array: ["one", "two", "three"]
+			};
+			chai.request(server)
+				.post("/api/test")
+				.auth(init.email, init.password)
+				.send(test)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('object');
+					res.body.data.should.have.property("string_array");
+					res.body.data.string_array.should.be.an("array");
+					res.body.data.string_array.should.have.length(3);
+					res.body.data.string_array[0].should.equal("one");
+					res.body.data.string_array[1].should.equal("two");
+					res.body.data.string_array[2].should.equal("three");
+					done();
+				});
+		});
 	});
 
 	describe("/GET test count", () => {
@@ -241,7 +264,7 @@ describe('Test', () => {
 				.get("/count/test")
 				.end((err, res) => {
 					res.should.have.status(200);
-					res.body.count.should.be.eql(1);
+					res.body.count.should.be.eql(2);
 					done();
 				});
 		});
@@ -717,7 +740,7 @@ describe('Test', () => {
 						res.body.data.should.be.an('array');
 						res.body.data[0].should.have.property("_id");
 						res.body.data[0].should.have.property("count");
-						res.body.data[0].count.should.eql(2);
+						res.body.data[0].count.should.eql(3);
 						done();
 					});
 			});
@@ -736,7 +759,7 @@ describe('Test', () => {
 						res.body.data.should.be.an('array');
 						res.body.data[0].should.have.property("_id");
 						res.body.data[0].should.have.property("count");
-						res.body.data[0].count.should.eql(2);
+						res.body.data[0].count.should.eql(3);
 						done();
 					});
 			});
@@ -762,7 +785,7 @@ describe('Test', () => {
 						res.body.data.should.be.an('array');
 						res.body.data[0].should.have.property("_id");
 						res.body.data[0].should.have.property("count");
-						res.body.data[0].count.should.eql(2);
+						res.body.data[0].count.should.eql(3);
 						done();
 					});
 			});
@@ -789,7 +812,7 @@ describe('Test', () => {
 						res.body.data.should.be.an('array');
 						res.body.data[0].should.have.property("_id");
 						res.body.data[0].should.have.property("count");
-						res.body.data[0].count.should.eql(2);
+						res.body.data[0].count.should.eql(3);
 						done();
 					});
 			});
@@ -832,7 +855,7 @@ describe('Test', () => {
 						res.body.data.should.be.an('array');
 						res.body.data[0].should.have.property("_id");
 						res.body.data[0].should.have.property("count");
-						res.body.data[0].count.should.eql(2);
+						res.body.data[0].count.should.eql(3);
 						done();
 					});
 			});
@@ -848,7 +871,7 @@ describe('Test', () => {
 						res.body.data[0].should.have.property("foo");
 						res.body.data[0].foo.should.eql("Foo1");
 						res.body.should.have.property("count");
-						res.body.count.should.eql(2);
+						res.body.count.should.eql(3);
 						done();
 					});
 			})
@@ -917,7 +940,7 @@ describe('Test', () => {
 						res.body.data[1].should.have.property("foo");
 						res.body.data[2].should.have.property("foo");
 						res.body.should.have.property("count");
-						res.body.count.should.eql(4);
+						res.body.count.should.eql(5);
 						done();
 					});
 			});
@@ -948,6 +971,123 @@ describe('Test', () => {
 					res.should.have.status(200);
 					res.body.should.be.a('array');
 					done();
+				});
+		});
+	});
+
+	describe("Mixed Array Tests", () => {
+		it("should save complex objects in mixed_array", (done) => {
+			const complexData = {
+				foo: "MixedArrayTest",
+				bar: "MixedArrayBar",
+				mixed_array: [
+					{
+						nested: {
+							prop1: "value1",
+							prop2: 123,
+							prop3: true
+						},
+						array: [1, 2, 3],
+						date: new Date("2024-03-20T10:00:00Z")
+					},
+					["array", "of", "strings"],
+					42,
+					{ simple: "object" },
+					null,
+					new Date("2024-03-21"),
+					[
+						{
+							foo: "bar",
+							bar: "foo"
+						},
+						{
+							foo: "baz",
+							bar: "baz"
+						}
+					]
+				]
+			};
+
+			chai.request(server)
+				.post("/api/test")
+				.auth(init.email, init.password)
+				.send(complexData)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.data.should.be.an('object');
+					res.body.data.should.have.property("mixed_array");
+					res.body.data.mixed_array.should.be.an("array");
+					res.body.data.mixed_array.should.have.length(7);
+
+					// Verify first object with nested properties
+					res.body.data.mixed_array[0].should.have.property("nested");
+					res.body.data.mixed_array[0].nested.prop1.should.equal("value1");
+					res.body.data.mixed_array[0].nested.prop2.should.equal(123);
+					res.body.data.mixed_array[0].nested.prop3.should.equal(true);
+					res.body.data.mixed_array[0].array.should.deep.equal([1, 2, 3]);
+
+					// Verify array of strings
+					res.body.data.mixed_array[1].should.deep.equal(["array", "of", "strings"]);
+
+					// Verify number
+					res.body.data.mixed_array[2].should.equal(42);
+
+					// Verify simple object
+					res.body.data.mixed_array[3].should.have.property("simple");
+					res.body.data.mixed_array[3].simple.should.equal("object");
+
+					// Verify null
+					should.equal(res.body.data.mixed_array[4], null);
+
+					// Verify dates are stored as ISO strings
+					res.body.data.mixed_array[0].date.should.be.a("string");
+					res.body.data.mixed_array[5].should.be.a("string");
+					res.body.data.mixed_array[6].should.be.a("array");
+					res.body.data.mixed_array[6][0].should.have.property("foo");
+					res.body.data.mixed_array[6][0].foo.should.equal("bar");
+					res.body.data.mixed_array[6][1].should.have.property("foo");
+					res.body.data.mixed_array[6][1].foo.should.equal("baz");
+					done();
+				});
+		});
+
+		it("should retrieve and maintain complex objects in mixed_array", (done) => {
+			// First create a test document
+			const testData = {
+				foo: "MixedArrayRetrieveTest",
+				bar: "RetrieveBar",
+				mixed_array: [
+					{
+						deep: { nested: { object: true } },
+						array: [[1, 2], [3, 4]],
+					},
+					Buffer.from("Hello World").toString("base64"),
+					new RegExp("test").toString()
+				]
+			};
+
+			let testId;
+
+			chai.request(server)
+				.post("/api/test")
+				.auth(init.email, init.password)
+				.send(testData)
+				.end((err, res) => {
+					res.should.have.status(200);
+					testId = res.body.data._id;
+
+					// Now retrieve and verify
+					chai.request(server)
+						.get(`/api/test/${testId}`)
+						.auth(init.email, init.password)
+						.end((err, res) => {
+							res.should.have.status(200);
+							res.body.data.mixed_array[0].deep.nested.object.should.equal(true);
+							res.body.data.mixed_array[0].array.should.deep.equal([[1, 2], [3, 4]]);
+							res.body.data.mixed_array[1].should.be.a("string");
+							res.body.data.mixed_array[2].should.equal("/test/");
+							done();
+						});
 				});
 		});
 	});

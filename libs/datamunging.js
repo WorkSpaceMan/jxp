@@ -302,7 +302,7 @@ var deserialize = function (input) {
 		var val = input[prop];
 		if (parts) {
 			var tmp = assignPropVal(parts, result, val, 0);
-			newobj = _.deepExtend(newobj, tmp, 0);
+			newobj = _.deepExtend(tmp);
 		} else {
 			// console.log("NOT ARRAY", parts);
 			newobj[prop] = input[prop];

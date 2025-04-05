@@ -11,10 +11,12 @@ const TestSchema = new JXPSchema({
     fulltext: { type: String, index: { text: true } },
     link_id: { type: ObjectId, link: "Link", }, // We can populate these links during a query
     other_link_id: { type: ObjectId, link: "Link", map_to: "other_link" },
+    string_array: [String],
     array_link_id: [{ type: ObjectId, link: "Link", map_to: "array_link", justOne: false }],
     composite_array: [
         { afoo: String, abar: Number }
     ],
+    mixed_array: [Mixed],
     date_field: { type: Date, index: true } // Added date field for testing date filtering
 },
     {
