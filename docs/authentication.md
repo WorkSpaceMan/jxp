@@ -179,5 +179,5 @@ Header: `Authorization: Bearer <your bearer token>`
 
 ### API Key
 
-The API Key is a permanent key that doesn't expire. It can be used by adding `?apikey=<apikey>` to the end of any request, or sending `apikey: <apikey>` in the header. 
+The API Key is a permanent key that doesn't expire. It can be used by adding `?apikey=<apikey>` to the end of any request, or sending `x-api-key: <apikey>` in the header. 
 
