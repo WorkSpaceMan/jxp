@@ -19,11 +19,16 @@
                 "-u",
                 "tdd",
                 "--timeout",
-                "999999",
+                "30000",
                 "--colors",
+                "--exit",
+                "--bail",
                 "${workspaceFolder}/test"
             ],
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "env": {
+                "NODE_ENV": "test"
+            }
         }
     ]
 }

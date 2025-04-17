@@ -235,24 +235,47 @@ class WSClient {
 wss.on('connection', function connection(ws) {
     try {
         const client = new WSClient(ws);
-        // clients[client.id] = client;
+        const startTime = Date.now();
+        console.log(`New WebSocket connection established at ${new Date()}`);
+
         ws.on('message', async function message(msg) {
+            const messageStartTime = Date.now();
             try {
-                console.log(`Received message from ${client.id}`);
+                console.log(`Received message from ${client.id} at ${new Date()}`);
                 const result = await client.receive(msg);
                 ws.send(JSON.stringify(result));
+                console.log(`Message processed in ${Date.now() - messageStartTime}ms`);
             } catch (err) {
                 console.error("message error", err);
+                console.error(`Message processing failed after ${Date.now() - messageStartTime}ms`);
             }
         });
+
         ws.on('close', function close() {
+            const connectionDuration = Date.now() - startTime;
             if (client.user) {
-                console.log(`Close ${client.user.name} <${client.user.email}>`);
+                console.log(`Connection closed for ${client.user.name} <${client.user.email}> after ${connectionDuration}ms`);
             } else {
-                console.log(`Close anonymous connection`);
+                console.log(`Anonymous connection closed after ${connectionDuration}ms`);
             }
             client.close();
         });
+
+        // Add ping/pong monitoring
+        const pingInterval = setInterval(() => {
+            if (ws.readyState === ws.OPEN) {
+                const pingStart = Date.now();
+                ws.ping();
+                ws.once('pong', () => {
+                    const latency = Date.now() - pingStart;
+                    if (latency > 1000) { // Alert if latency > 1 second
+                        console.warn(`High WebSocket latency detected: ${latency}ms`);
+                    }
+                });
+            }
+        }, 30000);
+
+        ws.on('close', () => clearInterval(pingInterval));
     } catch (err) {
         console.error("connection error", err);
     }

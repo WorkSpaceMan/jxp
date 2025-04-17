@@ -65,7 +65,7 @@ const logout = async (req, res) => {
 		if (!res.user) throw new errors.ForbiddenError("You don't seem to be logged in");
 		await security.revokeToken(res.user._id);
 		res.send({ status: "ok", message: "User logged out" });
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(err.toString());
@@ -148,13 +148,17 @@ const login = async (req, res) => {
 	}
 	if ((!password) || (!email)) {
 		console.error(new Date(), "Missing email or password parameters");
-		return new errors.ForbiddenError("Missing email or password parameters");
+		throw new errors.ForbiddenError("Missing email or password parameters");
 	}
 	try {
 		const user = await User.findOne({ email });
-		if (!user) throw (`Incorrect email; email: ${email}`);
+		if (!user) {
+			console.error(new Date(), `Authentication failed - user not found`, ip, email);
+			throw new errors.ForbiddenError("Incorrect email or password");
+		}
 		if (!(await bcrypt.compare(password, user.password))) {
-			throw (`Incorrect password; email: ${email}`);
+			console.error(new Date(), `Authentication failed - invalid password`, ip, email);
+			throw new errors.ForbiddenError("Incorrect email or password");
 		}
 		const token = await security.refreshToken(user._id);
 		const refreshtoken = await security.ensureRefreshToken(user._id);
@@ -171,7 +175,7 @@ const login = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), `Authentication failed`, ip, err);
 		if (err.code) throw err;
-		return new errors.ForbiddenError(err.toString());
+		throw new errors.ForbiddenError("Incorrect email or password");
 	}
 }
 

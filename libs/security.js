@@ -9,7 +9,7 @@ var User = null;
 var RefreshToken = null;
 var provider = "https://api.workspaceman.nl";
 
-const init = function(config) {
+const init = function (config) {
 	APIKey = require(path.join(config.model_dir, "apikey_model"));
 	Groups = require(path.join(config.model_dir, "usergroups_model.js"));
 	User = require(path.join(config.model_dir, "user_model"));
@@ -18,7 +18,7 @@ const init = function(config) {
 	if (config.url) provider = config.url;
 };
 
-const basicAuthData = function(req) {
+const basicAuthData = function (req) {
 	if (!req.headers.authorization) {
 		return false;
 	}
@@ -34,19 +34,19 @@ const basicAuthData = function(req) {
 const basicAuth = async ba => {
 	try {
 		if (!Array.isArray(ba) || ba.length !== 2) {
-			throw("Basic Auth incorrectly formatted");
+			throw ("Basic Auth incorrectly formatted");
 		}
 		var email = ba[0];
 		var password = ba[1];
 		const user = await User.findOne({ email }).exec();
 		if (!user) {
-			throw(new Date(), `Incorrect username or password for ${email}`);
+			throw (new Date(), `Incorrect username or password for ${email}`);
 		}
 		if (!await bcrypt.compare(password, user.password)) {
-			throw(`Incorrect username or password for ${email}`);
+			throw (`Incorrect username or password for ${email}`);
 		}
 		return user;
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		throw err;
 	}
@@ -66,13 +66,13 @@ const bearerAuthData = req => {
 
 const bearerAuth = async t => {
 	try {
-		if (!t) throw("Token invalid");
+		if (!t) throw ("Token invalid");
 		const token = await Token.findOne({ access_token: t, provider }).exec();
 		if (!token) {
-			throw(`Token ${t} not found`);
+			throw (`Token ${t} not found`);
 		}
 		if (!tokenIsValid(token)) {
-			throw(`Token is no loger valid`);
+			throw (`Token is no loger valid`);
 		}
 		const user = await User.findOne({ _id: token.user_id }).exec();
 		if (!user) {
@@ -87,13 +87,13 @@ const bearerAuth = async t => {
 
 const apiKeyAuth = async apikey => {
 	try {
-		if (!apikey) throw("Missing apikey");
+		if (!apikey) throw ("Missing apikey");
 		const result = await APIKey.findOne({ apikey });
-		if (!result) throw("Could not find apikey");
+		if (!result) throw ("Could not find apikey");
 		const user = User.findOne({ _id: result.user_id });
-		if (!user) throw("Could not find user associated to apikey");
+		if (!user) throw ("Could not find user associated to apikey");
 		return user;
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		throw err;
 	}
@@ -104,7 +104,7 @@ const getGroups = async user_id => {
 		const userGroup = await Groups.findOne({ user_id });
 		var groups = userGroup && userGroup.groups ? userGroup.groups : [];
 		return groups;
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		throw err;
 	}
@@ -126,7 +126,7 @@ const generateApiKey = async user_id => {
 		apikey.apikey = randToken.generate(16);
 		await apikey.save();
 		return apikey;
-	} catch(err) {
+	} catch (err) {
 		console.error(new Date(), err);
 		throw err;
 	}
@@ -208,10 +208,10 @@ const revokeRefreshToken = async user_id => {
 
 const refresh = async (req, res) => {
 	try {
-		if(req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("bearer") === 0) {
+		if (req.headers.authorization && req.headers.authorization.trim().toLowerCase().indexOf("bearer") === 0) {
 			const refresh_token = await RefreshToken.findOne({ refresh_token: bearerAuthData(req) }).exec();
-			if (!refresh_token) throw("Refresh token not found");
-			if (!tokenIsValid(refresh_token)) throw("Refresh token has expired");
+			if (!refresh_token) throw ("Refresh token not found");
+			if (!tokenIsValid(refresh_token)) throw ("Refresh token has expired");
 			const user_id = refresh_token.user_id;
 			const token = await refreshToken(user_id);
 			await revokeRefreshToken(user_id);
@@ -224,7 +224,7 @@ const refresh = async (req, res) => {
 				refresh_token_expires: tokenExpires(new_refresh_token)
 			});
 		} else {
-			throw("Missing refresh token")
+			throw ("Missing refresh token")
 		}
 	} catch (err) {
 		console.error(err);
@@ -242,7 +242,7 @@ const login = async (req, res) => {
 			return;
 		}
 		res = Object.assign(res, authenticate_result);
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
 		throw new errors.ForbiddenError(err.toString());
@@ -264,7 +264,7 @@ const authenticate = async req => {
 		user = await apiKeyAuth(req.query.apikey);
 	} else if (req.headers["X-API-Key"] || req.headers["x-api-key"]) {
 		// API Key
-		user = await apiKeyAuth(req.query.apikey || req.headers["X-API-Key"] || req.headers["x-api-key"])
+		user = await apiKeyAuth(req.headers["X-API-Key"] || req.headers["x-api-key"])
 	} else {
 		throw ("Could not find any way to authenticate");
 	}
@@ -278,7 +278,7 @@ const authenticate = async req => {
 		username: user.email,
 		user
 	}
-	
+
 }
 
 const auth = async (req, res) => {
@@ -303,7 +303,7 @@ const auth = async (req, res) => {
 			throw new errors.InternalServerError(`Unsupported operation: ${req.method}`);
 		}
 		return await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
 		throw new errors.ForbiddenError(err.toString());
@@ -355,7 +355,7 @@ const check_perms = async (user, groups, model, method, item_id) => {
 		}
 		//Group check
 		for (let group of groups) {
-			if (perms[group] && perms[group].includes(method) ) {
+			if (perms[group] && perms[group].includes(method)) {
 				// console.log("Matched permission '" + group + "':" + method);
 				return;
 			}

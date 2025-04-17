@@ -15,9 +15,9 @@ const security = require("../libs/security");
 const empty = async model => {
 	try {
 		await model.deleteMany({});
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
-		throw(err);
+		throw (err);
 	}
 };
 
@@ -44,9 +44,9 @@ const init = async () => {
 		await post(User, { name: "Admin User", email: admin_email, password: security.encPassword(admin_password), urlid: "admin-user", admin: true });
 		await post(User, { name: "Test User", email, password: security.encPassword(password), urlid: "test-user" });
 		return true;
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
-		throw(err);
+		throw (err);
 	}
 };
 
@@ -55,9 +55,9 @@ const empty_user_collections = async () => {
 		await empty(User);
 		await empty(Apikey);
 		await empty(Test);
-	} catch(err) {
+	} catch (err) {
 		console.error(err);
-		throw(err);
+		throw (err);
 	}
 }
 
