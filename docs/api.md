@@ -92,11 +92,19 @@ You can paginate with the `page=<page number>` parameter. Page count starts at 1
 
 If you go beyond the total number of pages, you will get an empty `data` array.
 
-#### Large collections (required limit)
+#### Default limit
 
-For collections with at least **10,000** documents (by default), `GET /api/<model>`, `GET /csv/<model>`, and `POST /query/<model>` **require** a valid `?limit=` between 1 and the configured maximum (default **1000**). Requests without `?limit=`, or with `?limit=` above the maximum, return **400 Bad Request**.
+When `query_limits.enabled` is true (default), list and query endpoints apply **`?limit=100`** if you omit `limit`. Use `?limit=` up to the configured maximum (default **1000**) for larger pages.
 
-Use `GET /count/<model>` for totals on large collections.
+#### Large collections (explicit limit)
+
+For collections with at least **10,000** documents (by default), you must pass an explicit `?limit=` between 1 and the maximum. Omitting `limit` on a large collection returns **400 Bad Request** (the default limit does not satisfy this rule).
+
+Use `GET /count/<model>` for totals. Add **`?count=true`** (or **`?page=`**) when you need `count` / `page_count` in the list response without paginating.
+
+#### Totals in list responses
+
+By default, list responses **omit** `count` unless you pass **`?count=true`** or **`?page=`**, to avoid expensive `countDocuments` on every request.
 
 Configure globally when starting JXP:
 
@@ -105,6 +113,8 @@ query_limits: {
   enabled: true,
   large_collection_threshold: 10000,
   max: 1000,
+  default: 100,
+  skip_count_unless_paginated: true,
 }
 ```
 

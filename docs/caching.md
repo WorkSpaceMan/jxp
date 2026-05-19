@@ -22,6 +22,8 @@ Set `CACHE_DEBUG=true` to log cache expiry and flush events to the console.
 
 ## Admin endpoints
 
+Requires **admin** authentication (same as other admin-only routes):
+
 - `GET /cache/stats` — returns node-cache statistics when caching is enabled, or `{ "cache_enabled": false }` when disabled
 - `GET /cache/clear` — flushes all cached entries
 

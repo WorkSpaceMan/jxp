@@ -2,6 +2,8 @@
 
 You can apply an aggregation pipeline through the `/aggregate/<modelname>` endpoint. See [MongoDB's aggregation documentation](https://www.mongodb.com/docs/manual/aggregation/).
 
+Only allowlisted stages are permitted (e.g. `$match`, `$group`, `$lookup`, `$project`, `$sort`, `$limit`). Stages such as `$out`, `$merge`, and `$function` require an admin user. Disable per model with `advanced_queries: { aggregate: false }`.
+
 POST the pipeline as a **JSON array**, or wrap it in a `"query"` property. Both forms are accepted:
 
 ```json

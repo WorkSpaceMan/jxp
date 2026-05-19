@@ -129,18 +129,21 @@ Mongoose version key.
 
 ## Stored Procedures
 
-You can write your own stored procs in your schemas to do whatever you want. You can access these through the `/call` endpoint. Declare these as a static Mongoose function.
-
-`/call/test/test`
+You can expose selected static methods via the `/call` endpoint. Declare the static on the schema and list its name in **`callable_statics`** (only listed methods are callable; all others return 403).
 
 ```js
+const TestSchema = new JXPSchema({ ... }, {
+  perms: { ... },
+  callable_statics: ["test"],
+});
+
 TestSchema.statics.test = function(data) {
     console.log(data);
     return "Testing OKAY!";
 };
 ```
 
-You can GET your static, or POST data to it.
+`/call/test/test` — GET or POST. Unlisted statics are rejected.
 
 You can even prepopulate the function with an item:
 

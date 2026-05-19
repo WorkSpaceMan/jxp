@@ -19,6 +19,13 @@ const corsMiddleware = require('restify-cors-middleware2');
 const { Parser: CsvParser } = require('@json2csv/plainjs');
 const cache = require("./cache");
 const query_limits = require("./query_limits");
+const query_sanitize = require("./query_sanitize");
+const aggregate_guard = require("./aggregate_guard");
+const bulkwrite_guard = require("./bulkwrite_guard");
+const call_guard = require("./call_guard");
+const response_sanitize = require("./response_sanitize");
+const link_index = require("./link_index");
+const { safeErrorMessage } = require("./safe_error");
 const schemaModule = require("./schema");
 global.JXPSchema = schemaModule.default || schemaModule;
 
@@ -28,32 +35,65 @@ var ops = 0;
 
 var debug = false;
 
+const USER_PRIVILEGE_FIELDS = ["admin", "password", "groups"];
+
+function getStripFields(req) {
+	return req.config?.security?.strip_fields || ["password"];
+}
+
+function getSecurityOpts(req) {
+	return req.config?.security || {};
+}
+
+function advancedQueryAllowed(Model, kind) {
+	const opts = (Model.schema as { opts?: { advanced_queries?: Record<string, boolean> } }).opts;
+	const aq = opts?.advanced_queries;
+	if (kind === "bulkwrite") {
+		return aq?.bulkwrite === true;
+	}
+	if (kind === "aggregate") {
+		return aq?.aggregate !== false;
+	}
+	return aq?.query !== false;
+}
+
 // Middleware
 const middlewareModel = (req, res, next) => {
 	const modelname = req.params.modelname;
 	req.modelname = modelname;
-	// console.log("Model", modelname);
-	try {
-		req.Model = models[modelname];
-		return next();
-	} catch (err) {
-		console.error(new Date, err);
+	req.Model = models[modelname];
+	if (!req.Model) {
 		throw new errors.NotFoundError(`Model ${modelname} not found`);
 	}
+	return next();
 };
 
 const middlewarePasswords = (req, res, next) => {
-	if (req.body && req.body.password && !req.query.password_override) {
-		req.body.password = security.encPassword(req.body.password);
+	if (req.body && req.body.password) {
+		if (req.query.password_override) {
+			if (!res.user?.admin) {
+				throw new errors.ForbiddenError("password_override requires admin");
+			}
+		} else {
+			req.body.password = security.encPassword(req.body.password);
+		}
 	}
 	next();
 };
 
 const middlewareCheckAdmin = (req, res, next) => {
-	//We don't want users to pump up their own permissions
 	if (req.modelname !== "user") return next();
-	if (res.user.admin) return next();
-	req.params.admin = false;
+	const isAdmin = res.user?.admin;
+	if (!isAdmin) {
+		if (req.params) req.params.admin = false;
+		if (req.body) {
+			for (const field of USER_PRIVILEGE_FIELDS) {
+				if (field in req.body) {
+					delete req.body[field];
+				}
+			}
+		}
+	}
 	next();
 };
 
@@ -63,7 +103,7 @@ const outputJSON = async (req, res) => {
 		res.send(res.result);
 	} catch (err) {
 		console.error(new Date(), err);
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 }
 
@@ -87,7 +127,7 @@ const outputCSV = (req, res, next) => {
 		next();
 	} catch (err) {
 		console.error(err);
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 }
 
@@ -95,26 +135,23 @@ const outputCSV = (req, res, next) => {
 const actionGet = async (req, res) => {
 	const opname = `get ${req.modelname} ${ops++}`;
 	console.time(opname);
-	const parseSearch = function (search) {
-		let result: Record<string, unknown> = {};
-		for (let i in search) {
-			result[i] = new RegExp(search[i], "i");
-		}
-		return result;
-	};
 	let filters = {};
 	try {
 		filters = parseFilter(req.query.filter);
+		filters = query_sanitize.sanitizeFilter(filters, getSecurityOpts(req));
 	} catch (err) {
 		console.trace(new Date(), err);
 		// Preserve BadRequestError, convert others to InternalServerError
 		if (err instanceof errors.BadRequestError) {
 			throw err;
 		}
-		throw new errors.InternalServerError(err.toString());
+		if (err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
-	let search = parseSearch(req.query.search);
-	for (let i in search) {
+	const search = query_sanitize.parseSearchObject(req.query.search);
+	for (const i in search) {
 		filters[i] = search[i];
 	}
 	let countquery = filters;
@@ -137,15 +174,20 @@ const actionGet = async (req, res) => {
 	}
 	try {
 		const estimatedCount = await req.Model.estimatedDocumentCount();
-		let count = estimatedCount;
-		if (count < 100000 && Object.keys(countquery).length !== 0) {
-			count = await qcount.countDocuments();
-		} else {
-			count = -1;
+		let count = -1;
+		if (query_limits.shouldRunCount(req)) {
+			if (estimatedCount < 100000 && Object.keys(countquery).length !== 0) {
+				count = await qcount.countDocuments();
+			} else {
+				count = estimatedCount;
+			}
 		}
-		const result: Record<string, unknown> = { count };
+		const result: Record<string, unknown> = {};
+		if (count >= 0) {
+			result.count = count;
+		}
 		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount);
-		query_limits.applyListPagination(q, result, req, effectiveLimit, count, changeUrlParams);
+		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
 			result.sort = req.query.sort;
@@ -161,6 +203,7 @@ const actionGet = async (req, res) => {
 			result.populate = req.query.populate;
 		}
 		if (req.query.autopopulate) {
+			res.header("jxp-autopopulate-warning", "expensive");
 			for (let key in req.Model.schema.paths) {
 				const dirpath = req.Model.schema.paths[key];
 				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
@@ -181,6 +224,7 @@ const actionGet = async (req, res) => {
 			result.search = req.query.search;
 		}
 		result.data = await q.exec();
+		response_sanitize.sanitizeListResult(result, getStripFields(req));
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
@@ -190,8 +234,11 @@ const actionGet = async (req, res) => {
 		if (err instanceof errors.BadRequestError) {
 			throw err;
 		}
+		if (err instanceof errors.ForbiddenError) {
+			throw err;
+		}
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -206,7 +253,7 @@ const actionGetOne = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -237,7 +284,7 @@ const actionPost = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -273,7 +320,7 @@ const actionPut = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -281,13 +328,23 @@ const actionUpdate = async (req, res) => {
 	const opname = `update ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		let body_data = datamunging.deserialize(req.body);
-		const data = await req.Model.update({ _id: req.params.item_id }, body_data);
+		const body_data = datamunging.deserialize(req.body);
+		const item = await req.Model.findById(req.params.item_id);
+		if (!item) {
+			throw new errors.NotFoundError(`Document ${req.params.item_id} not found on ${req.modelname}`);
+		}
+		_populateItem(item, body_data);
+		_versionItem(item);
+		if (res.user) {
+			item.__user = res.user;
+			item._updated_by_id = res.user._id;
+		}
+		const data = await item.save();
 		let silence = req.params._silence;
 		if (req.body && req.body._silence) silence = true;
 		if (!silence) {
-			req.config.callbacks.put.call(null, req.modelname, data, res.user);
-			ws.putHook.call(null, req.modelname, data, res.user);
+			req.config.callbacks.put.call(null, req.modelname, item, res.user);
+			ws.putHook.call(null, req.modelname, item, res.user);
 		}
 		res.json({
 			status: "ok",
@@ -299,7 +356,7 @@ const actionUpdate = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -314,23 +371,9 @@ const actionDelete = async (req, res) => {
 		if (!item) {
 			throw new errors.NotFoundError(`Couldn't find item ${req.params.item_id} for delete on ${req.modelname}`);
 		}
-		// Get linked models
-		const linked_models = [];
-		const link_modelnames = Object.getOwnPropertyNames(models);
-		for (let link_modelname of link_modelnames) {
-			const link_definitions = Object.getOwnPropertyNames(models[link_modelname].schema.definition);
-			for (let link_definition of link_definitions) {
-				if (req.Model.modelName === models[link_modelname].schema.definition[link_definition].link) {
-					linked_models.push({
-						modelname: link_modelname,
-						field: link_definition
-					});
-				}
-			}
-		}
-		// Test that none of our linked models have this ID we're trying to delete
-		for (let linked_model of linked_models) {
-			const q = {};
+		const linked_models = link_index.getReferrers(req.Model.modelName);
+		const referrerChecks = linked_models.map(async (linked_model) => {
+			const q: Record<string, unknown> = {};
 			q[linked_model.field] = item._id;
 			const check = await models[linked_model.modelname].countDocuments(q);
 			if (check) {
@@ -344,7 +387,8 @@ const actionDelete = async (req, res) => {
 					throw new errors.ConflictError(`Parent link item exists in ${linked_model.modelname}/${linked_model.field}`);
 				}
 			}
-		}
+		});
+		await Promise.all(referrerChecks);
 		if (res.user) {
 			item.__user = res.user;
 		}
@@ -375,29 +419,26 @@ const actionDelete = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
 const actionCount = async (req, res) => {
 	const opname = `count ${req.modelname} ${ops++}`;
 	console.time(opname);
-	const parseSearch = function (search) {
-		let result: Record<string, unknown> = {};
-		for (let i in search) {
-			result[i] = new RegExp(search[i], "i");
-		}
-		return result;
-	};
 	let filters = {};
 	try {
 		filters = parseFilter(req.query.filter);
+		filters = query_sanitize.sanitizeFilter(filters, getSecurityOpts(req));
 	} catch (err) {
 		console.trace(new Date(), err);
-		throw new errors.InternalServerError(err.toString());
+		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
-	let search = parseSearch(req.query.search);
-	for (let i in search) {
+	const search = query_sanitize.parseSearchObject(req.query.search);
+	for (const i in search) {
 		filters[i] = search[i];
 	}
 	if (!req.query.showDeleted) {
@@ -411,48 +452,63 @@ const actionCount = async (req, res) => {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
 const actionCall = async (req, res) => {
-	// console.log({ action_id: 7, action: "Method called", type: req.modelname, method: req.params.method_name, user: filterLogUser(res.user) });
 	req.body = req.body || {};
 	req.body.__user = res.user || null;
 	try {
+		call_guard.assertCallableStatic(req.Model, req.params.method_name);
 		const result = await req.Model[req.params.method_name](req.body);
 		res.json(result);
 	} catch (err) {
 		console.error(new Date(), err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		if (err instanceof errors.ForbiddenError || err instanceof errors.NotFoundError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
 const actionCallItem = async (req, res) => {
 	try {
-		const item = req.Model.findById(req.params.item_id);
+		call_guard.assertCallableStatic(req.Model, req.params.method_name);
+		const item = await req.Model.findById(req.params.item_id);
 		if (!item) {
 			throw new errors.NotFoundError(`Couldn't find item ${req.params.item_id} on ${req.modelname} for call`);
 		}
-		req.params.__user = res.user || null;
-		const result = await req.Model[req.params.method_name](item);
+		if (item._deleted && !req.query.showDeleted) {
+			throw new errors.NotFoundError(`Document ${req.params.item_id} is deleted on ${req.modelname}`);
+		}
+		const body = req.body || {};
+		body.__user = res.user || null;
+		const result = await req.Model[req.params.method_name](item, body);
 		res.json(result);
 	} catch (err) {
 		console.trace(err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		if (err instanceof errors.ForbiddenError || err instanceof errors.NotFoundError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
 // Actions (verbs)
 const actionQuery = async (req, res) => {
+	if (!advancedQueryAllowed(req.Model, "query")) {
+		throw new errors.ForbiddenError(`POST /query is disabled for model ${req.modelname}`);
+	}
 	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
 		throw new errors.BadRequestError("Query missing or not of type object");
 	}
 	const opname = `query ${req.modelname} ${ops++}`;
 	console.time(opname);
-	let query = [req.body.query];
+	const sanitizedQuery = query_sanitize.sanitizeFilter(req.body.query, getSecurityOpts(req));
+	let query = [sanitizedQuery];
 	let checkDeleted = { "$or": [{ _deleted: false }, { _deleted: null }] };
 	if (!req.query.showDeleted) {
 		query.push(checkDeleted);
@@ -460,11 +516,17 @@ const actionQuery = async (req, res) => {
 	let qcount = req.Model.find({ "$and": query });
 	let q = req.Model.find({ "$and": query });
 	try {
-		const count = await qcount.countDocuments();
-		const result: Record<string, unknown> = { count };
+		let count = -1;
+		if (query_limits.shouldRunCount(req)) {
+			count = await qcount.countDocuments();
+		}
+		const result: Record<string, unknown> = {};
+		if (count >= 0) {
+			result.count = count;
+		}
 		const estimatedCount = await req.Model.estimatedDocumentCount();
 		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount);
-		query_limits.applyListPagination(q, result, req, effectiveLimit, count, changeUrlParams);
+		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
 			result.sort = req.query.sort;
@@ -497,28 +559,36 @@ const actionQuery = async (req, res) => {
 			q.select(select);
 		}
 		result.data = await q.exec();
+		response_sanitize.sanitizeListResult(result, getStripFields(req));
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		if (err instanceof errors.BadRequestError) {
+		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
 			throw err;
 		}
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
 // Actions (verbs)
 const actionAggregate = async (req, res) => {
+	if (!advancedQueryAllowed(req.Model, "aggregate")) {
+		throw new errors.ForbiddenError(`POST /aggregate is disabled for model ${req.modelname}`);
+	}
 	let query = (req.body.query) ? req.body.query : req.body; // Don't require to embed in query anymore
 	if (!query || !Array.isArray(query)) {
 		console.error("query missing or not of type array")
 		throw new errors.BadRequestError("Query missing or not of type array");
 	}
 	query = query_manipulation.fix_query(query);
+	aggregate_guard.validatePipeline(query, {
+		aggregate_stages_allow: getSecurityOpts(req).aggregate_stages_allow,
+		isAdmin: res.user?.admin,
+	});
 	const opname = `aggregate ${req.modelname} ${ops++}`;
 	console.time(opname);
 	try {
@@ -528,26 +598,36 @@ const actionAggregate = async (req, res) => {
 		} else {
 			result.data = await req.Model.aggregate(query);
 		}
+		response_sanitize.sanitizeResponse(result, getStripFields(req));
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError(err.toString());
+		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
 // Actions (verbs)
 const actionBulkWrite = async (req, res) => {
+	if (!advancedQueryAllowed(req.Model, "bulkwrite")) {
+		throw new errors.ForbiddenError(`POST /bulkwrite is disabled for model ${req.modelname}`);
+	}
 	if (!req.body || !Array.isArray(req.body)) {
 		console.error("query missing or not of type array")
 		throw new errors.BadRequestError("Query missing or not of type array");
 	}
 	const opname = `bulkwrite ${req.modelname} ${ops++}`;
 	console.time(opname);
-	let query = req.body;
-	// console.log(query);
+	const query = req.body;
+	bulkwrite_guard.validateBulkOps(query, {
+		bulk_operations_allow: getSecurityOpts(req).bulk_operations_allow,
+		isAdmin: res.user?.admin,
+	});
 	try {
 		let result: Record<string, unknown> = {};
 		result.data = await req.Model.bulkWrite(query);
@@ -557,7 +637,10 @@ const actionBulkWrite = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		throw new errors.InternalServerError(err.toString());
+		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -624,14 +707,11 @@ const getOne = async (Model, item_id, params, options) => {
 			// console.error("Document is deleted");
 			throw new errors.NotFoundError(`Document ${item_id} is deleted on ${Model.modelName}`);
 		}
-		item = item.toObject();
-		//Don't ever return passwords
-		delete item.password;
-		return item;
+		return response_sanitize.sanitizeDocument(item);
 	} catch (err) {
 		console.error(err);
 		if (err.code) throw err;
-		throw new errors.InternalServerError(err.toString());
+		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 };
 
@@ -652,8 +732,7 @@ const parseFilter = (filter, depth = 0) => {
 
 	if (!filter) return {};
 	if (depth > MAX_DEPTH) {
-		console.warn('Maximum filter depth exceeded');
-		return filter;
+		throw new errors.BadRequestError("Maximum filter depth exceeded");
 	}
 
 	if (typeof filter !== "object" || filter === null) return filter;
@@ -890,6 +969,15 @@ const JXP = function (options: JXPConfig) {
 			enabled: true,
 			large_collection_threshold: 10000,
 			max: 1000,
+			default: 100,
+			require_limit_always: true,
+			skip_count_unless_paginated: true,
+		},
+		security: {
+			strip_fields: ["password"],
+		},
+		cors: {
+			origins: ["*"],
 		},
 	};
 	//Override config with passed in options
@@ -928,6 +1016,7 @@ const JXP = function (options: JXPConfig) {
 		const mod = require(path.join(config.model_dir, fname));
 		models[modelname] = mod.default || mod;
 	});
+	link_index.buildLinkIndex(models);
 
 	setup.init(config);
 	security.init(config);
@@ -953,9 +1042,10 @@ const JXP = function (options: JXPConfig) {
 	server.use(morgan("combined", { stream: accessLogStream }));
 
 	// CORS
+	const corsOrigins = config.cors?.origins?.length ? config.cors.origins : ["*"];
 	const cors = corsMiddleware({
 		preflightMaxAge: 5, //Optional
-		origins: ['*'],
+		origins: corsOrigins,
 		allowHeaders: ['X-Requested-With', 'Authorization'],
 		exposeHeaders: ['Authorization']
 	});
@@ -1182,8 +1272,8 @@ const JXP = function (options: JXPConfig) {
 	server.on("upgrade", ws.upgrade)
 
 	/* Cache */
-	server.get("/cache/stats", cache.stats, outputJSON);
-	server.get("/cache/clear", cache.clearAll, outputJSON);
+	server.get("/cache/stats", security.login, security.admin_only, cache.stats, outputJSON);
+	server.get("/cache/clear", security.login, security.admin_only, cache.clearAll, outputJSON);
 
 	return server;
 };

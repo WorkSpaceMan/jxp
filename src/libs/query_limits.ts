@@ -4,6 +4,9 @@ const DEFAULTS = {
 	enabled: true,
 	large_collection_threshold: 10000,
 	max: 1000,
+	default: 100,
+	require_limit_always: true,
+	skip_count_unless_paginated: true,
 };
 
 function getLimits(req) {
@@ -16,8 +19,16 @@ function getLimits(req) {
 }
 
 function parseRequestedLimit(req) {
-	const n = parseInt(req.query.limit, 10);
+	const n = parseInt(String(req.query.limit ?? ""), 10);
 	return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function shouldRunCount(req) {
+	const limits = getLimits(req);
+	if (limits.skip_count_unless_paginated === false) return true;
+	if (req.query.count === "true" || req.query.count === true) return true;
+	const page = parseInt(String(req.query.page ?? ""), 10);
+	return Number.isFinite(page) && page > 0;
 }
 
 function enforceListLimit(req, estimatedCount) {
@@ -29,10 +40,10 @@ function enforceListLimit(req, estimatedCount) {
 	const requested = parseRequestedLimit(req);
 	const isLarge = estimatedCount >= limits.large_collection_threshold;
 
-	if (isLarge && !requested) {
+	if (isLarge && !requested && limits.require_limit_always !== false) {
 		throw new errors.BadRequestError(
 			`Collection "${req.modelname}" has ~${estimatedCount} documents. ` +
-			`Use ?limit=1..${limits.max} (required). For totals use GET /count/${req.modelname}.`
+				`Use ?limit=1..${limits.max} (required). For totals use GET /count/${req.modelname}.`
 		);
 	}
 
@@ -42,7 +53,15 @@ function enforceListLimit(req, estimatedCount) {
 		);
 	}
 
-	return requested;
+	if (requested) {
+		return requested;
+	}
+
+	if (limits.require_limit_always !== false && limits.default) {
+		return limits.default;
+	}
+
+	return null;
 }
 
 function applyListPagination(q, result, req, limit, count, changeUrlParams) {
@@ -51,12 +70,14 @@ function applyListPagination(q, result, req, limit, count, changeUrlParams) {
 	}
 	q.limit(limit);
 	result.limit = limit;
-	const page_count = Math.ceil(count / limit);
-	result.page_count = page_count;
-	let page = parseInt(req.query.page, 10);
+	const page_count = count >= 0 ? Math.ceil(count / limit) : null;
+	if (page_count !== null) {
+		result.page_count = page_count;
+	}
+	let page = parseInt(String(req.query.page ?? ""), 10);
 	page = page ? page : 1;
 	result.page = page;
-	if (page < page_count) {
+	if (page_count !== null && page < page_count) {
 		result.next = changeUrlParams(req, "page", page + 1);
 	}
 	if (page > 1) {
@@ -68,6 +89,7 @@ function applyListPagination(q, result, req, limit, count, changeUrlParams) {
 module.exports = {
 	getLimits,
 	parseRequestedLimit,
+	shouldRunCount,
 	enforceListLimit,
 	applyListPagination,
 	DEFAULTS,

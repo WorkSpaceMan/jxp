@@ -20,5 +20,6 @@ process.env.CACHE_DEBUG = process.env.CACHE_DEBUG ?? "true";
 process.env.CACHE_TTL = process.env.CACHE_TTL || "600";
 process.env.QUERY_LIMITS_ENABLED = process.env.QUERY_LIMITS_ENABLED ?? "true";
 process.env.QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD =
-	process.env.QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD || "0";
+	process.env.QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD || "10000";
 process.env.QUERY_LIMITS_MAX = process.env.QUERY_LIMITS_MAX || "1000";
+process.env.QUERY_LIMITS_DEFAULT = process.env.QUERY_LIMITS_DEFAULT || "100";

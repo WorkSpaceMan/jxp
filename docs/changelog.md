@@ -8,6 +8,7 @@ Major release: complete TypeScript rewrite and configuration overhaul. *(Publish
 
 ### Breaking changes
 
+- **Security hardening (4.0)** — default `?limit=100` on list/query endpoints; `/call` requires `callable_statics` on each model; cache admin routes require admin auth; `password_override` is admin-only; dangerous Mongo operators blocked in filters; aggregation/bulkwrite allowlists; passwords stripped from list responses.
 - **No `config` package** — configuration via `.env` / environment variables and `jxp/libs/load-config` (compiled to `dist/libs/load-config.js`). Removed `/config/*.json` and [node-config](https://www.npmjs.com/package/config).
 - **TypeScript** — framework source under `src/`; npm package ships compiled `dist/` with `.d.ts` types.
 - **Build step required** — `npm run build` (runs on `npm install` via `prepare`).
@@ -24,7 +25,8 @@ Major release: complete TypeScript rewrite and configuration overhaul. *(Publish
 - **[docs/typescript.md](typescript.md)** — v4 migration guide.
 - **Built-in documentation UI** — landing page, MkDocs nav sidebar, per-model API reference.
 - **Interactive API console** — try REST endpoints from model pages; optional API key in docs navbar.
-- **Query limits** (from v3.1) — env/config `query_limits`; required `?limit=` on large collections.
+- **Query limits** (from v3.1) — env/config `query_limits`; default limit on all list/query requests; required explicit `?limit=` on large collections.
+- **Security modules** — `query_sanitize`, `aggregate_guard`, `bulkwrite_guard`, `call_guard`, `response_sanitize`, `link_index`.
 - **Startup helpers** — Node 22+ deprecation warnings; `quiet_startup` option.
 
 ### Changed

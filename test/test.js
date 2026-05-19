@@ -866,7 +866,7 @@ describe('Test', () => {
 		describe("/POST bulkwrite", () => {
 			it("it should make sure we are set up right", done => {
 				chai.request(server)
-					.get("/api/test?limit=1000")
+					.get("/api/test?limit=1000&count=true")
 					.auth(init.email, init.password)
 					.end((err, res) => {
 						res.should.have.status(200);
@@ -933,7 +933,7 @@ describe('Test', () => {
 			});
 			it("it should test bulkwrite", (done) => {
 				chai.request(server)
-					.get("/api/test?sort[createdAt]=1&limit=1000")
+					.get("/api/test?sort[createdAt]=1&limit=1000&count=true")
 					.auth(init.email, init.password)
 					.end((err, res) => {
 						res.should.have.status(200);
@@ -1362,9 +1362,19 @@ describe('Test', () => {
 	});
 
 	describe("Caching", () => {
+		it("should reject cache stats without auth", (done) => {
+			chai.request(server)
+				.get("/cache/stats")
+				.end((err, res) => {
+					res.should.have.status(403);
+					res.body.message.should.match(/not logged in/i);
+					done();
+				});
+		});
 		it("should give us cache stats", (done) => {
 			chai.request(server)
 				.get("/cache/stats")
+				.auth(init.admin_email, init.admin_password)
 				.end((err, res) => {
 					// console.log(res.body);
 					res.should.have.status(200);
@@ -1375,6 +1385,7 @@ describe('Test', () => {
 		it("should clear the cache stats", (done) => {
 			chai.request(server)
 				.get("/cache/clear")
+				.auth(init.admin_email, init.admin_password)
 				.end((err, res) => {
 					// console.log(res.body);
 					res.should.have.status(200);
@@ -1406,6 +1417,7 @@ describe('Test', () => {
 		it("should give us cache stats", (done) => {
 			chai.request(server)
 				.get("/cache/stats")
+				.auth(init.admin_email, init.admin_password)
 				.end((err, res) => {
 					res.should.have.status(200);
 					res.body.should.have.property("hits");
@@ -1529,13 +1541,14 @@ describe('Test', () => {
 	});
 
 	describe("query_limits", () => {
-		it("returns 400 for list GET without limit on large collections", (done) => {
+		it("applies default limit when list GET omits limit", (done) => {
 			chai.request(server)
 				.get("/api/test")
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					res.should.have.status(400);
-					res.body.message.should.match(/limit/i);
+					res.should.have.status(200);
+					res.body.should.have.property("limit").eql(100);
+					res.body.data.should.be.an("array");
 					done();
 				});
 		});
@@ -1563,14 +1576,14 @@ describe('Test', () => {
 				});
 		});
 
-		it("returns 400 for POST /query without limit", (done) => {
+		it("applies default limit for POST /query without limit", (done) => {
 			chai.request(server)
 				.post("/query/test")
 				.auth(init.email, init.password)
 				.send({ query: { foo: "Foo1" } })
 				.end((err, res) => {
-					res.should.have.status(400);
-					res.body.message.should.match(/limit/i);
+					res.should.have.status(200);
+					res.body.should.have.property("limit").eql(100);
 					done();
 				});
 		});

@@ -14,6 +14,22 @@ export interface JXPQueryLimits {
 	enabled?: boolean;
 	large_collection_threshold?: number;
 	max?: number;
+	/** Applied when client omits ?limit= (secure default) */
+	default?: number;
+	require_limit_always?: boolean;
+	/** Skip countDocuments unless ?page= or ?count=true */
+	skip_count_unless_paginated?: boolean;
+}
+
+export interface JXPSecurityConfig {
+	strip_fields?: string[];
+	filter_operators_deny?: string[];
+	aggregate_stages_allow?: string[];
+	bulk_operations_allow?: string[];
+}
+
+export interface JXPCorsConfig {
+	origins?: string[];
 }
 
 export interface JXPCacheConfig {
@@ -60,6 +76,8 @@ export interface JXPConfig {
 	cache?: JXPCacheConfig;
 	cache_timeout?: string;
 	query_limits?: JXPQueryLimits;
+	security?: JXPSecurityConfig;
+	cors?: JXPCorsConfig;
 	oauth?: {
 		success_uri?: string;
 		fail_uri?: string;

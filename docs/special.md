@@ -2,7 +2,7 @@
 
 ## We always encrypt passwords
 
-You should note that if you send through anything called "password", it will automatically encrypt using bcrypt, unless you send the parameter `password_override=1`.
+If you send anything called `password`, it is encrypted with bcrypt automatically. The query parameter `password_override=1` skips hashing but **requires an admin user** (for setting a pre-computed hash).
 
 ## Reflection/navel gazing
 

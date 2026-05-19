@@ -44,6 +44,8 @@ const TestSchema = new JXPSchema(
 			user: "cr",
 			all: "r",
 		},
+		callable_statics: ["test"],
+		advanced_queries: { query: true, aggregate: true, bulkwrite: true },
 	}
 );
 

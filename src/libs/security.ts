@@ -95,7 +95,7 @@ const apiKeyAuth = async apikey => {
 		if (!apikey) throw ("Missing apikey");
 		const result = await APIKey.findOne({ apikey });
 		if (!result) throw ("Could not find apikey");
-		const user = User.findOne({ _id: result.user_id });
+		const user = await User.findOne({ _id: result.user_id }).exec();
 		if (!user) throw ("Could not find user associated to apikey");
 		return user;
 	} catch (err) {
@@ -378,10 +378,10 @@ const check_perms = async (user, groups, model, method, item_id?: string) => {
 
 const admin_only = (req, res, next) => { // Chain after login
 	if (!res.user) {
-		throw new errors.ForbiddenError("User not logged in");
+		return next(new errors.ForbiddenError("User not logged in"));
 	}
 	if (!res.user.admin) {
-		throw new errors.ForbiddenError("User not admin");
+		return next(new errors.ForbiddenError("User not admin"));
 	}
 	next();
 }

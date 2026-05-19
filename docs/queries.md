@@ -2,6 +2,8 @@
 
 You can post complex queries through the `/query/<modelname>` endpoint, such as doing `$and` or `$or` queries, or regex expressions.
 
+Dangerous operators (e.g. `$where`, `$function`) are rejected. Per-model opt-out: `advanced_queries: { query: false }` in schema options.
+
 Wrap your MongoDB filter in a `"query"` object and POST it as JSON. URL query parameters for `GET /api/<model>` also work here: `limit`, `page`, `sort`, `populate`, `filter`, `autopopulate`, and `fields`. See [The Restful API](api.md) for those features.
 
 Eg.

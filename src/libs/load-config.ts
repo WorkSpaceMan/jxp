@@ -127,6 +127,19 @@ export function loadJxpConfig(overrides: Partial<JXPConfig> = {}): JXPConfig {
 			enabled: envBool("QUERY_LIMITS_ENABLED", true),
 			large_collection_threshold: envInt("QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD", 10000),
 			max: envInt("QUERY_LIMITS_MAX", 1000),
+			default: envInt("QUERY_LIMITS_DEFAULT", 100),
+			require_limit_always: envBool("QUERY_LIMITS_REQUIRE_LIMIT_ALWAYS", true),
+			skip_count_unless_paginated: envBool("QUERY_LIMITS_SKIP_COUNT_UNLESS_PAGINATED", true),
+		},
+		security: {
+			strip_fields: process.env.SECURITY_STRIP_FIELDS
+				? process.env.SECURITY_STRIP_FIELDS.split(",").map((s) => s.trim())
+				: ["password"],
+		},
+		cors: {
+			origins: process.env.CORS_ORIGINS
+				? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
+				: ["*"],
 		},
 		callbacks: {
 			put: () => {},

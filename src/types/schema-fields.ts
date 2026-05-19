@@ -9,6 +9,12 @@ export interface JXPFieldDefinition extends SchemaTypeOptions<unknown> {
 	alias?: string;
 }
 
+export interface JXPAdvancedQueries {
+	query?: boolean;
+	aggregate?: boolean;
+	bulkwrite?: boolean;
+}
+
 export interface JXPSchemaOptions {
 	perms?: Partial<Record<"admin" | "owner" | "user" | "all" | string, string>>;
 	timestamps?: boolean;
@@ -19,6 +25,10 @@ export interface JXPSchemaOptions {
 		large_collection_threshold?: number;
 		max?: number;
 	};
+	/** Static method names exposed via GET/POST /call/:modelname/:method_name */
+	callable_statics?: string[];
+	/** Opt out of HTTP advanced endpoints per model (default: query/aggregate on, bulkwrite off) */
+	advanced_queries?: JXPAdvancedQueries;
 	[key: string]: unknown;
 }
 

@@ -1,6 +1,8 @@
 # Bulk Writes
 
-You can perform bulk writes through the `/bulkwrite/<modelname>` endpoint. Note that authorisation works a little differently — the user must have **create, read, update, and delete** permissions on the model.
+You can perform bulk writes through the `/bulkwrite/<modelname>` endpoint. **Disabled by default** unless the model opts in with `advanced_queries: { bulkwrite: true }`. Only allowlisted operations (`insertOne`, `updateOne`, `replaceOne`, `deleteOne`) are accepted; `updateMany` / `deleteMany` require admin.
+
+Authorisation works a little differently — the user must have **create, read, update, and delete** permissions on the model.
 
 ***WARNING*** Be cautious when using bulk writes because you can destroy your data. Don't forget to back up!
 

@@ -50,7 +50,7 @@ CACHE_DEBUG=false
 CACHE_TTL=300
 ```
 
-When enabled, JXP uses an in-process cache ([node-cache](https://www.npmjs.com/package/node-cache)). GET responses may include `jxp-cache` (`hit` / `miss`) and `jxp-cache-key` headers. Admin endpoints (no auth required by default):
+When enabled, JXP uses an in-process cache ([node-cache](https://www.npmjs.com/package/node-cache)). GET responses may include `jxp-cache` (`hit` / `miss`) and `jxp-cache-key` headers. Admin endpoints (**require admin login**):
 
 - `GET /cache/stats` — cache statistics, or `{ cache_enabled: false }` when disabled
 - `GET /cache/clear` — flush all cached entries
@@ -63,6 +63,9 @@ See [Caching](caching.md) for details.
 QUERY_LIMITS_ENABLED=true
 QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD=10000
 QUERY_LIMITS_MAX=1000
+QUERY_LIMITS_DEFAULT=100
+QUERY_LIMITS_SKIP_COUNT_UNLESS_PAGINATED=true
+CORS_ORIGINS=http://localhost:3000,http://localhost:4001
 ```
 
 ## Throttling

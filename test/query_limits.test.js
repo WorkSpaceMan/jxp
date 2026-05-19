@@ -38,9 +38,16 @@ describe("query_limits", () => {
 		expect(parseRequestedLimit(mockReq({ query: { limit: "10" } }))).to.equal(10);
 	});
 
-	it("allows unbounded list on small collections", () => {
+	it("applies default limit when client omits limit", () => {
 		const limit = enforceListLimit(mockReq(), 5);
-		expect(limit).to.be.null;
+		expect(limit).to.equal(100);
+	});
+
+	it("shouldRunCount is false without page or count", () => {
+		const { shouldRunCount } = require("../dist/libs/query_limits");
+		expect(shouldRunCount(mockReq())).to.be.false;
+		expect(shouldRunCount(mockReq({ query: { count: "true" } }))).to.be.true;
+		expect(shouldRunCount(mockReq({ query: { page: "2" } }))).to.be.true;
 	});
 
 	it("requires limit on large collections", () => {
