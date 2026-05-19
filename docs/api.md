@@ -92,6 +92,31 @@ You can paginate with the `page=<page number>` parameter. Page count starts at 1
 
 If you go beyond the total number of pages, you will get an empty `data` array.
 
+#### Large collections (required limit)
+
+For collections with at least **10,000** documents (by default), `GET /api/<model>`, `GET /csv/<model>`, and `POST /query/<model>` **require** a valid `?limit=` between 1 and the configured maximum (default **1000**). Requests without `?limit=`, or with `?limit=` above the maximum, return **400 Bad Request**.
+
+Use `GET /count/<model>` for totals on large collections.
+
+Configure globally when starting JXP:
+
+```js
+query_limits: {
+  enabled: true,
+  large_collection_threshold: 10000,
+  max: 1000,
+}
+```
+
+Override per model in schema options:
+
+```js
+const ReaderSchema = new JXPSchema({ ... }, {
+  perms: { ... },
+  query_limits: { large_collection_threshold: 5000, max: 500 },
+});
+```
+
 *Note* If you have more than 100,000 items in your collection, `count` will return as -1, else doing a full-dataset filtered count becomes too expensive and can cause serious performance issues.
 
 ### Counting

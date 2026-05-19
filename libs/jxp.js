@@ -16,6 +16,7 @@ const query_manipulation = require("./query_manipulation");
 const corsMiddleware = require('restify-cors-middleware2');
 const json2csv = require('json2csv').parse;
 const cache = require("./cache");
+const query_limits = require("./query_limits");
 global.JXPSchema = require("./schema");
 
 var models = {};
@@ -132,30 +133,16 @@ const actionGet = async (req, res) => {
 		q.options = ({ user: res.user });
 	}
 	try {
-		let count = await req.Model.estimatedDocumentCount();
+		const estimatedCount = await req.Model.estimatedDocumentCount();
+		let count = estimatedCount;
 		if (count < 100000 && Object.keys(countquery).length !== 0) {
 			count = await qcount.countDocuments();
 		} else {
 			count = -1;
 		}
 		const result = { count };
-		const limit = parseInt(req.query.limit);
-		if (limit) {
-			q.limit(limit);
-			result.limit = limit;
-			let page_count = Math.ceil(count / limit);
-			result.page_count = page_count;
-			let page = parseInt(req.query.page);
-			page = page ? page : 1;
-			result.page = page;
-			if (page < page_count) {
-				result.next = changeUrlParams(req, "page", page + 1);
-			}
-			if (page > 1) {
-				result.prev = changeUrlParams(req, "page", page - 1);
-				q.skip(limit * (page - 1));
-			}
-		}
+		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount);
+		query_limits.applyListPagination(q, result, req, effectiveLimit, count, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
 			result.sort = req.query.sort;
@@ -472,23 +459,9 @@ const actionQuery = async (req, res) => {
 	try {
 		const count = await qcount.countDocuments();
 		const result = { count };
-		const limit = parseInt(req.query.limit);
-		if (limit) {
-			q.limit(limit);
-			result.limit = limit;
-			let page_count = Math.ceil(count / limit);
-			result.page_count = page_count;
-			let page = parseInt(req.query.page);
-			page = page ? page : 1;
-			result.page = page;
-			if (page < page_count) {
-				result.next = changeUrlParams(req, "page", page + 1);
-			}
-			if (page > 1) {
-				result.prev = changeUrlParams(req, "page", page - 1);
-				q.skip(limit * (page - 1));
-			}
-		}
+		const estimatedCount = await req.Model.estimatedDocumentCount();
+		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount);
+		query_limits.applyListPagination(q, result, req, effectiveLimit, count, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
 			result.sort = req.query.sort;
@@ -527,6 +500,9 @@ const actionQuery = async (req, res) => {
 	} catch (err) {
 		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
+		if (err instanceof errors.BadRequestError) {
+			throw err;
+		}
 		if (err.code) throw err;
 		throw new errors.InternalServerError(err.toString());
 	}
@@ -907,6 +883,11 @@ const JXP = function (options) {
 			},
 		},
 		cache_timeout: "5 minutes",
+		query_limits: {
+			enabled: true,
+			large_collection_threshold: 10000,
+			max: 1000,
+		},
 	};
 	//Override config with passed in options
 

@@ -20,5 +20,10 @@
 		"enabled": true,
 		"debug": true,
 		"ttl": 600
+	},
+	"query_limits": {
+		"enabled": true,
+		"large_collection_threshold": 0,
+		"max": 1000
 	}
 }

@@ -124,7 +124,7 @@ describe('Test', () => {
 	describe("Authentication", () => {
 		it("should authenticate with basic auth", done => {
 			chai.request(server)
-				.get("/api/user")
+				.get("/api/user?limit=1000")
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -134,7 +134,7 @@ describe('Test', () => {
 		});
 		it("should authenticate with a token", done => {
 			chai.request(server)
-				.get("/api/user")
+				.get("/api/user?limit=1000")
 				.set("Authorization", `Bearer ${token}`)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -144,7 +144,7 @@ describe('Test', () => {
 		})
 		it("should authenticate with an API key in the header", done => {
 			chai.request(server)
-				.get("/api/user")
+				.get("/api/user?limit=1000")
 				.set("X-API-Key", apikey)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -154,7 +154,7 @@ describe('Test', () => {
 		})
 		it("should authenticate with an API key in the url", done => {
 			chai.request(server)
-				.get(`/api/user?apikey=${apikey}`)
+				.get(`/api/user?apikey=${apikey}&limit=1000`)
 				.end((err, res) => {
 					res.should.have.status(200);
 					res.body.data.should.be.an('array');
@@ -175,7 +175,7 @@ describe('Test', () => {
 		it("it should GET all the tests", (done) => {
 			Test.deleteMany(() => {
 				chai.request(server)
-					.get("/api/test")
+					.get("/api/test?limit=1000")
 					// .auth(init.email, init.password)
 					.end((err, res) => {
 						res.should.have.status(200);
@@ -294,7 +294,7 @@ describe('Test', () => {
 	describe("Search test", () => {
 		it("it should search all the tests", (done) => {
 			chai.request(server)
-				.get("/api/test?search=Xanadu")
+				.get("/api/test?search=Xanadu&limit=1000")
 				// .auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -323,7 +323,7 @@ describe('Test', () => {
 
 		it("should filter by exact date", (done) => {
 			chai.request(server)
-				.get(`/api/test?filter[date_field]=${testDate.toISOString()}`)
+				.get(`/api/test?filter[date_field]=${testDate.toISOString()}&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -341,7 +341,7 @@ describe('Test', () => {
 			endDate.setDate(endDate.getDate() + 1);
 
 			chai.request(server)
-				.get(`/api/test?filter[date_field]=$gte:${startDate.toISOString()}&filter[date_field]=$lte:${endDate.toISOString()}`)
+				.get(`/api/test?filter[date_field]=$gte:${startDate.toISOString()}&filter[date_field]=$lte:${endDate.toISOString()}&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -359,7 +359,7 @@ describe('Test', () => {
 			endDate.setDate(endDate.getDate() + 1);
 
 			chai.request(server)
-				.get(`/api/test?filter[date_field]=$gte:${startDate.toISOString()}&filter[date_field]=$lte:${endDate.toISOString()}`)
+				.get(`/api/test?filter[date_field]=$gte:${startDate.toISOString()}&filter[date_field]=$lte:${endDate.toISOString()}&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -372,7 +372,7 @@ describe('Test', () => {
 
 		it("should handle invalid date formats gracefully", (done) => {
 			chai.request(server)
-				.get('/api/test?filter[date_field]=invalid-date')
+				.get('/api/test?filter[date_field]=invalid-date&limit=1000')
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(500);
@@ -386,7 +386,7 @@ describe('Test', () => {
 			futureDate.setFullYear(futureDate.getFullYear() + 1);
 
 			chai.request(server)
-				.get(`/api/test?filter[date_field]=${futureDate.toISOString()}`)
+				.get(`/api/test?filter[date_field]=${futureDate.toISOString()}&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -515,7 +515,7 @@ describe('Test', () => {
 		});
 		it("should autopopulate on all records", done => {
 			chai.request(server)
-				.get(`/api/test?autopopulate=true`)
+				.get(`/api/test?autopopulate=true&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -564,7 +564,7 @@ describe('Test', () => {
 		});
 		it("should populate link_id on all records", done => {
 			chai.request(server)
-				.get(`/api/test?populate=link`)
+				.get(`/api/test?populate=link&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -592,7 +592,7 @@ describe('Test', () => {
 		});
 		it("should populate just val from link_id on all records", done => {
 			chai.request(server)
-				.get(`/api/test?populate[link]=val`)
+				.get(`/api/test?populate[link]=val&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -618,7 +618,7 @@ describe('Test', () => {
 		});
 		it("should populate name and val from link_id on all records", done => {
 			chai.request(server)
-				.get(`/api/test?populate[link]=val,name`)
+				.get(`/api/test?populate[link]=val,name&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -648,7 +648,7 @@ describe('Test', () => {
 		});
 		it("should populate link_id and other_link_id on all records", done => {
 			chai.request(server)
-				.get(`/api/test?populate[]=link&populate[]=other_link`)
+				.get(`/api/test?populate[]=link&populate[]=other_link&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -677,7 +677,7 @@ describe('Test', () => {
 		});
 		it("should populate an array of links", done => {
 			chai.request(server)
-				.get(`/api/test?populate=array_link`)
+				.get(`/api/test?populate=array_link&limit=1000`)
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -705,7 +705,7 @@ describe('Test', () => {
 					]
 				};
 				chai.request(server)
-					.post("/query/test")
+					.post("/query/test?limit=1000")
 					.auth(init.email, init.password)
 					.send({ query })
 					.end((err, res) => {
@@ -863,7 +863,7 @@ describe('Test', () => {
 		describe("/POST bulkwrite", () => {
 			it("it should make sure we are set up right", done => {
 				chai.request(server)
-					.get("/api/test")
+					.get("/api/test?limit=1000")
 					.auth(init.email, init.password)
 					.end((err, res) => {
 						res.should.have.status(200);
@@ -930,7 +930,7 @@ describe('Test', () => {
 			});
 			it("it should test bulkwrite", (done) => {
 				chai.request(server)
-					.get("/api/test?sort[createdAt]=1")
+					.get("/api/test?sort[createdAt]=1&limit=1000")
 					.auth(init.email, init.password)
 					.end((err, res) => {
 						res.should.have.status(200);
@@ -1331,7 +1331,7 @@ describe('Test', () => {
 		});
 		it("it should GET a user with a + in email", (done) => {
 			chai.request(server)
-				.get("/api/user?filter[email]=plus%2Buser@gmail.com")
+				.get("/api/user?filter[email]=plus%2Buser@gmail.com&limit=1000")
 				.auth(init.admin_email, init.admin_password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -1380,7 +1380,7 @@ describe('Test', () => {
 		});
 		it("should get an uncached request", (done) => {
 			chai.request(server)
-				.get("/api/test")
+				.get("/api/test?limit=1000")
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -1391,7 +1391,7 @@ describe('Test', () => {
 		});
 		it("should get an cached request", (done) => {
 			chai.request(server)
-				.get("/api/test")
+				.get("/api/test?limit=1000")
 				.auth(init.email, init.password)
 				.end((err, res) => {
 					res.should.have.status(200);
@@ -1523,5 +1523,65 @@ describe('Test', () => {
 					done();
 				});
 		});
-	})
+	});
+
+	describe("query_limits", () => {
+		it("returns 400 for list GET without limit on large collections", (done) => {
+			chai.request(server)
+				.get("/api/test")
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(400);
+					res.body.message.should.match(/limit/i);
+					done();
+				});
+		});
+
+		it("returns 200 for list GET with valid limit", (done) => {
+			chai.request(server)
+				.get("/api/test?limit=10")
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.have.property("limit").eql(10);
+					res.body.data.should.be.an("array");
+					done();
+				});
+		});
+
+		it("returns 400 when limit exceeds max", (done) => {
+			chai.request(server)
+				.get("/api/test?limit=5000")
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(400);
+					res.body.message.should.match(/exceeds maximum/i);
+					done();
+				});
+		});
+
+		it("returns 400 for POST /query without limit", (done) => {
+			chai.request(server)
+				.post("/query/test")
+				.auth(init.email, init.password)
+				.send({ query: { foo: "Foo1" } })
+				.end((err, res) => {
+					res.should.have.status(400);
+					res.body.message.should.match(/limit/i);
+					done();
+				});
+		});
+
+		it("returns 200 for POST /query with valid limit", (done) => {
+			chai.request(server)
+				.post("/query/test?limit=10")
+				.auth(init.email, init.password)
+				.send({ query: { foo: "Foo1" } })
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.have.property("limit").eql(10);
+					done();
+				});
+		});
+	});
 });

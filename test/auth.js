@@ -74,7 +74,7 @@ describe('Authentication Tests', () => {
     describe("Token Authentication", () => {
         it("should authenticate with valid token", (done) => {
             chai.request(server)
-                .get("/api/user")
+                .get("/api/user?limit=1000")
                 .set("Authorization", `Bearer ${token}`)
                 .end((err, res) => {
                     if (err) return done(err);
@@ -86,7 +86,7 @@ describe('Authentication Tests', () => {
 
         it("should fail with invalid token", (done) => {
             chai.request(server)
-                .get("/api/user")
+                .get("/api/user?limit=1000")
                 .set("Authorization", "Bearer invalidtoken")
                 .end((err, res) => {
                     if (err) return done(err);
@@ -99,7 +99,7 @@ describe('Authentication Tests', () => {
     describe("API Key Authentication", () => {
         it("should authenticate with valid API key in header", (done) => {
             chai.request(server)
-                .get("/api/user")
+                .get("/api/user?limit=1000")
                 .set("X-API-Key", apikey)
                 .end((err, res) => {
                     if (err) return done(err);
@@ -111,7 +111,7 @@ describe('Authentication Tests', () => {
 
         it("should authenticate with valid API key in query", (done) => {
             chai.request(server)
-                .get(`/api/user?apikey=${apikey}`)
+                .get(`/api/user?apikey=${apikey}&limit=1000`)
                 .end((err, res) => {
                     if (err) return done(err);
                     res.should.have.status(200);
@@ -122,7 +122,7 @@ describe('Authentication Tests', () => {
 
         it("should fail with invalid API key", (done) => {
             chai.request(server)
-                .get("/api/user")
+                .get("/api/user?limit=1000")
                 .set("X-API-Key", "invalidapikey")
                 .end((err, res) => {
                     if (err) return done(err);
@@ -178,7 +178,7 @@ describe('Authentication Tests', () => {
 
         it("should not be able to use token after logout", (done) => {
             chai.request(server)
-                .get("/api/user")
+                .get("/api/user?limit=1000")
                 .set("Authorization", `Bearer ${token}`)
                 .end((err, res) => {
                     if (err) return done(err);
