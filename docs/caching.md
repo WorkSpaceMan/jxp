@@ -1,13 +1,9 @@
 # Caching
 
-Enable caching to speed up your queries. Caching is disabled by default. Enable caching through the config:
+Enable caching to speed up your queries. Caching is disabled by default. Enable via environment variables (or pass `cache` in the object to `JXP()`):
 
-```JSON
-{
-    "cache": {
-        "enabled": true,
-        "debug": false,
-        "ttl": 3600
-    }
-}
+```
+CACHE_ENABLED=true
+CACHE_DEBUG=false
+CACHE_TTL=3600
 ```

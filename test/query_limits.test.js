@@ -5,7 +5,7 @@ const {
 	parseRequestedLimit,
 	enforceListLimit,
 	DEFAULTS,
-} = require("../libs/query_limits");
+} = require("../dist/libs/query_limits");
 
 function mockReq(overrides = {}) {
 	return {

@@ -4,7 +4,7 @@ var chai = require('chai');
 var chaiHttp = require('chai-http');
 
 var init = require("./init");
-var server = require("../bin/server");
+var server = require("../dist/bin/server");
 
 chai.use(chaiHttp);
 

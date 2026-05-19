@@ -25,8 +25,23 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
     cd my-ap
     npm start
 
+## Installing from source
+
+```bash
+npm i --legacy-peer-deps
+npm run build   # compiles TypeScript (also runs on install via prepare)
+npm start       # sample server at dist/bin/server.js
+```
+
+Requires **Node.js 22+** and MongoDB for the sample server and integration tests.
+
+## TypeScript
+
+JXP 4 is implemented in TypeScript. See [docs/typescript.md](docs/typescript.md) for building from source, consuming types in JavaScript apps, and authoring typed models.
+
 ## Documentation
 
+* [TypeScript / v4 migration](docs/typescript.md)
 * [Installation](https://jxp.readthedocs.io/en/v2.0.0/installation)
 * [Configuration](https://jxp.readthedocs.io/en/v2.0.0/configuration)
 * [Authentication](https://jxp.readthedocs.io/en/v2.0.0/authentication)
@@ -36,7 +51,3 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
 * [Hooks](https://jxp.readthedocs.io/en/v2.0.0/hooks)
 * [Special Features](https://jxp.readthedocs.io/en/v2.0.0/special)
 * [Changelog](https://jxp.readthedocs.io/en/v2.0.0/changelog)
-
-## Installing from source
-
-`npm i --legacy-peer-deps`

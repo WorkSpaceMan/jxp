@@ -1,9 +1,10 @@
-process.env.NODE_ENV = 'test';
-const config = require("config");
 const path = require("path");
 
-var model_dir = config.model_dir || path.join(process.cwd(), "./models");
-const Test = require(path.join(model_dir, "test_model"));
+var model_dir = process.env.MODEL_DIR
+	? path.resolve(process.cwd(), process.env.MODEL_DIR)
+	: path.join(process.cwd(), "dist/models");
+const testMod = require(path.join(model_dir, "test_model"));
+const Test = testMod.default || testMod;
 
 var chai = require('chai');
 var chaiHttp = require('chai-http');
@@ -11,7 +12,7 @@ var should = chai.should();
 
 var init = require("./init");
 
-var server = require("../bin/server");
+var server = require("../dist/bin/server");
 
 chai.use(chaiHttp);
 
