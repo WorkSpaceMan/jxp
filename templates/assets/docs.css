@@ -1,0 +1,227 @@
+:root {
+	--docs-sidebar-width: 280px;
+	--docs-topbar-height: 56px;
+	--docs-accent: #0d6efd;
+	--docs-sidebar-bg: #f8f9fa;
+	--docs-border: #dee2e6;
+}
+
+body.docs-body {
+	min-height: 100vh;
+	background: #fff;
+}
+
+.docs-topbar {
+	height: var(--docs-topbar-height);
+	border-bottom: 1px solid var(--docs-border);
+	background: #fff;
+	z-index: 1030;
+}
+
+.docs-brand {
+	font-weight: 600;
+	font-size: 1.1rem;
+	color: #212529;
+	text-decoration: none;
+}
+
+.docs-brand:hover {
+	color: var(--docs-accent);
+}
+
+.docs-shell {
+	display: flex;
+	min-height: calc(100vh - var(--docs-topbar-height));
+}
+
+.docs-sidebar {
+	width: var(--docs-sidebar-width);
+	flex-shrink: 0;
+	border-right: 1px solid var(--docs-border);
+	background: var(--docs-sidebar-bg);
+	overflow-y: auto;
+	padding: 1rem 0;
+	position: sticky;
+	top: var(--docs-topbar-height);
+	height: calc(100vh - var(--docs-topbar-height));
+}
+
+.docs-main {
+	flex: 1;
+	min-width: 0;
+	padding: 1.5rem 2rem 3rem;
+	max-width: 960px;
+}
+
+.docs-sidebar-section {
+	padding: 0 1rem;
+	margin-bottom: 1.25rem;
+}
+
+.docs-sidebar-title {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #6c757d;
+	margin-bottom: 0.5rem;
+}
+
+.docs-nav-link {
+	display: block;
+	padding: 0.35rem 0.75rem;
+	font-size: 0.875rem;
+	color: #495057;
+	text-decoration: none;
+	border-radius: 0.375rem;
+	border-left: 3px solid transparent;
+}
+
+.docs-nav-link:hover {
+	background: rgba(13, 110, 253, 0.08);
+	color: var(--docs-accent);
+}
+
+.docs-nav-link.active {
+	background: rgba(13, 110, 253, 0.12);
+	color: var(--docs-accent);
+	border-left-color: var(--docs-accent);
+	font-weight: 500;
+}
+
+.docs-api-key-wrap {
+	max-width: 220px;
+}
+
+.docs-api-key-wrap .form-control {
+	font-size: 0.8rem;
+	font-family: ui-monospace, monospace;
+}
+
+@media (max-width: 991.98px) {
+	.docs-sidebar {
+		display: none;
+	}
+
+	.docs-main {
+		padding: 1rem;
+	}
+}
+
+.docs-hero {
+	padding: 2.5rem 0 2rem;
+	border-bottom: 1px solid var(--docs-border);
+	margin-bottom: 2rem;
+}
+
+.docs-hero h1 {
+	font-size: 2.25rem;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+}
+
+.docs-hero .lead {
+	color: #6c757d;
+	max-width: 36rem;
+}
+
+.docs-content h1,
+.docs-content h2,
+.docs-content h3 {
+	margin-top: 1.5rem;
+	margin-bottom: 0.75rem;
+}
+
+.docs-content pre {
+	background: #f8f9fa;
+	border: 1px solid var(--docs-border);
+	border-radius: 0.375rem;
+	padding: 1rem;
+	overflow-x: auto;
+	font-size: 0.85rem;
+}
+
+.docs-content code {
+	font-size: 0.875em;
+	color: #d63384;
+}
+
+.docs-content pre code {
+	color: inherit;
+}
+
+.docs-content table {
+	margin: 1rem 0;
+}
+
+.method-badge {
+	font-family: ui-monospace, monospace;
+	font-size: 0.75rem;
+	font-weight: 700;
+	min-width: 4.5rem;
+	text-align: center;
+}
+
+.method-get { background-color: #198754 !important; }
+.method-post { background-color: #0d6efd !important; }
+.method-put { background-color: #fd7e14 !important; }
+.method-delete { background-color: #dc3545 !important; }
+
+.endpoint-path {
+	font-family: ui-monospace, monospace;
+	font-size: 0.9rem;
+}
+
+.api-try-panel {
+	border: 1px solid var(--docs-border);
+	border-radius: 0.375rem;
+	padding: 1rem;
+	background: #fafbfc;
+	margin-top: 0.75rem;
+}
+
+.api-response {
+	font-family: ui-monospace, monospace;
+	font-size: 0.8rem;
+	background: #212529;
+	color: #e9ecef;
+	border-radius: 0.375rem;
+	padding: 1rem;
+	max-height: 320px;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-word;
+	margin-top: 0.75rem;
+}
+
+.api-response.empty {
+	background: #f8f9fa;
+	color: #6c757d;
+	border: 1px dashed var(--docs-border);
+}
+
+.api-response-meta {
+	font-size: 0.8rem;
+	color: #6c757d;
+	margin-top: 0.5rem;
+}
+
+.field-details pre {
+	font-size: 0.75rem;
+	max-height: 200px;
+	overflow: auto;
+}
+
+.feature-card {
+	height: 100%;
+	border: 1px solid var(--docs-border);
+	transition: box-shadow 0.15s ease;
+}
+
+.feature-card:hover {
+	box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
+}
+
+.docs-security-note {
+	font-size: 0.8rem;
+}

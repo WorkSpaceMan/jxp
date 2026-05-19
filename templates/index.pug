@@ -1,4 +1,64 @@
 extends layout
 
-block content  
-  include:markdown-it ../docs/index.md
+block content
+  .docs-hero
+    h1= name
+    p.lead
+      | REST API powered by 
+      a(href="https://jxp.readthedocs.io" target="_blank" rel="noopener") JXP
+      |  — define Mongoose schemas, get a full API with auth, permissions, and smart queries.
+    .d-flex.flex-wrap.gap-2.mt-3
+      if first_guide_url
+        a.btn.btn-primary(href=first_guide_url) Get started
+      a.btn.btn-outline-primary(href="/docs/api") Browse API
+      a.btn.btn-outline-secondary(href="/docs/md/api.md") REST reference
+
+  .row.g-4.mb-4
+    .col-md-6
+      .card.h-100
+        .card-header.fw-semibold Quick start
+        .card-body
+          p.mb-2 Authenticate with an API key header (optional for exploring docs; required for live calls):
+          pre.mb-3
+            code.
+              curl -H "X-API-Key: YOUR_KEY" \
+                "#{base_url}/api/MODEL?limit=5"
+          p.mb-0.small.text-muted
+            | Set your key in the top bar to use 
+            strong Try it 
+            |  panels on API resource pages. Keys are stored in the browser only when “Remember” is checked.
+    .col-md-6
+      .card.h-100
+        .card-header.fw-semibold API at a glance
+        .card-body
+          p.mb-2
+            strong= model_list.length
+            |  resource#{model_list.length !== 1 ? 's' : ''} registered
+          if model_list.length
+            .d-flex.flex-wrap.gap-1
+              each m in model_list.slice(0, 12)
+                a.badge.text-bg-light.text-decoration-none(href="/docs/model/" + m)= m
+              if model_list.length > 12
+                a.badge.text-bg-secondary.text-decoration-none(href="/docs/api") +#{model_list.length - 12} more
+          else
+            p.text-muted.mb-0 No models loaded yet.
+
+  h2.h4.mb-3 Features
+  .row.g-3.mb-4
+    each feature in features
+      .col-md-6.col-lg-4
+        .card.feature-card
+          .card-body
+            h3.h6.card-title= feature.title
+            p.card-text.small.text-muted.mb-0= feature.description
+
+  h2.h4.mb-3 Links
+  ul.list-unstyled
+    li.mb-1
+      a(href="https://www.npmjs.com/package/jxp" target="_blank" rel="noopener") JXP on NPM
+    li.mb-1
+      a(href="https://github.com/WorkSpaceMan/jxp" target="_blank" rel="noopener") GitHub
+    li.mb-1
+      a(href="https://www.npmjs.com/package/jxp-helper" target="_blank" rel="noopener") jxp-helper client
+    li
+      a(href="https://jxp.readthedocs.io" target="_blank" rel="noopener") Read the Docs

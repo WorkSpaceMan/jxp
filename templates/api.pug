@@ -1,0 +1,32 @@
+extends layout
+
+block content
+  h1.mb-1 API reference
+  p.text-muted.mb-4 Explore resources, try requests with your API key, and inspect schemas.
+
+  if model_summaries.length
+    .table-responsive
+      table.table.table-striped.table-hover.align-middle
+        thead
+          tr
+            th Resource
+            th Collection
+            th Permissions
+            th
+        tbody
+          each summary in model_summaries
+            tr
+              td
+                a.fw-semibold(href="/docs/model/" + summary.slug)= summary.slug
+              td
+                code.small= summary.collection
+              td
+                if summary.perms
+                  each value, key in summary.perms
+                    span.badge.text-bg-secondary.me-1(title=key)= key + ': ' + value
+                else
+                  span.badge.text-bg-warning No perms
+              td.text-end
+                a.btn.btn-sm.btn-outline-primary(href="/docs/model/" + summary.slug) Open
+  else
+    .alert.alert-info No API resources are registered.

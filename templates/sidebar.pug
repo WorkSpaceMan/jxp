@@ -1,0 +1,30 @@
+nav.docs-sidebar#docsSidebarDesktop(aria-label="Documentation navigation")
+  .docs-sidebar-section
+    .docs-sidebar-title Guides
+    each nav in guide_nav
+      - const label = Object.keys(nav)[0]
+      - const file = Object.values(nav)[0]
+      a.docs-nav-link(href="/docs/md/" + file class=(active_guide === file ? 'active' : ''))= label
+  .docs-sidebar-section
+    .docs-sidebar-title API
+    a.docs-nav-link(href="/docs/api" class=(active_section === 'api' && !active_model ? 'active' : '')) Overview
+    each model_name in model_list
+      a.docs-nav-link(href="/docs/model/" + model_name class=(active_model === model_name ? 'active' : ''))= model_name
+
+//- Mobile offcanvas (same links)
+.offcanvas.offcanvas-start#docsSidebarOffcanvas(tabindex="-1" aria-labelledby="docsSidebarOffcanvasLabel")
+  .offcanvas-header
+    h5.offcanvas-title#docsSidebarOffcanvasLabel Navigation
+    button.btn-close(type="button" data-bs-dismiss="offcanvas" aria-label="Close")
+  .offcanvas-body.p-0
+    .docs-sidebar-section
+      .docs-sidebar-title Guides
+      each nav in guide_nav
+        - const label = Object.keys(nav)[0]
+        - const file = Object.values(nav)[0]
+        a.docs-nav-link(href="/docs/md/" + file class=(active_guide === file ? 'active' : ''))= label
+    .docs-sidebar-section
+      .docs-sidebar-title API
+      a.docs-nav-link(href="/docs/api" class=(active_section === 'api' && !active_model ? 'active' : '')) Overview
+      each model_name in model_list
+        a.docs-nav-link(href="/docs/model/" + model_name class=(active_model === model_name ? 'active' : ''))= model_name

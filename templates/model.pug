@@ -1,75 +1,124 @@
 extends layout
 
 block content
-    h1= "Model " + model.collection.name
-    hr
-    h2 Permissions
-    if perms
-        table.table
-            thead
-                tr
-                    th User Group
-                    th Create?
-                    th Read?
-                    th Update?
-                    th Delete?
-            tbody
-                each value, key in perms
-                    tr
-                        td= key
-                        td= value.includes("c") ? "x" : ""
-                        td= value.includes("r") ? "x" : ""
-                        td= value.includes("u") ? "x" : ""
-                        td= value.includes("d") ? "x" : ""
-    else
-        .alert.alert-warning No permissions defined for this model, it will not be accessible through the API
+  nav.mb-3(aria-label="breadcrumb")
+    ol.breadcrumb
+      li.breadcrumb-item
+        a(href="/docs/api") API
+      li.breadcrumb-item.active(aria-current="page")= model_slug
 
-    hr
-    h2 Fields
-    table.table
+  h1.mb-1= model_slug
+  p.text-muted
+    | Collection: 
+    code= collection_name
+    |  · 
+    a(href="/docs/md/api.md") Query &amp; filter docs
+
+  h2.h4.mt-4.mb-3 Endpoints
+  p.small.text-muted.mb-3
+    | Optional 
+    code X-API-Key 
+    |  in the top bar. 
+    span.text-warning Keys in the browser are for development only.
+
+  .accordion#apiEndpointsAccordion
+    each endpoint, idx in endpoints
+      .accordion-item
+        h2.accordion-header(id="heading-" + idx)
+          button.accordion-button(class=(idx === 0 ? '' : 'collapsed') type="button" data-bs-toggle="collapse" data-bs-target="#collapse-" + idx aria-expanded=(idx === 0 ? 'true' : 'false') aria-controls="collapse-" + idx)
+            span.badge.method-badge.me-2(class='method-' + endpoint.method.toLowerCase())= endpoint.method
+            span.endpoint-path= endpoint.path
+        .accordion-collapse.collapse(class=(idx === 0 ? 'show' : '') id="collapse-" + idx aria-labelledby="heading-" + idx data-bs-parent="#apiEndpointsAccordion")
+          .accordion-body
+            p.mb-2= endpoint.description
+            if endpoint.queryHint
+              p.small.text-muted= endpoint.queryHint
+            .api-try-panel(data-method=endpoint.method data-default-path=endpoint.path)
+              .mb-2
+                label.form-label.small.fw-semibold Request URL
+                .input-group.input-group-sm
+                  span.input-group-text= endpoint.method
+                  input.form-control.api-path-input(type="text" value=endpoint.path)
+              if endpoint.hasBody
+                .mb-2
+                  label.form-label.small.fw-semibold JSON body
+                  textarea.form-control.api-body-input.font-monospace(rows="4" placeholder='{"field": "value"}') {}
+              button.btn.btn-primary.btn-sm.api-send-btn(type="button")
+                i.bi.bi-play-fill.me-1
+                | Send request
+              .api-response.empty(role="status") Response will appear here…
+              .api-response-meta
+
+  hr.my-4
+
+  h2.h4 Permissions
+  if perms
+    .table-responsive
+      table.table.table-striped.table-sm
         thead
-            tr
-                th Name
-                th Type
-                th Link
-                th Maps To
-                th Default
-                th Indexed?
-                th Unique?
-                th Required?
+          tr
+            th User Group
+            th Create
+            th Read
+            th Update
+            th Delete
         tbody
-            each fieldname in fields
-                - let field = safeFields[fieldname]
-                if (field.path)
-                    tr
-                        td= field.path
-                        td
-                            if field.arrayType
-                                | Array of #{field.arrayType}
-                            else
-                                = field.instance
-                        td= field.options.link
-                        td= field.options.map_to
-                        td= field.defaultValue
-                        td= (field.options.index) ? "x" : ""
-                        td= (field.options.unique) ? "x" : ""
-                        td= field.isRequired ? "x" : ""
-    hr
-    h2 Field Details
-    each fieldname in fields
-        - let field = safeFields[fieldname]
-        if field
-            .field-details
-                h3= field.path
-                pre.pre= JSON.stringify(field, null, 2)
-                if field.schema
-                    h4 Nested Schema
-                    ul
-                        each nestedField in field.schema
-                            li #{nestedField.path}: #{nestedField.type}
-                if field.validators && field.validators.length
-                    h4 Validators
-                    ul
-                        each validator in field.validators
-                            li #{validator.type}: #{validator.message}
+          each value, key in perms
+            tr
+              td= key
+              td= value.includes("c") ? "✓" : ""
+              td= value.includes("r") ? "✓" : ""
+              td= value.includes("u") ? "✓" : ""
+              td= value.includes("d") ? "✓" : ""
+  else
+    .alert.alert-warning No permissions defined — this resource may not be accessible via the API.
 
+  h2.h4.mt-4 Fields
+  .table-responsive
+    table.table.table-striped.table-sm
+      thead
+        tr
+          th Name
+          th Type
+          th Link
+          th Maps To
+          th Default
+          th Indexed
+          th Unique
+          th Required
+      tbody
+        each fieldname in fields
+          - let field = safeFields[fieldname]
+          if field && field.path
+            tr
+              td
+                code= field.path
+              td
+                if field.arrayType
+                  span.badge.text-bg-info Array of #{field.arrayType}
+                else
+                  span.badge.text-bg-light.text-dark= field.instance
+              td= field.options.link || ''
+              td= field.options.map_to || ''
+              td.small= field.defaultValue != null ? field.defaultValue : ''
+              td= field.options.index ? "✓" : ""
+              td= field.options.unique ? "✓" : ""
+              td= field.isRequired ? "✓" : ""
+
+  h2.h4.mt-4 Field details
+  each fieldname in fields
+    - let field = safeFields[fieldname]
+    if field
+      .field-details.mb-3
+        h3.h6= field.path
+        pre.pre.small.bg-light.p-2.rounded= JSON.stringify(field, null, 2)
+        if field.schema
+          h4.h6 Nested schema
+          ul.small
+            each nestedField in field.schema
+              li #{nestedField.path}: #{nestedField.type}
+        if field.validators && field.validators.length
+          h4.h6 Validators
+          ul.small
+            each validator in field.validators
+              li #{validator.type}: #{validator.message}

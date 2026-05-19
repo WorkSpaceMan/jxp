@@ -1,21 +1,14 @@
-nav.navbar.navbar-expand-lg.navbar-light
-    a.navbar-brand(href="/")
-        h1= name
-    button.navbar-toggler(type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation")
-        span.navbar-toggler-icon
-    #navbarSupportedContent.collapse.navbar-collapse
-        ul.navbar-nav.mr-auto
-            li.nav-item.dropdown(class=models)
-                a#navbarDropdown.nav-link.dropdown-toggle(href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false") Model Reference
-                .dropdown-menu(aria-labelledby="navbarDropdown")
-                    each model_name in model_list
-                        a.dropdown-item.btn(href="/docs/model/" + model_name)= model_name
-            li.nav-item.dropdown(class=documentation)
-                a#navbarDropdown.nav-link.dropdown-toggle(href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false") Guides
-                .dropdown-menu(aria-labelledby="navbarDropdown")
-                    each nav of guide_nav
-                        a.dropdown-item.btn(href="/docs/md/" + Object.values(nav)[0])= Object.keys(nav)[0]
-        = "v" + version
-        //- form.form-inline.my-2.my-lg-0(method="GET" action="/search")
-        //-     input.form-control.mr-sm-2(name="query" type="search" placeholder="Search" aria-label="Search" value=query)
-        //-     button.btn.btn-outline-success.my-2.my-sm-0(type="submit") Search
+header.docs-topbar.navbar.navbar-expand-lg.sticky-top
+  .container-fluid.px-3
+    button.btn.btn-outline-secondary.btn-sm.d-lg-none.me-2(type="button" data-bs-toggle="offcanvas" data-bs-target="#docsSidebarOffcanvas" aria-controls="docsSidebarOffcanvas" aria-label="Open navigation")
+      i.bi.bi-list
+    a.docs-brand.navbar-brand.mb-0(href="/")= name
+    span.badge.bg-secondary.ms-2.align-self-center v#{version}
+    .ms-auto.d-flex.align-items-center.gap-2.flex-wrap
+      .docs-api-key-wrap
+        label.visually-hidden(for="docs-api-key") API Key
+        input#docs-api-key.form-control.form-control-sm(type="password" placeholder="X-API-Key (optional)" autocomplete="off")
+      .form-check.form-check-inline.mb-0.docs-security-note
+        input#docs-remember-key.form-check-input(type="checkbox")
+        label.form-check-label(for="docs-remember-key") Remember
+      span.docs-security-note.text-muted.d-none.d-md-inline Dev only

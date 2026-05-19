@@ -9,14 +9,14 @@ const login = require("./login");
 const groups = require("./groups");
 const setup = require("./setup");
 const Docs = require("./docs");
-const querystring = require("querystring");
+const querystring = require("node:querystring");
 const fs = require("fs");
 const morgan = require("morgan");
 const ws = require("./ws");
 const modeldir = require("./modeldir");
 const query_manipulation = require("./query_manipulation");
 const corsMiddleware = require('restify-cors-middleware2');
-const json2csv = require('json2csv').parse;
+const { Parser: CsvParser } = require('@json2csv/plainjs');
 const cache = require("./cache");
 const query_limits = require("./query_limits");
 const schemaModule = require("./schema");
@@ -82,7 +82,7 @@ const outputCSV = (req, res, next) => {
 			'Content-Type': 'text/csv',
 			'Content-Disposition': 'attachment; filename=export.csv'
 		});
-		const csv = json2csv(data, opts);
+		const csv = new CsvParser(opts).parse(data);
 		res.end(csv);
 		next();
 	} catch (err) {
@@ -1167,6 +1167,8 @@ const JXP = function (options: JXPConfig) {
 	server.get("/model/:modelname", middlewareModel, docs.metaModel.bind(docs));
 	server.get("/model", docs.metaModels.bind(docs));
 	// server.get("/docs/_design", docs.dbDiagram.bind(docs));
+	server.get("/docs/assets/:file", docs.serveAsset.bind(docs));
+	server.get("/docs/api", docs.apiIndex.bind(docs));
 	server.get("/docs/md/:md_doc", docs.md.bind(docs));
 	server.get("/docs/model/:modelname", docs.model.bind(docs));
 	server.get("/", docs.frontPage.bind(docs));

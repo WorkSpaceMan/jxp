@@ -1,10 +1,8 @@
-const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const security = require("../libs/security");
 const nodemailer = require('nodemailer');
 const errors = require("restify-errors");
-const smtpTransport = require('nodemailer-smtp-transport');
 const path = require("path");
 let User = null;
 
@@ -21,16 +19,15 @@ var init = function (config) {
 const recover = async (req, res) => {
 	try {
 		// create reusable transporter object using SMTP transport
-		const transporter = nodemailer.createTransport(smtpTransport({
+		const transporter = nodemailer.createTransport({
 			host: req.config.smtp_server,
 			port: 25,
 			auth: {
 				user: req.config.smtp_username,
 				pass: req.config.smtp_password,
 			},
-			// secure: true,
-			tls: { rejectUnauthorized: false }
-		}));
+			tls: { rejectUnauthorized: false },
+		});
 		const email = req.body.email;
 		if (!email) {
 			console.error("Missing email parameter");
@@ -98,17 +95,32 @@ const oauth_callback = async (req, res) => {
 		if (!code) {
 			throw ("missing_code");
 		}
-		const token = (await axios.post(provider_config.token_uri, {
+		const tokenBody = {
 			client_id: provider_config.app_id,
 			redirect_uri: `${req.config.url}/login/oauth/callback/${req.params.provider}`,
 			client_secret: provider_config.app_secret,
 			code: code,
-			grant_type: "authorization_code"
-		})).data;
+			grant_type: "authorization_code",
+		};
+		const tokenRes = await fetch(provider_config.token_uri, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(tokenBody),
+		});
+		if (!tokenRes.ok) {
+			throw ("token_request_failed");
+		}
+		const token = await tokenRes.json();
 		if (!token.access_token) {
 			throw ("missing_access_token");
 		}
-		const data = (await axios.get(provider_config.api_uri, { headers: { Authorization: `Bearer ${token.access_token}` } })).data;
+		const dataRes = await fetch(provider_config.api_uri, {
+			headers: { Authorization: `Bearer ${token.access_token}` },
+		});
+		if (!dataRes.ok) {
+			throw ("api_request_failed");
+		}
+		const data = await dataRes.json();
 		if (data.emailAddress) {
 			data.email = data.emailAddress;
 		}

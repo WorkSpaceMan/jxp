@@ -1,5 +1,4 @@
 #! /usr/bin/env node
-const mkdirp = require("mkdirp");
 const program = require("commander");
 const path = require("path");
 const readline = require('readline-sync');
@@ -74,12 +73,12 @@ async function main() {
 			"dependencies": {
 				"jxp": "^4.0.0",
 				"dotenv": "^16.4.7",
-				"mongoose": "6.12.6"
+				"mongoose": "6.13.9"
 			},
 			"author": app_author,
 			"license": app_license
 		};
-		await mkdirp(destination_path); // Ensure the dir exists
+		await fs.promises.mkdir(destination_path, { recursive: true, mode: 0o755 });
 		write(path.join(destination_path, "package.json"), JSON.stringify(package_data, null, "\t"));
 		await mkdir(path.join(destination_path, "bin"));
 		await mkdir(path.join(destination_path, "models"));
@@ -186,8 +185,8 @@ function write(filePath: string, str: string, mode?: number) {
  * @return {Promise}
  */
 
-function mkdir(path) {
-	return mkdirp(path, 0o755);
+function mkdir(path: string) {
+	return fs.promises.mkdir(path, { recursive: true, mode: 0o755 });
 }
 
 main();

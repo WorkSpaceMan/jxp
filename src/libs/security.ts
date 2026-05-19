@@ -7,7 +7,7 @@ var Token = null;
 var Groups = null;
 var User = null;
 var RefreshToken = null;
-var provider = "https://api.workspaceman.nl";
+var provider = "";
 
 const loadModel = (modelDir: string, file: string) => {
 	const mod = require(path.join(modelDir, file));
