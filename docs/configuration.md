@@ -2,7 +2,7 @@
 
 JXP 4 uses **environment variables** and [dotenv](https://github.com/motdotla/dotenv). Copy [`.env.sample`](../.env.sample) to `.env` and adjust values.
 
-There is no `config` npm package and no `/config/*.json` hierarchy.
+_As of version 4, there is no `config` npm package and no `/config/*.json` hierarchy._
 
 ## MongoDB
 
@@ -50,6 +50,13 @@ CACHE_DEBUG=false
 CACHE_TTL=300
 ```
 
+When enabled, JXP uses an in-process cache ([node-cache](https://www.npmjs.com/package/node-cache)). GET responses may include `jxp-cache` (`hit` / `miss`) and `jxp-cache-key` headers. Admin endpoints (no auth required by default):
+
+- `GET /cache/stats` — cache statistics, or `{ cache_enabled: false }` when disabled
+- `GET /cache/clear` — flush all cached entries
+
+See [Caching](caching.md) for details.
+
 ## Query limits
 
 ```
@@ -68,7 +75,9 @@ THROTTLE_JSON={"burst":100,"rate":50,"ip":true}
 
 ## Model directory
 
-JXP discovers models by scanning `MODEL_DIR` for `*_model.js`. You can also pass `model_dir` in the object given to `JXP(apiconfig)` (as RevEngine does from its own `lib/env.js`).
+JXP discovers models by scanning `MODEL_DIR` for `*_model.js`. You can also pass `model_dir` in the object given to `JXP(apiconfig)`.
+
+Relative `model_dir` paths resolve from `process.cwd()` (typical for npm scripts), not from the server script path.
 
 ## Programmatic config
 
@@ -84,7 +93,47 @@ const server = JXP({
 });
 ```
 
-The sample JXP server uses `loadJxpConfig()` from `jxp/libs/load-config` to build the same shape from `.env`.
+The sample JXP server uses `loadJxpConfig()` from `jxp/libs/load-config` (resolved via `package.json` `exports` to compiled `dist/libs/load-config.js`) to build the same shape from `.env`.
+
+### SMTP and password recovery
+
+SMTP and password-recovery URLs are **not** read from environment variables by `loadJxpConfig()`. Pass them on the `JXP()` options object:
+
+```javascript
+JXP({
+  smtp_server: "mail.example.com",
+  smtp_username: "user",
+  smtp_password: "secret",
+  smtp_from: "noreply@example.com",
+  password_recovery_url: "https://myapp.example.com/reset",
+});
+```
+
+Used by `POST /login/recover` (see [Authentication](authentication.md)).
+
+### OAuth
+
+OAuth2 providers are configured programmatically on the `oauth` key:
+
+```javascript
+JXP({
+  url: "http://localhost:4001",
+  oauth: {
+    success_uri: "https://myapp.example.com/oauth/success",
+    fail_uri: "https://myapp.example.com/oauth/fail",
+    google: {
+      auth_uri: "https://accounts.google.com/o/oauth2/v2/auth",
+      token_uri: "https://oauth2.googleapis.com/token",
+      api_uri: "https://www.googleapis.com/oauth2/v2/userinfo",
+      app_id: "...",
+      app_secret: "...",
+      scope: "email profile",
+    },
+  },
+});
+```
+
+Routes: `GET /login/oauth/:provider` and `GET /login/oauth/callback/:provider`. See [Authentication](authentication.md).
 
 ## Tests
 

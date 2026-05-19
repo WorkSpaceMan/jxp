@@ -174,7 +174,7 @@ To ensure a full-text index across all fields on your model, add this to your sc
 
 `MySchema.index( { "$**": "text" } );`
 
-See [https://docs.mongodb.com/manual/core/index-text/](MongoDB Text Indexes) for more options, such as weighted indexing.
+See [MongoDB Text Indexes](https://www.mongodb.com/docs/manual/core/index-text/) for more options, such as weighted indexing.
 
 Note that you can only declare one index per collection (and hence schema).
 
@@ -193,28 +193,33 @@ As with PUT, we need to reference a specific item, so the endpoint needs to incl
 
 ## Advanced queries
 
-If you need to send an advanced query, such as a combined $and/$or, you can _POST_ a `{query}` variable to the `/query/{modelname}` endpoint. Most of the other features you'd use for `/get/{modelname}` (except for _search_ since it's a query) will still work.
+If you need to send an advanced query, such as a combined `$and`/`$or`, POST JSON to `/query/{modelname}` with a **`query` object** (required). Most URL features from `GET /api/{modelname}` still apply (`limit`, `page`, `sort`, `populate`, `filter`, `autopopulate`, `fields`) except `search`.
 
 Eg.
-```javascript
-query = {
-    "$and": [
-        { 
-            "foo": {
-                "$regex": "foo",
-                "$options": "i"
+
+```json
+{
+    "query": {
+        "$and": [
+            {
+                "foo": {
+                    "$regex": "foo",
+                    "$options": "i"
+                }
+            },
+            {
+                "bar": "Bar"
             }
-        },
-        {	
-            "bar": "Bar"
-        }
-    ]
+        ]
+    }
 }
 ```
 
+See [Queries](queries.md) for more examples.
+
 ## Aggregate queries
 
-You can perform an aggregate query by POSTing your query to `/aggregate/{modelname}`. The aggregation pipeline must be wrapped in an array
+You can perform an aggregate query by POSTing a pipeline array to `/aggregate/{modelname}`, or wrapping it in `{ "query": [ ... ] }`. See [Aggregations](aggregations.md).
 
 Eg.
 ```javascript

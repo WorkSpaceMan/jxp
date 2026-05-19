@@ -84,7 +84,7 @@ export function getModelDirFromEnv(): string | undefined {
 
 /**
  * Build a JXP options object from environment variables.
- * Used by the sample server; apps like RevEngine pass their own object to `JXP()`.
+ * Used by the sample server; apps pass their own object to `JXP()`.
  */
 export function loadJxpConfig(overrides: Partial<JXPConfig> = {}): JXPConfig {
 	loadEnv();

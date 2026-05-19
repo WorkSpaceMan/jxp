@@ -1,8 +1,8 @@
 # Special Features
 
-## We allways encrypt passwords
+## We always encrypt passwords
 
-You should note that if you send through anything called "password", it will automagically encrypt using bcrypt, unless you send the parameter `password_override=1`.
+You should note that if you send through anything called "password", it will automatically encrypt using bcrypt, unless you send the parameter `password_override=1`.
 
 ## Reflection/navel gazing
 
@@ -12,7 +12,7 @@ The endpoint `/model/modelname` gives us a description of a model.
 
 ## Cache
 
-The `/cache` endpoint should show us some info about the state of our Memcached server.
+When caching is enabled, `GET /cache/stats` returns in-process cache statistics (see [Caching](caching.md)). Use `GET /cache/clear` to flush the cache.
 
 ## Downloading data as CSV
 

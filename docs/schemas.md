@@ -10,9 +10,9 @@ The schemas are based on Mongoose, so anything you can do with a [Mongoose schem
 
 ## Defining a schema
 
-Schemas are all found in the `/models` directory, and have the format `/models/<name>_model.js`. Each schema represents a collection in Mongo, with the Mongo collection name being the plural of the schema name. Eg. the data for `user_model.js` is stored in the `users` collection in Mongo.
+Schemas are loaded from `MODEL_DIR` (default `./dist/models` on the sample server). Each file is named `<name>_model.js`. Each schema represents a collection in Mongo, with the Mongo collection name being the plural of the schema name. Eg. the data for `user_model.js` is stored in the `users` collection in Mongo.
 
-A typical schema looks like `/models/test_model.js`:
+A typical schema looks like `test_model.js` in your model directory:
 ```javascript
 /* global JXPSchema ObjectId Mixed */
 
@@ -109,6 +109,12 @@ _owner_id: ObjectId
 This is a link to the `user` that originally created the document. This is used for permissioning the `owner` rights.
 
 ```javascript
+_updated_by_id: ObjectId
+```
+
+Set on PUT to the user who last updated the document (populated as `_updated_by` when using `map_to`).
+
+```javascript
 createdAt: Date,
 updatedAt: Date
 ```
@@ -116,10 +122,10 @@ updatedAt: Date
 We always store the created and updated timestamp.
 
 ```javascript
-_v: Number
+__v: Number
 ```
 
-The version is tracked.
+Mongoose version key.
 
 ## Stored Procedures
 
@@ -147,8 +153,10 @@ TestSchema.statics.testItem = function(item, data) {
 };
 ```
 
-The static call will include the user's data as `data.__user`. [NOTE: This will probably change to "sender" before v2 is finalised.]
+The static call will include the authenticated user on `data.__user` when a user is logged in.
 
-## Pre- and post-fuctions
+You can also set permissions after construction with `TestSchema.set("_perms", { ... })`, but the usual pattern is the `perms` option in the constructor (see above).
+
+## Pre- and post-functions
 
 You can use [Mongoose pre- and post-middleware](https://mongoosejs.com/docs/middleware.html#post) to do advanced validation or to return a calculated field with your results.

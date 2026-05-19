@@ -22,8 +22,10 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
 
     npm install -g jxp
     jxp-setup my-app
-    cd my-ap
+    cd my-app
     npm start
+
+Requires **Node.js 22+**.
 
 ## Installing from source
 
@@ -42,12 +44,13 @@ JXP 4 is implemented in TypeScript. See [docs/typescript.md](docs/typescript.md)
 ## Documentation
 
 * [TypeScript / v4 migration](docs/typescript.md)
-* [Installation](https://jxp.readthedocs.io/en/v2.0.0/installation)
-* [Configuration](https://jxp.readthedocs.io/en/v2.0.0/configuration)
-* [Authentication](https://jxp.readthedocs.io/en/v2.0.0/authentication)
-* [Schemas](https://jxp.readthedocs.io/en/v2.0.0/schemas)
-* [Restful API](https://jxp.readthedocs.io/en/v2.0.0/api)
-* [Roles and Permissions](https://jxp.readthedocs.io/en/v2.0.0/permissions)
-* [Hooks](https://jxp.readthedocs.io/en/v2.0.0/hooks)
-* [Special Features](https://jxp.readthedocs.io/en/v2.0.0/special)
-* [Changelog](https://jxp.readthedocs.io/en/v2.0.0/changelog)
+* [Installation](https://jxp.readthedocs.io/en/latest/installation/)
+* [Configuration](https://jxp.readthedocs.io/en/latest/configuration/)
+* [Authentication](https://jxp.readthedocs.io/en/latest/authentication/)
+* [Schemas](https://jxp.readthedocs.io/en/latest/schemas/)
+* [Restful API](https://jxp.readthedocs.io/en/latest/api/)
+* [Roles and Permissions](https://jxp.readthedocs.io/en/latest/permissions/)
+* [Hooks](https://jxp.readthedocs.io/en/latest/hooks/)
+* [Special Features](https://jxp.readthedocs.io/en/latest/special/)
+* [Changelog](https://jxp.readthedocs.io/en/latest/changelog/)
+* [Full docs](https://jxp.readthedocs.io/en/latest/)

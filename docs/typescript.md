@@ -19,10 +19,6 @@ During development:
 npm run dev     # rebuild on src/ changes and restart the sample server
 ```
 
-## Configuration
-
-JXP 4 does not use the `config` npm package. Use `.env` (see `.env.sample`) or pass an options object to `JXP()` like [RevEngine](https://github.com/WorkSpaceMan/revengine-api) does via `lib/env.js`. For the sample server, use `require("jxp/libs/load-config").loadJxpConfig()`.
-
 ## Consuming JXP from JavaScript
 
 No changes are required for existing `*_model.js` apps:
