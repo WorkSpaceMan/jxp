@@ -80,7 +80,7 @@ JXP ships typed built-in models (import from your compiled `dist/models` path wh
 
 ## Breaking changes in v4
 
-- **Build step required** — `npm install` runs `prepare` → `npm run build`. Published package includes `dist/` only (not `src/`).
+- **Published package** — npm installs ship prebuilt `dist/` (not `src/`). Building from source (`npm run build`) is only required when developing from a git clone.
 - **Entry point** — `main` is `dist/libs/jxp.js`; `types` points to matching `.d.ts`.
 - **Node** — requires Node.js 22+.
 - **Relative `model_dir`** — resolved from `process.cwd()` (typical for npm scripts), not from the server script path.

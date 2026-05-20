@@ -1,7 +1,8 @@
-FROM node:17
+FROM node:22-bookworm-slim
 
 WORKDIR /jxp
-COPY package.json .
-RUN yarn install
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
 COPY . .
-CMD npm start
+RUN npm run build
+CMD ["npm", "start"]

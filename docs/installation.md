@@ -14,7 +14,7 @@ If you want to send forgotten-password links, configure SMTP on your `JXP()` opt
 
 ### JXP 4
 
-JXP 4 is implemented in TypeScript and published as compiled JavaScript in `dist/`. Running from source requires `npm run build` (also runs on `npm install` via `prepare`). Consumer apps still define models as `*_model.js` files in `MODEL_DIR`.
+JXP 4 is implemented in TypeScript and published as compiled JavaScript in `dist/`. The npm package includes a prebuilt `dist/`; `npm install jxp` does not compile from source. Cloning the repo and running `npm install` builds automatically when `src/` is present. Consumer apps still define models as `*_model.js` files in `MODEL_DIR`.
 
 ## Running on Docker
 

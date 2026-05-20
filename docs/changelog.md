@@ -11,7 +11,7 @@ Major release: complete TypeScript rewrite and configuration overhaul.
 - **Security hardening (4.0)** — see [migration](#security-hardening-migration) below.
 - **No `config` package** — configuration via `.env` / environment variables and `jxp/libs/load-config` (compiled to `dist/libs/load-config.js`). Removed `/config/*.json` and [node-config](https://www.npmjs.com/package/config).
 - **TypeScript** — framework source under `src/`; npm package ships compiled `dist/` with `.d.ts` types.
-- **Build step required** — `npm run build` (runs on `npm install` via `prepare`).
+- **Build from source** — `npm run build` when developing from a git clone; npm registry installs ship prebuilt `dist/`.
 - **Entry point** — `main` / `types` → `dist/libs/jxp.js` and `dist/libs/jxp.d.ts`.
 - **Node 22+** — `engines.node` is `>=22.0.0`.
 - **Relative paths** — `model_dir` and `log` resolve from `process.cwd()`, not the server script directory.
@@ -259,4 +259,4 @@ Major v2 rewrite ([PR #11](https://github.com/WorkSpaceMan/jxp/pull/11)):
 | v2.11 | — | ≤17 (warning in release) |
 | v1 / early v2 | 5.x | — |
 
-For commits after v3.1.0 on GitHub, see the [compare view](https://github.com/WorkSpaceMan/jxp/compare/7224093...master) once v4 is pushed.
+See the [v4.0.0 release](https://github.com/WorkSpaceMan/jxp/releases/tag/v4.0.0) and [compare view since v3.1.0](https://github.com/WorkSpaceMan/jxp/compare/7224093...v4.0.0).

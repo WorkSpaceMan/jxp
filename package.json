@@ -43,11 +43,11 @@
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
-		"prepare": "npm run build",
+		"prepublishOnly": "npm run build",
+		"prepare": "node -e \"require('fs').existsSync('src')&&require('child_process').execSync('npm run build',{stdio:'inherit'})\"",
 		"start": "node dist/bin/server.js",
 		"dev": "nodemon --watch src --ext ts --exec 'npm run build && node dist/bin/server.js'",
 		"test": "npm run build && mocha --require test/env.js --timeout 1000 -b --exit",
-		"wstest": "npm run build && mocha test/wstest",
 		"setup": "node dist/bin/setup.js"
 	},
 	"bin": {

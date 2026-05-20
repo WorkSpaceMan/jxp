@@ -31,7 +31,7 @@ Requires **Node.js 22+**.
 
 ```bash
 npm i --legacy-peer-deps
-npm run build   # compiles TypeScript (also runs on install via prepare)
+npm run build   # compiles TypeScript (runs on git clone install when src/ is present)
 npm start       # sample server at dist/bin/server.js
 ```
 
