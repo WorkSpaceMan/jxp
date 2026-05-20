@@ -17,6 +17,10 @@
 			"types": "./dist/libs/jxp.d.ts",
 			"default": "./dist/libs/jxp.js"
 		},
+		"./libs/schema": {
+			"types": "./dist/libs/schema.d.ts",
+			"default": "./dist/libs/schema.js"
+		},
 		"./libs/query_manipulation": {
 			"types": "./dist/libs/query_manipulation.d.ts",
 			"default": "./dist/libs/query_manipulation.js"
@@ -32,6 +36,9 @@
 		"./libs/connection_string": {
 			"types": "./dist/libs/connection_string.d.ts",
 			"default": "./dist/libs/connection_string.js"
+		},
+		"./types/jxp-config": {
+			"types": "./dist/types/jxp-config.d.ts"
 		}
 	},
 	"scripts": {

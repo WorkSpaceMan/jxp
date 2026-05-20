@@ -55,6 +55,4 @@ const fix_query = query => {
     return cleaned;
 }
 
-module.exports = {
-    fix_query
-}
+export { fix_query };
