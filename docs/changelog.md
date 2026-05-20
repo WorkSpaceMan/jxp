@@ -4,11 +4,11 @@ Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
 ## v4.0.0 — 2026-05-19
 
-Major release: complete TypeScript rewrite and configuration overhaul. *(Published on local `master`; push to GitHub pending.)*
+Major release: complete TypeScript rewrite and configuration overhaul.
 
 ### Breaking changes
 
-- **Security hardening (4.0)** — default `?limit=100` on list/query endpoints; `/call` requires `callable_statics` on each model; cache admin routes require admin auth; `password_override` is admin-only; dangerous Mongo operators blocked in filters; aggregation/bulkwrite allowlists; passwords stripped from list responses.
+- **Security hardening (4.0)** — see [migration](#security-hardening-migration) below.
 - **No `config` package** — configuration via `.env` / environment variables and `jxp/libs/load-config` (compiled to `dist/libs/load-config.js`). Removed `/config/*.json` and [node-config](https://www.npmjs.com/package/config).
 - **TypeScript** — framework source under `src/`; npm package ships compiled `dist/` with `.d.ts` types.
 - **Build step required** — `npm run build` (runs on `npm install` via `prepare`).
@@ -26,18 +26,59 @@ Major release: complete TypeScript rewrite and configuration overhaul. *(Publish
 - **Built-in documentation UI** — landing page, MkDocs nav sidebar, per-model API reference.
 - **Interactive API console** — try REST endpoints from model pages; optional API key in docs navbar.
 - **Query limits** (from v3.1) — env/config `query_limits`; default limit on all list/query requests; required explicit `?limit=` on large collections.
-- **Security modules** — `query_sanitize`, `aggregate_guard`, `bulkwrite_guard`, `call_guard`, `response_sanitize`, `link_index`.
+- **Security modules** — `query_sanitize`, `aggregate_guard`, `bulkwrite_guard`, `call_guard`, `response_sanitize`, `link_index`, `safe_error`.
+- **Schema options** — `callable_statics` (string array); `advanced_queries: { query?, aggregate?, bulkwrite? }` (bulkwrite off by default).
+- **Config / env** — `security.strip_fields`, `cors.origins`; `QUERY_LIMITS_DEFAULT`, `QUERY_LIMITS_SKIP_COUNT_UNLESS_PAGINATED`, `CORS_ORIGINS` (see [configuration.md](configuration.md)).
 - **Startup helpers** — Node 22+ deprecation warnings; `quiet_startup` option.
 
 ### Changed
 
+- **List responses** — `count` and `page_count` are omitted unless the client passes `?count=true` or `?page=` (avoids `countDocuments` on every list request).
+- **CORS** — origins read from `config.cors.origins` (default `["*"]` if unset).
+- **`/update/:model/:id`** — uses document load + `save()` (validators/hooks) instead of deprecated `Model.update()`.
+- **Delete** — referrer checks use a pre-built link index and run in parallel.
+- **`admin_only` middleware** — passes errors via `next(err)` for correct Restify handling.
 - **Mongoose 6.13.9** (pinned).
 - **Cache** — in-process [node-cache](https://www.npmjs.com/package/node-cache) *(replaces apicache from v2.6)*.
 - **CSV** — `@json2csv/plainjs` replaces `json2csv`.
 - **Email** — `nodemailer` 8.x; removed `nodemailer-smtp-transport`.
 - **Docs rendering** — `markdown-it`; MkDocs pages from `docs/*.md`.
-- **Tests** — Mocha 11; `test/env.js` loads `.env.test`.
-- **Documentation** — full MkDocs audit for v4 behavior.
+- **Tests** — Mocha 11; `test/env.js` loads `.env.test`; `test/security_hardening.test.js` for guards and allowlists.
+- **Documentation** — full MkDocs audit for v4 behavior; security notes in [api.md](api.md), [queries.md](queries.md), [aggregations.md](aggregations.md), [bulk_writes.md](bulk_writes.md), [caching.md](caching.md), [schemas.md](schemas.md), [special.md](special.md).
+
+### Fixed
+
+- **`actionCallItem`** — `findById` is awaited; deleted documents are rejected; request body is passed to the static.
+- **`apiKeyAuth`** — missing `await` on `User.findOne` when resolving API key users.
+- **`middlewareModel`** — returns 404 when model name is unknown (no silent `undefined` model).
+- **Filter depth** — exceeding max depth returns 400 instead of passing raw input through.
+
+### Security hardening migration
+
+Consumer apps (e.g. RevEngine) should adjust clients and models as follows:
+
+| Area | Before | After |
+|------|--------|--------|
+| List GET / POST `/query` | Unbounded or large default on small collections | Default `?limit=100` when omitted; collections ≥10k docs still require explicit `?limit=` |
+| Totals in list JSON | `count` always present | Pass `?count=true` or `?page=` when you need `count` / `page_count` |
+| `/call/:model/:method` | Any schema static callable | Only names listed in `callable_statics` |
+| `/cache/stats`, `/cache/clear` | No auth | Admin login required |
+| `password_override=1` | Any authenticated user | Admin only |
+| User PUT | Could set `admin` / `password` | Non-admins have privilege fields stripped |
+| `?filter[$where]=…` | Accepted | **400** — operator denied |
+| POST `/aggregate` | Any pipeline stage | Allowlisted stages; `$out` / `$merge` / `$function` need admin |
+| POST `/bulkwrite` | Open | **Disabled per model** unless `advanced_queries.bulkwrite: true`; op allowlist |
+| List passwords | Could leak on `GET /api/user` | Stripped from list/query/aggregate responses |
+
+Example model opts:
+
+```js
+new JXPSchema({ ... }, {
+  perms: { admin: "crud", user: "r" },
+  callable_statics: ["preview_segment", "apply_segment"],
+  advanced_queries: { bulkwrite: true }, // only if HTTP bulkwrite is required
+});
+```
 
 ---
 
