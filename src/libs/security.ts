@@ -14,6 +14,9 @@ const loadModel = (modelDir: string, file: string) => {
 	return mod.default || mod;
 };
 
+const bulkwrite_guard = require("./bulkwrite_guard");
+const { logRequestError } = require("./request_log");
+
 const init = function (config) {
 	APIKey = loadModel(config.model_dir, "apikey_model");
 	Groups = loadModel(config.model_dir, "usergroups_model.js");
@@ -309,21 +312,24 @@ const auth = async (req, res) => {
 		}
 		return await check_perms(res.user, res.groups, req.Model, method, req.params.item_id);
 	} catch (err) {
-		console.error(err);
+		logRequestError(req, res, err, "auth");
 		if (err.code) throw err;
 		throw new errors.ForbiddenError(err.toString());
 	}
 };
 
-// Bulk auth requires all CRUD permissions
+// Bulk auth: admins bypass; others need perms matching each operation (e.g. updateOne → create + update).
 const bulkAuth = async (req, res,) => {
+	if (res.user?.admin) {
+		return;
+	}
 	try {
-		await check_perms(res.user, res.groups, req.Model, "c");
-		await check_perms(res.user, res.groups, req.Model, "r");
-		await check_perms(res.user, res.groups, req.Model, "u");
-		await check_perms(res.user, res.groups, req.Model, "d");
+		const required = bulkwrite_guard.requiredPermsForBulkOps(req.body);
+		for (const method of required) {
+			await check_perms(res.user, res.groups, req.Model, method);
+		}
 	} catch (err) {
-		console.error(err);
+		logRequestError(req, res, err, "bulkAuth");
 		if (err.code) throw err;
 		throw new errors.ForbiddenError(err.toString());
 	}
@@ -378,10 +384,14 @@ const check_perms = async (user, groups, model, method, item_id?: string) => {
 
 const admin_only = (req, res, next) => { // Chain after login
 	if (!res.user) {
-		return next(new errors.ForbiddenError("User not logged in"));
+		const err = new errors.ForbiddenError("User not logged in");
+		logRequestError(req, res, err, "admin_only");
+		return next(err);
 	}
 	if (!res.user.admin) {
-		return next(new errors.ForbiddenError("User not admin"));
+		const err = new errors.ForbiddenError("User not admin");
+		logRequestError(req, res, err, "admin_only");
+		return next(err);
 	}
 	next();
 }

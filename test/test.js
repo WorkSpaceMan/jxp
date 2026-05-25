@@ -947,6 +947,78 @@ describe('Test', () => {
 						done();
 					});
 			});
+			it("allows admin bulkwrite on models without bulkwrite opt-in", (done) => {
+				const query = [
+					{
+						insertOne: {
+							document: { name: "Bulk link", val: "bulk-val" },
+						},
+					},
+				];
+				chai.request(server)
+					.post("/bulkwrite/link")
+					.auth(init.admin_email, init.admin_password)
+					.send(query)
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an("object");
+						res.body.data.should.have.property("ok");
+						res.body.data.ok.should.eql(1);
+						done();
+					});
+			});
+			it("allows non-admin updateOne without upsert when user has update", (done) => {
+				const query = [
+					{
+						updateOne: {
+							filter: { foo: "Foo bulk updated" },
+							update: { $set: { foo: "Foo user bulk updated" } },
+						},
+					},
+				];
+				chai.request(server)
+					.post("/bulkwrite/test")
+					.auth(init.email, init.password)
+					.send(query)
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an("object");
+						res.body.data.should.have.property("ok");
+						res.body.data.ok.should.eql(1);
+						done();
+					});
+			});
+			it("rejects non-admin bulkwrite when model has no bulkwrite opt-in", (done) => {
+				const query = [
+					{
+						updateOne: {
+							filter: { name: "Bulk link" },
+							update: { $set: { val: "nope" } },
+						},
+					},
+				];
+				chai.request(server)
+					.post("/bulkwrite/link")
+					.auth(init.email, init.password)
+					.send(query)
+					.end((err, res) => {
+						res.should.have.status(403);
+						res.body.should.have.property("message");
+						res.body.message.should.match(/disabled for model link/);
+						done();
+					});
+			});
+			it("rejects non-admin deleteOne without delete permission", (done) => {
+				const query = [{ deleteOne: { filter: { foo: "Foo3" } } }];
+				chai.request(server)
+					.post("/bulkwrite/test")
+					.auth(init.email, init.password)
+					.send(query)
+					.end((err, res) => {
+						res.should.have.status(403);
+						done();
+					});
+			});
 		});
 		// it("should $push to an array", done => {
 		// 	chai.request(server)

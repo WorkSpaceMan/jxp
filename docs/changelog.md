@@ -2,6 +2,60 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v4.1.1 — 2026-05-25
+
+Bulk write authorization fixes (admins no longer need per-model opt-in) and structured request error logging for security guards (query limits, filters, aggregate, bulkwrite, auth).
+
+### Bulk write
+
+#### Changed
+
+- **POST `/bulkwrite`** — **Admin** users may bulk write any model without `advanced_queries.bulkwrite: true`. Non-admins still require model opt-in on the schema.
+- **`bulkAuth`** — Replaces the previous “full CRUD required” rule with **per-operation** permission checks (admins bypass entirely).
+- **Upsert-aware `updateOne` / `replaceOne`** — requires **update** only; **create** is also required when the operation includes `upsert: true` (same as a single-record upsert). `insertOne` → create; `deleteOne` → delete; `updateMany` / `deleteMany` remain admin-only (validated by `bulkwrite_guard`).
+- **Middleware order** — `middlewareBulkWriteAllowed` runs before `bulkAuth` so non-admins without opt-in receive “disabled for model” before a permission mismatch.
+
+#### Added
+
+- **`bulkwrite_guard.requiredPermsForBulkOps()`** — derives required permission letters from each bulk op payload (including per-entry upsert flags).
+
+### Request error logging (`request_log`)
+
+Structured one-line `console.error` entries for guard and handler failures, so production issues are traceable without reading stack traces.
+
+#### Log line format
+
+Each line includes (when available):
+
+- **Client** — `ip=` (`req.ip`, first `X-Forwarded-For` hop, `X-Real-IP`, or socket address), truncated `ua=` (`User-Agent`), `auth=` (`apikey-query`, `apikey-header`, `bearer`, `basic`; credentials are never logged)
+- **Request** — HTTP method and path, `model=`, `id=`, resolved `user=` (email or id), `admin` flag
+- **Context** — guard or handler label (e.g. `query_limit`, `filter`, `query_sanitize`, `aggregate_guard`, `bulkwrite disabled`, `bulkAuth`, `auth`, `admin_only`)
+- **Detail** — operation-specific summary: `?limit` / `?page` / `filterKeys=N`, `bulk[N updateOne:2 …]`, `aggregate[N $match:1 …]`, `postQuery keys=N`, `call=methodName`, collection size hints for query limits (`~N docs threshold=…`)
+- **Message** — the HTTP error message
+
+Unexpected errors (non-4xx) still log a stack trace; expected `BadRequest` / `Forbidden` / `NotFound` do not.
+
+#### Wired into
+
+- **`query_limits.enforceListLimit`** — missing limit on large collections, limit over max
+- **Filter parsing and `query_sanitize`** — denied operators, depth, regex
+- **POST `/query` and `/aggregate`** — model opt-in middleware, pipeline stage guard, invalid body
+- **POST `/bulkwrite`** — opt-in, `bulkAuth`, validation, Mongo errors
+- **`/call`** — callable static guard
+- **`security.auth`**, **`security.bulkAuth`**, **`security.admin_only`**
+- **`middlewareModel`** (unknown model), **`password_override`**
+- Global **`restError`** handler (fallback for other HTTP errors)
+
+#### Added
+
+- **`src/libs/request_log.ts`** — `clientIp`, `authHint`, `requestClientInfo`, `logRequestError`, `logAndThrow`, and request detail helpers.
+- **`middlewareAdvancedQueryAllowed`** — shared opt-in check for POST `/query` and `/aggregate` with logging.
+- **Tests** — `test/bulkwrite_guard.test.js`, `test/request_log.test.js`; extended `/POST bulkwrite` and guard coverage in `test/test.js`.
+
+### Documentation
+
+- [bulk_writes.md](bulk_writes.md) — admin bypass, per-op permissions, and upsert behaviour.
+
 ## v4.1.0 — 2026-05-25
 
 API docs browser security: gated model explorer, real API login, and brute-force limits.
@@ -88,7 +142,7 @@ Consumer apps (e.g. RevEngine) should adjust clients and models as follows:
 | User PUT | Could set `admin` / `password` | Non-admins have privilege fields stripped |
 | `?filter[$where]=…` | Accepted | **400** — operator denied |
 | POST `/aggregate` | Any pipeline stage | Allowlisted stages; `$out` / `$merge` / `$function` need admin |
-| POST `/bulkwrite` | Open | **Disabled per model** unless `advanced_queries.bulkwrite: true`; op allowlist |
+| POST `/bulkwrite` | Open | **Disabled per model** unless `advanced_queries.bulkwrite: true`; op allowlist; full CRUD required *(see v4.1.1)* |
 | List passwords | Could leak on `GET /api/user` | Stripped from list/query/aggregate responses |
 
 Example model opts:

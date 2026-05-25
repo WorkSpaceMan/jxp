@@ -1,4 +1,5 @@
 const errors = require("restify-errors");
+const { logRequestError } = require("./request_log");
 
 const DEFAULTS = {
 	enabled: true,
@@ -31,7 +32,7 @@ function shouldRunCount(req) {
 	return Number.isFinite(page) && page > 0;
 }
 
-function enforceListLimit(req, estimatedCount) {
+function enforceListLimit(req, estimatedCount, res?) {
 	const limits = getLimits(req);
 	if (limits.enabled === false) {
 		return parseRequestedLimit(req);
@@ -39,18 +40,23 @@ function enforceListLimit(req, estimatedCount) {
 
 	const requested = parseRequestedLimit(req);
 	const isLarge = estimatedCount >= limits.large_collection_threshold;
+	const sizeHint = `~${estimatedCount} docs threshold=${limits.large_collection_threshold}`;
 
 	if (isLarge && !requested && limits.require_limit_always !== false) {
-		throw new errors.BadRequestError(
+		const err = new errors.BadRequestError(
 			`Collection "${req.modelname}" has ~${estimatedCount} documents. ` +
 				`Use ?limit=1..${limits.max} (required). For totals use GET /count/${req.modelname}.`
 		);
+		logRequestError(req, res, err, "query_limit", sizeHint);
+		throw err;
 	}
 
 	if (requested && requested > limits.max) {
-		throw new errors.BadRequestError(
+		const err = new errors.BadRequestError(
 			`?limit=${requested} exceeds maximum ${limits.max} for "${req.modelname}".`
 		);
+		logRequestError(req, res, err, "query_limit", sizeHint);
+		throw err;
 	}
 
 	if (requested) {

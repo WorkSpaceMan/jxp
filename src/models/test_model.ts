@@ -41,7 +41,7 @@ const TestSchema = new JXPSchema(
 		perms: {
 			admin: "crud",
 			owner: "crud",
-			user: "cr",
+			user: "cur",
 			all: "r",
 		},
 		callable_statics: ["test"],

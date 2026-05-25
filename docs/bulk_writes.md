@@ -1,8 +1,15 @@
 # Bulk Writes
 
-You can perform bulk writes through the `/bulkwrite/<modelname>` endpoint. **Disabled by default** unless the model opts in with `advanced_queries: { bulkwrite: true }`. Only allowlisted operations (`insertOne`, `updateOne`, `replaceOne`, `deleteOne`) are accepted; `updateMany` / `deleteMany` require admin.
+You can perform bulk writes through the `/bulkwrite/<modelname>` endpoint. **Disabled by default** for non-admin users unless the model opts in with `advanced_queries: { bulkwrite: true }`. **Admin users** may use bulk write on any model. Only allowlisted operations (`insertOne`, `updateOne`, `replaceOne`, `deleteOne`) are accepted; `updateMany` / `deleteMany` require admin.
 
-Authorisation works a little differently — the user must have **create, read, update, and delete** permissions on the model.
+Authorisation is checked **per operation** (admins bypass):
+
+| Operation | Permissions required |
+|-----------|---------------------|
+| `insertOne` | create |
+| `updateOne` / `replaceOne` | update; plus create when `upsert: true` |
+| `deleteOne` | delete |
+| `updateMany` / `deleteMany` | admin only (updateMany follows the same upsert rule for admins) |
 
 ***WARNING*** Be cautious when using bulk writes because you can destroy your data. Don't forget to back up!
 

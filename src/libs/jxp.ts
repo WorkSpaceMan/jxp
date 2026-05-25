@@ -28,6 +28,7 @@ const call_guard = require("./call_guard");
 const response_sanitize = require("./response_sanitize");
 const link_index = require("./link_index");
 const { safeErrorMessage } = require("./safe_error");
+const { logRequestError, logAndThrow } = require("./request_log");
 const schemaModule = require("./schema");
 global.JXPSchema = schemaModule.default || schemaModule;
 
@@ -47,10 +48,11 @@ function getSecurityOpts(req) {
 	return req.config?.security || {};
 }
 
-function advancedQueryAllowed(Model, kind) {
+function advancedQueryAllowed(Model, kind, options?: { isAdmin?: boolean }) {
 	const opts = (Model.schema as { opts?: { advanced_queries?: Record<string, boolean> } }).opts;
 	const aq = opts?.advanced_queries;
 	if (kind === "bulkwrite") {
+		if (options?.isAdmin) return true;
 		return aq?.bulkwrite === true;
 	}
 	if (kind === "aggregate") {
@@ -59,13 +61,39 @@ function advancedQueryAllowed(Model, kind) {
 	return aq?.query !== false;
 }
 
+const middlewareBulkWriteAllowed = (req, res, next) => {
+	if (!advancedQueryAllowed(req.Model, "bulkwrite", { isAdmin: !!res.user?.admin })) {
+		const err = new errors.ForbiddenError(
+			`POST /bulkwrite is disabled for model ${req.modelname}`
+		);
+		logRequestError(req, res, err, "bulkwrite disabled");
+		return next(err);
+	}
+	next();
+};
+
+const middlewareAdvancedQueryAllowed = (kind: "query" | "aggregate") => {
+	return (req, res, next) => {
+		if (!advancedQueryAllowed(req.Model, kind)) {
+			const err = new errors.ForbiddenError(
+				`POST /${kind} is disabled for model ${req.modelname}`
+			);
+			logRequestError(req, res, err, `${kind} disabled`);
+			return next(err);
+		}
+		next();
+	};
+};
+
 // Middleware
 const middlewareModel = (req, res, next) => {
 	const modelname = req.params.modelname;
 	req.modelname = modelname;
 	req.Model = models[modelname];
 	if (!req.Model) {
-		throw new errors.NotFoundError(`Model ${modelname} not found`);
+		const err = new errors.NotFoundError(`Model ${modelname} not found`);
+		logRequestError(req, res, err, "model");
+		return next(err);
 	}
 	return next();
 };
@@ -74,7 +102,9 @@ const middlewarePasswords = (req, res, next) => {
 	if (req.body && req.body.password) {
 		if (req.query.password_override) {
 			if (!res.user?.admin) {
-				throw new errors.ForbiddenError("password_override requires admin");
+				const err = new errors.ForbiddenError("password_override requires admin");
+				logRequestError(req, res, err, "password_override");
+				return next(err);
 			}
 		} else {
 			req.body.password = security.encPassword(req.body.password);
@@ -104,7 +134,7 @@ const outputJSON = async (req, res) => {
 	try {
 		res.send(res.result);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "outputJSON");
 		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 }
@@ -128,7 +158,7 @@ const outputCSV = (req, res, next) => {
 		res.end(csv);
 		next();
 	} catch (err) {
-		console.error(err);
+		logRequestError(req, res, err, "outputCSV");
 		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 }
@@ -142,8 +172,7 @@ const actionGet = async (req, res) => {
 		filters = parseFilter(req.query.filter);
 		filters = query_sanitize.sanitizeFilter(filters, getSecurityOpts(req));
 	} catch (err) {
-		console.trace(new Date(), err);
-		// Preserve BadRequestError, convert others to InternalServerError
+		logRequestError(req, res, err, "filter");
 		if (err instanceof errors.BadRequestError) {
 			throw err;
 		}
@@ -188,7 +217,7 @@ const actionGet = async (req, res) => {
 		if (count >= 0) {
 			result.count = count;
 		}
-		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount);
+		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount, res);
 		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
@@ -230,9 +259,13 @@ const actionGet = async (req, res) => {
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
-		// Preserve BadRequestError, convert others to InternalServerError
+		if (
+			!(err instanceof errors.BadRequestError) &&
+			!(err instanceof errors.ForbiddenError)
+		) {
+			logRequestError(req, res, err, "get");
+		}
 		if (err instanceof errors.BadRequestError) {
 			throw err;
 		}
@@ -252,7 +285,7 @@ const actionGetOne = async (req, res) => {
 		res.result = { data };
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "getOne");
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
@@ -283,7 +316,7 @@ const actionPost = async (req, res) => {
 		});
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "post");
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
@@ -296,8 +329,14 @@ const actionPut = async (req, res) => {
 	try {
 		let item = await req.Model.findById(req.params.item_id);
 		if (!item) {
-			console.error(new Date(), "Document not found");
-			throw new errors.NotFoundError(`Document ${req.params.item_id} not found on ${req.modelname}`);
+			logAndThrow(
+				req,
+				res,
+				new errors.NotFoundError(
+					`Document ${req.params.item_id} not found on ${req.modelname}`
+				),
+				"put"
+			);
 		}
 		_populateItem(item, datamunging.deserialize(req.body));
 		_versionItem(item);
@@ -319,7 +358,7 @@ const actionPut = async (req, res) => {
 		});
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "put");
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
@@ -355,7 +394,7 @@ const actionUpdate = async (req, res) => {
 		});
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "update");
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
@@ -386,7 +425,14 @@ const actionDelete = async (req, res) => {
 						await models[linked_model.modelname].updateMany(q, { _deleted: true });
 					}
 				} else {
-					throw new errors.ConflictError(`Parent link item exists in ${linked_model.modelname}/${linked_model.field}`);
+					logAndThrow(
+						req,
+						res,
+						new errors.ConflictError(
+							`Parent link item exists in ${linked_model.modelname}/${linked_model.field}`
+						),
+						"delete"
+					);
 				}
 			}
 		});
@@ -418,7 +464,9 @@ const actionDelete = async (req, res) => {
 		});
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
+		if (!(err instanceof errors.ConflictError)) {
+			logRequestError(req, res, err, "delete");
+		}
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
@@ -433,7 +481,7 @@ const actionCount = async (req, res) => {
 		filters = parseFilter(req.query.filter);
 		filters = query_sanitize.sanitizeFilter(filters, getSecurityOpts(req));
 	} catch (err) {
-		console.trace(new Date(), err);
+		logRequestError(req, res, err, "filter");
 		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
 			throw err;
 		}
@@ -451,7 +499,7 @@ const actionCount = async (req, res) => {
 		res.result = { count };
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "count");
 		if (debug) console.timeEnd(opname);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
@@ -466,7 +514,7 @@ const actionCall = async (req, res) => {
 		const result = await req.Model[req.params.method_name](req.body);
 		res.json(result);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "call");
 		if (err.code) throw err;
 		if (err instanceof errors.ForbiddenError || err instanceof errors.NotFoundError) {
 			throw err;
@@ -490,7 +538,7 @@ const actionCallItem = async (req, res) => {
 		const result = await req.Model[req.params.method_name](item, body);
 		res.json(result);
 	} catch (err) {
-		console.trace(err);
+		logRequestError(req, res, err, "call");
 		if (err.code) throw err;
 		if (err instanceof errors.ForbiddenError || err instanceof errors.NotFoundError) {
 			throw err;
@@ -501,15 +549,26 @@ const actionCallItem = async (req, res) => {
 
 // Actions (verbs)
 const actionQuery = async (req, res) => {
-	if (!advancedQueryAllowed(req.Model, "query")) {
-		throw new errors.ForbiddenError(`POST /query is disabled for model ${req.modelname}`);
-	}
 	if (!req.body || !req.body.query || typeof req.body.query !== "object") {
-		throw new errors.BadRequestError("Query missing or not of type object");
+		logAndThrow(
+			req,
+			res,
+			new errors.BadRequestError("Query missing or not of type object"),
+			"query"
+		);
 	}
 	const opname = `query ${req.modelname} ${ops++}`;
 	console.time(opname);
-	const sanitizedQuery = query_sanitize.sanitizeFilter(req.body.query, getSecurityOpts(req));
+	let sanitizedQuery;
+	try {
+		sanitizedQuery = query_sanitize.sanitizeFilter(req.body.query, getSecurityOpts(req));
+	} catch (err) {
+		logRequestError(req, res, err, "query_sanitize");
+		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
+	}
 	let query = [sanitizedQuery];
 	let checkDeleted = { "$or": [{ _deleted: false }, { _deleted: null }] };
 	if (!req.query.showDeleted) {
@@ -527,7 +586,7 @@ const actionQuery = async (req, res) => {
 			result.count = count;
 		}
 		const estimatedCount = await req.Model.estimatedDocumentCount();
-		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount);
+		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount, res);
 		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
@@ -566,8 +625,13 @@ const actionQuery = async (req, res) => {
 		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch (err) {
-		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
+		if (
+			!(err instanceof errors.BadRequestError) &&
+			!(err instanceof errors.ForbiddenError)
+		) {
+			logRequestError(req, res, err, "query");
+		}
 		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
 			throw err;
 		}
@@ -578,19 +642,28 @@ const actionQuery = async (req, res) => {
 
 // Actions (verbs)
 const actionAggregate = async (req, res) => {
-	if (!advancedQueryAllowed(req.Model, "aggregate")) {
-		throw new errors.ForbiddenError(`POST /aggregate is disabled for model ${req.modelname}`);
-	}
-	let query = (req.body.query) ? req.body.query : req.body; // Don't require to embed in query anymore
+	let query = req.body?.query ? req.body.query : req.body;
 	if (!query || !Array.isArray(query)) {
-		console.error("query missing or not of type array")
-		throw new errors.BadRequestError("Query missing or not of type array");
+		logAndThrow(
+			req,
+			res,
+			new errors.BadRequestError("Query missing or not of type array"),
+			"aggregate"
+		);
 	}
 	query = query_manipulation.fix_query(query);
-	aggregate_guard.validatePipeline(query, {
-		aggregate_stages_allow: getSecurityOpts(req).aggregate_stages_allow,
-		isAdmin: res.user?.admin,
-	});
+	try {
+		aggregate_guard.validatePipeline(query, {
+			aggregate_stages_allow: getSecurityOpts(req).aggregate_stages_allow,
+			isAdmin: res.user?.admin,
+		});
+	} catch (err) {
+		logRequestError(req, res, err, "aggregate_guard");
+		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		throw new errors.InternalServerError(safeErrorMessage(err));
+	}
 	const opname = `aggregate ${req.modelname} ${ops++}`;
 	console.time(opname);
 	try {
@@ -605,8 +678,13 @@ const actionAggregate = async (req, res) => {
 		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch (err) {
-		console.error(new Date(), err);
 		if (debug) console.timeEnd(opname);
+		if (
+			!(err instanceof errors.BadRequestError) &&
+			!(err instanceof errors.ForbiddenError)
+		) {
+			logRequestError(req, res, err, "aggregate");
+		}
 		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
 			throw err;
 		}
@@ -616,12 +694,10 @@ const actionAggregate = async (req, res) => {
 
 // Actions (verbs)
 const actionBulkWrite = async (req, res) => {
-	if (!advancedQueryAllowed(req.Model, "bulkwrite")) {
-		throw new errors.ForbiddenError(`POST /bulkwrite is disabled for model ${req.modelname}`);
-	}
 	if (!req.body || !Array.isArray(req.body)) {
-		console.error("query missing or not of type array")
-		throw new errors.BadRequestError("Query missing or not of type array");
+		const err = new errors.BadRequestError("Query missing or not of type array");
+		logRequestError(req, res, err, "bulkwrite");
+		throw err;
 	}
 	const opname = `bulkwrite ${req.modelname} ${ops++}`;
 	console.time(opname);
@@ -637,7 +713,7 @@ const actionBulkWrite = async (req, res) => {
 		if (debug) console.timeEnd(opname);
 		res.json(result);
 	} catch (err) {
-		console.error(new Date(), err);
+		logRequestError(req, res, err, "bulkwrite");
 		if (debug) console.timeEnd(opname);
 		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
 			throw err;
@@ -711,7 +787,6 @@ const getOne = async (Model, item_id, params, options) => {
 		}
 		return response_sanitize.sanitizeDocument(item);
 	} catch (err) {
-		console.error(err);
 		if (err.code) throw err;
 		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
@@ -1167,6 +1242,7 @@ const JXP = function (options: JXPConfig) {
 		middlewareModel,
 		security.login,
 		security.auth,
+		middlewareAdvancedQueryAllowed("query"),
 		config.pre_hooks.get,
 		actionQuery,
 	);
@@ -1176,6 +1252,7 @@ const JXP = function (options: JXPConfig) {
 		middlewareModel,
 		security.login,
 		security.auth,
+		middlewareAdvancedQueryAllowed("aggregate"),
 		config.pre_hooks.get,
 		actionAggregate
 	);
@@ -1184,6 +1261,7 @@ const JXP = function (options: JXPConfig) {
 		"/bulkwrite/:modelname",
 		middlewareModel,
 		security.login,
+		middlewareBulkWriteAllowed,
 		security.bulkAuth,
 		config.pre_hooks.get,
 		actionBulkWrite,
@@ -1292,7 +1370,12 @@ const JXP = function (options: JXPConfig) {
 	server.post("/setup/data", setup.checkUserDoesNotExist, setup.data_setup);
 
 	/* Websocket */
-	server.on("upgrade", ws.upgrade)
+	server.on("upgrade", ws.upgrade);
+
+	server.on("restError", (req, res, err, callback) => {
+		logRequestError(req, res, err);
+		return callback();
+	});
 
 	/* Cache */
 	server.get("/cache/stats", security.login, security.admin_only, cache.stats, outputJSON);
