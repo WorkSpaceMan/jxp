@@ -1,0 +1,24 @@
+---
+description: API docs browser access control and tests
+globs: "{src/libs/docs-auth.ts,src/libs/docs.ts,src/libs/jxp.ts,templates/**,test/docs_auth.test.js}"
+alwaysApply: false
+---
+
+# Docs browser (`DOCS_ACCESS`)
+
+| Mode | Public | Login required |
+|------|--------|----------------|
+| `protected` (default) | `/`, `/docs/md/*`, assets | `/docs/api`, `/docs/model/*` |
+| `disabled` | same | model explorer → 404 |
+| `public` | all | none |
+
+Sign-in page (`/docs/login`) calls `POST /login`, then `POST /docs/session` with the returned `apikey` (HttpOnly cookie). Both routes use login rate limiting (`login_rate_limit.ts`); handle HTTP 429 in `docs-login.js`.
+
+## Restify
+
+- Sync middleware: `(req, res, next)` + `res.redirect(302, url, next)`
+- Async routes: `(req, res)` + `sendRedirect(res, url)` for redirects
+
+## Tests
+
+Run `npm run test` after changes. See `test/docs_auth.test.js`.

@@ -23,3 +23,7 @@ process.env.QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD =
 	process.env.QUERY_LIMITS_LARGE_COLLECTION_THRESHOLD || "10000";
 process.env.QUERY_LIMITS_MAX = process.env.QUERY_LIMITS_MAX || "1000";
 process.env.QUERY_LIMITS_DEFAULT = process.env.QUERY_LIMITS_DEFAULT || "100";
+// Docs browser tests use protected mode; set DOCS_ACCESS=public to match old open behavior.
+process.env.DOCS_ACCESS = process.env.DOCS_ACCESS || "protected";
+process.env.LOGIN_RATE_LIMIT_ENABLED =
+	process.env.LOGIN_RATE_LIMIT_ENABLED ?? "false";

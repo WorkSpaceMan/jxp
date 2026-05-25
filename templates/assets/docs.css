@@ -225,3 +225,20 @@ body.docs-body {
 .docs-security-note {
 	font-size: 0.8rem;
 }
+
+.docs-main-full {
+	max-width: 480px;
+	margin: 0 auto;
+	padding-top: 2rem;
+}
+
+.docs-login-wrap {
+	display: flex;
+	justify-content: center;
+	padding: 1rem 0 3rem;
+}
+
+.docs-login-card {
+	width: 100%;
+	max-width: 400px;
+}

@@ -116,8 +116,26 @@
 		}
 	}
 
+	async function loadSessionApiKey() {
+		const access = document.documentElement.dataset.docsAccess;
+		if (access !== "protected") return;
+		try {
+			const res = await fetch("/docs/session", { credentials: "same-origin" });
+			if (!res.ok) return;
+			const data = await res.json();
+			if (!data.apikey) return;
+			const input = document.getElementById("docs-api-key");
+			if (input) input.value = data.apikey;
+		} catch {
+			/* ignore */
+		}
+	}
+
 	document.addEventListener("DOMContentLoaded", function () {
-		loadStoredKey();
+		const access = document.documentElement.dataset.docsAccess;
+		loadSessionApiKey().then(function () {
+			if (access !== "protected") loadStoredKey();
+		});
 
 		const keyInput = document.getElementById("docs-api-key");
 		const remember = document.getElementById("docs-remember-key");

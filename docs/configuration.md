@@ -42,6 +42,36 @@ MONGO_OPTIONS={"maxPoolSize":50}
 | `REFRESH_TOKEN_EXPIRY` | Refresh token TTL (seconds) | `2678400` |
 | `APIKEY` | Internal API key for schema helpers | — |
 
+## API docs browser
+
+| `DOCS_ACCESS` | Behavior |
+|---------------|----------|
+| `protected` (default) | Home (`/`) and guides (`/docs/md/*`) are public; model explorer (`/docs/api`, `/docs/model/*`) requires sign-in |
+| `disabled` | Model explorer routes return 404 |
+| `public` | Model explorer open without sign-in |
+
+Sign-in uses the normal `POST /login` endpoint (same credentials as the API). The docs UI then stores a session cookie via `POST /docs/session` and auto-fills the API key for “Try it” panels.
+
+| Variable | Description |
+|----------|-------------|
+| `DOCS_USER_EMAIL` | Optional email pre-fill on the docs sign-in form |
+| `DOCS_COOKIE_SECURE` | Set to `true` for `Secure` on the docs session cookie (HTTPS) |
+
+You can also set `docs: { access, user_email }` on the object passed to `JXP()`.
+
+## Login rate limiting
+
+Enabled by default on `POST /login` and `POST /docs/session` (docs sign-in after login):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOGIN_RATE_LIMIT_ENABLED` | `true` | Set `false` to disable |
+| `LOGIN_RATE_BURST` | `8` | Short burst of attempts per client |
+| `LOGIN_RATE_PER_MINUTE` | `12` | Sustained attempts per minute per client |
+| `LOGIN_RATE_LIMIT_XFF` | `false` | Use `X-Forwarded-For` when behind a reverse proxy |
+
+Over-limit clients receive HTTP **429**. Response headers include rate-limit hints when supported by Restify.
+
 ## Cache
 
 ```

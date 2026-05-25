@@ -1,0 +1,39 @@
+extends layout
+
+block content
+  .docs-login-wrap
+    .card.docs-login-card.shadow-sm
+      .card-body.p-4
+        h1.h4.mb-1 Sign in to explore the API
+        p.text-muted.small.mb-4
+          | Use your normal API account (
+          code POST /login
+          | ). Guides and this site stay open; model pages and “Try it” need a session.
+        #docs-login-error.alert.alert-danger(role="alert" hidden)
+        form#docs-login-form
+          input(type="hidden" name="next" value=docs_next)
+          .mb-3
+            label.form-label(for="docs-login-email") Email
+            input#docs-login-email.form-control(
+              type="email"
+              name="email"
+              value=docs_user_email
+              required
+              autocomplete="username"
+            )
+          .mb-3
+            label.form-label(for="docs-login-password") Password
+            input#docs-login-password.form-control(
+              type="password"
+              name="password"
+              required
+              autocomplete="current-password"
+            )
+          button.btn.btn-primary.w-100(type="submit") Sign in
+        p.mt-3.mb-0.small.text-muted
+          a(href="/") Back to home
+          |  · 
+          a(href="/docs/md/api.md") Read API docs without signing in
+
+block javascripts
+  script(src="/docs/assets/docs-login.js" defer)

@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import path from "path";
 import type { JXPConfig } from "../types/jxp-config";
+import { parseDocsAccess } from "./docs-auth";
 
 let envLoaded = false;
 
@@ -135,6 +136,16 @@ export function loadJxpConfig(overrides: Partial<JXPConfig> = {}): JXPConfig {
 			strip_fields: process.env.SECURITY_STRIP_FIELDS
 				? process.env.SECURITY_STRIP_FIELDS.split(",").map((s) => s.trim())
 				: ["password"],
+		},
+		docs: {
+			access: parseDocsAccess(process.env.DOCS_ACCESS),
+			user_email: process.env.DOCS_USER_EMAIL?.trim() || undefined,
+		},
+		login_rate_limit: {
+			enabled: envBool("LOGIN_RATE_LIMIT_ENABLED", true),
+			burst: envInt("LOGIN_RATE_BURST", 8),
+			per_minute: envInt("LOGIN_RATE_PER_MINUTE", 12),
+			xff: envBool("LOGIN_RATE_LIMIT_XFF"),
 		},
 		cors: {
 			origins: process.env.CORS_ORIGINS

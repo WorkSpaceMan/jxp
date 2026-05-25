@@ -1,0 +1,19 @@
+---
+description: Run JXP test suite after framework changes
+globs: jxp/**/*
+alwaysApply: false
+---
+
+# JXP tests
+
+When you change **jxp** (`src/`, `test/`, `templates/`, or `dist/` after build), run the test suite before finishing:
+
+```bash
+cd /path/to/jxp && npm run test
+```
+
+- `npm run test` runs `npm run build` then Mocha (`test/env.js` loads `.env` + `.env.test`).
+- Fix failures; do not leave the suite red.
+- New framework behavior needs tests under `test/` (see `docs_auth.test.js`, `query_limits.test.js`).
+
+If the app uses `npm run link:jxp`, rebuild jxp and restart the API after jxp changes; revengine-api tests do not replace jxp's own suite.

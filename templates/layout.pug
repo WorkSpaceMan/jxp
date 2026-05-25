@@ -1,5 +1,5 @@
 doctype html
-html(lang="en")
+html(lang="en" data-docs-access=docs_access)
   head
     meta(charset="utf-8")
     meta(name="viewport" content="width=device-width, initial-scale=1")
@@ -9,10 +9,14 @@ html(lang="en")
     link(rel="stylesheet" href="/docs/assets/docs.css")
   body.docs-body
     include navbar
-    .docs-shell
-      include sidebar
-      main.docs-main
+    if hide_sidebar
+      main.docs-main.docs-main-full
         block content
+    else
+      .docs-shell
+        include sidebar
+        main.docs-main
+          block content
     script(src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous")
     script(src="/docs/assets/api-console.js" defer)
     block javascripts

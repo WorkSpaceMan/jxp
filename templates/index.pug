@@ -18,15 +18,20 @@ block content
       .card.h-100
         .card-header.fw-semibold Quick start
         .card-body
-          p.mb-2 Authenticate with an API key header (optional for exploring docs; required for live calls):
+          p.mb-2 Authenticate with an API key header#{docs_access === 'public' ? ' (optional for exploring docs; required for live calls)' : ''}:
           pre.mb-3
             code.
               curl -H "X-API-Key: YOUR_KEY" \
                 "#{base_url}/api/MODEL?limit=5"
           p.mb-0.small.text-muted
-            | Set your key in the top bar to use 
-            strong Try it 
-            |  panels on API resource pages. Keys are stored in the browser only when “Remember” is checked.
+            if docs_access === 'protected'
+              | After signing in, your API key is filled in automatically for 
+              strong Try it 
+              |  panels on API resource pages.
+            else
+              | Set your key in the top bar to use 
+              strong Try it 
+              |  panels on API resource pages. Keys are stored in the browser only when “Remember” is checked.
     .col-md-6
       .card.h-100
         .card-header.fw-semibold API at a glance

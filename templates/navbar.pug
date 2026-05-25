@@ -5,10 +5,21 @@ header.docs-topbar.navbar.navbar-expand-lg.sticky-top
     a.docs-brand.navbar-brand.mb-0(href="/")= name
     span.badge.bg-secondary.ms-2.align-self-center v#{version}
     .ms-auto.d-flex.align-items-center.gap-2.flex-wrap
-      .docs-api-key-wrap
-        label.visually-hidden(for="docs-api-key") API Key
-        input#docs-api-key.form-control.form-control-sm(type="password" placeholder="X-API-Key (optional)" autocomplete="off")
-      .form-check.form-check-inline.mb-0.docs-security-note
-        input#docs-remember-key.form-check-input(type="checkbox")
-        label.form-check-label(for="docs-remember-key") Remember
-      span.docs-security-note.text-muted.d-none.d-md-inline Dev only
+      if docs_access === 'protected' && !docs_authenticated
+        a.btn.btn-sm.btn-outline-primary(href="/docs/login?next=/docs/api") Explore API
+      if docs_access !== 'disabled' && (docs_access !== 'protected' || docs_authenticated)
+        .docs-api-key-wrap
+          label.visually-hidden(for="docs-api-key") API Key
+          input#docs-api-key.form-control.form-control-sm(
+            type="password"
+            placeholder=docs_access === 'protected' ? "X-API-Key" : "X-API-Key (optional)"
+            autocomplete="off"
+          )
+        .form-check.form-check-inline.mb-0.docs-security-note
+          input#docs-remember-key.form-check-input(type="checkbox")
+          label.form-check-label(for="docs-remember-key") Remember
+        if docs_access === 'protected'
+          form.d-inline(method="post" action="/docs/logout")
+            button.btn.btn-sm.btn-link.text-muted(type="submit") Sign out
+        else
+          span.docs-security-note.text-muted.d-none.d-md-inline Dev only

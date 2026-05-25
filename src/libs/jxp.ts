@@ -9,6 +9,8 @@ const login = require("./login");
 const groups = require("./groups");
 const setup = require("./setup");
 const Docs = require("./docs");
+const docsAuth = require("./docs-auth");
+const loginRateLimit = require("./login_rate_limit");
 const querystring = require("node:querystring");
 const fs = require("fs");
 const morgan = require("morgan");
@@ -1025,6 +1027,10 @@ const JXP = function (options: JXPConfig) {
 	ws.init({ models });
 	cache.init(config);
 	const docs = new Docs({ config, models });
+	docsAuth.init(config);
+	docsAuth.logDocsAccessMode(config);
+	const loginThrottle = loginRateLimit.createLoginThrottle(config);
+	loginRateLimit.logLoginRateLimit(config);
 
 	// Set up our API server
 
@@ -1231,7 +1237,14 @@ const JXP = function (options: JXPConfig) {
 	server.get("/logout", security.login, login.logout);
 	server.get("/login/oauth/:provider", login.oauth);
 	server.get("/login/oauth/callback/:provider", login.oauth_callback);
-	server.post("/login", config.pre_hooks.login, login.login, config.post_hooks.login, outputJSON);
+	const loginChain = [
+		...(loginThrottle ? [loginThrottle] : []),
+		config.pre_hooks.login,
+		login.login,
+		config.post_hooks.login,
+		outputJSON,
+	];
+	server.post("/login", ...loginChain);
 	server.post("/refresh", security.refresh);
 	server.post("/login/refresh", security.refresh);
 
@@ -1257,10 +1270,20 @@ const JXP = function (options: JXPConfig) {
 	server.get("/model/:modelname", middlewareModel, docs.metaModel.bind(docs));
 	server.get("/model", docs.metaModels.bind(docs));
 	// server.get("/docs/_design", docs.dbDiagram.bind(docs));
+	server.get("/docs/login", async (req, res) => {
+		await docsAuth.loginPage(req, res, docs.renderLogin.bind(docs));
+	});
+	server.post(
+		"/docs/session",
+		...(loginThrottle ? [loginThrottle] : []),
+		docsAuth.establishSession,
+	);
+	server.get("/docs/session", docsAuth.getSession);
+	server.post("/docs/logout", docsAuth.logout);
 	server.get("/docs/assets/:file", docs.serveAsset.bind(docs));
-	server.get("/docs/api", docs.apiIndex.bind(docs));
+	server.get("/docs/api", docsAuth.docsAccessMiddleware, docs.apiIndex.bind(docs));
 	server.get("/docs/md/:md_doc", docs.md.bind(docs));
-	server.get("/docs/model/:modelname", docs.model.bind(docs));
+	server.get("/docs/model/:modelname", docsAuth.docsAccessMiddleware, docs.model.bind(docs));
 	server.get("/", docs.frontPage.bind(docs));
 
 	/* Setup */

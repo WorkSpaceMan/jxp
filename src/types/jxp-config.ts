@@ -32,6 +32,20 @@ export interface JXPCorsConfig {
 	origins?: string[];
 }
 
+export interface LoginRateLimitConfig {
+	enabled?: boolean;
+	burst?: number;
+	per_minute?: number;
+	xff?: boolean;
+}
+
+export interface JXPDocsConfig {
+	/** protected (default) | disabled | public */
+	access?: "protected" | "disabled" | "public";
+	/** System user email for docs login (protected mode) */
+	user_email?: string;
+}
+
 export interface JXPCacheConfig {
 	enabled?: boolean;
 	debug?: boolean;
@@ -74,6 +88,8 @@ export interface JXPConfig {
 	smtp_password?: string;
 	smtp_from?: string;
 	cache?: JXPCacheConfig;
+	docs?: JXPDocsConfig;
+	login_rate_limit?: LoginRateLimitConfig;
 	cache_timeout?: string;
 	query_limits?: JXPQueryLimits;
 	security?: JXPSecurityConfig;
@@ -135,6 +151,9 @@ export interface JXPResponse {
 	result?: unknown;
 	jxp_cache_key?: string;
 	header(name: string, value?: string): unknown;
+	status(code: number): JXPResponse;
+	redirect(code: number, url: string, next?: () => void): void;
+	redirect(url: string, next?: () => void): void;
 	send(body?: unknown): unknown;
 	json(body?: unknown): unknown;
 	writeHead(code: number, headers?: Record<string, unknown>): void;

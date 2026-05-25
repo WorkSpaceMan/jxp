@@ -2,6 +2,27 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v4.1.0 — 2026-05-25
+
+API docs browser security: gated model explorer, real API login, and brute-force limits.
+
+### Added
+
+- **Docs access control** (`DOCS_ACCESS`) — `protected` (default), `disabled`, or `public`. Home (`/`) and usage guides (`/docs/md/*`) stay open; model explorer (`/docs/api`, `/docs/model/*`) requires sign-in.
+- **Docs sign-in flow** — `/docs/login` calls `POST /login`, then `POST /docs/session` to store an HttpOnly cookie; API key auto-fills for “Try it” panels (`GET /docs/session`).
+- **Login rate limiting** — per-IP token bucket on `POST /login` and `POST /docs/session` (default: burst 8, 12/min). Env: `LOGIN_RATE_LIMIT_*`; HTTP **429** when exceeded.
+- **`src/libs/docs-auth.ts`**, **`src/libs/login_rate_limit.ts`** — middleware, session cookie, and throttle helpers.
+- **Tests** — `test/docs_auth.test.js`, `test/login_rate_limit.test.js`.
+
+### Changed
+
+- **Docs browser default** — model explorer is no longer world-readable; guides and landing page remain public in `protected` mode.
+- **Configuration** — [configuration.md](configuration.md) documents `DOCS_*` and `LOGIN_RATE_LIMIT_*` variables.
+
+### Fixed
+
+- **Restify async routes** — docs login/session handlers use `(req, res)` only; redirects use `sendRedirect()` where `res.redirect()` requires `next`.
+
 ## v4.0.0 — 2026-05-19
 
 Major release: complete TypeScript rewrite and configuration overhaul.

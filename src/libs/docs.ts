@@ -10,8 +10,9 @@ const md = new MarkdownIt();
 pug.filters["markdown-it"] = (text: string) => md.render(text);
 import getModelFileContents = require("./schema_description");
 import errors from "restify-errors";
-import type { JXPConfig } from "../types/jxp-config";
+import type { JXPConfig, JXPRequest } from "../types/jxp-config";
 import type { Model } from "mongoose";
+import { getDocsAccess, verifyDocsSession } from "./docs-auth";
 
 const readFile = util.promisify(fs.readFile);
 const packageRoot = path.join(__dirname, "../..");
@@ -142,12 +143,26 @@ class Docs {
         return `${proto}://${host}`;
     }
 
+    templateContext(req?: JXPRequest, extra: Record<string, unknown> = {}): Record<string, unknown> {
+        const access = getDocsAccess(this.config);
+        const session = req ? verifyDocsSession(req) : undefined;
+        return {
+            docs_access: access,
+            docs_authenticated: access === "public" || Boolean(session),
+            docs_user_email: this.config.docs?.user_email ?? "",
+            docs_session_email: session?.email ?? "",
+            ...extra,
+        };
+    }
+
     renderTemplate(
         res: { writeHead: Function; write: Function; end: Function },
         template_file: string,
-        data: Record<string, unknown> = {}
+        data: Record<string, unknown> = {},
+        req?: JXPRequest
     ): void {
         const template = pug.compileFile(path.join(packageRoot, `templates/${template_file}.pug`));
+        Object.assign(data, this.templateContext(req, data));
         data.title = data.title || `${this.package.name} API Documentation`;
         data.name = this.package.name;
         data.version = this.package.version;
@@ -230,13 +245,22 @@ class Docs {
         }
     }
 
+    renderLogin(res, data: Record<string, unknown> = {}): void {
+        this.renderTemplate(res, "login", {
+            active_section: "login",
+            hide_sidebar: true,
+            title: `Sign in · ${this.package.name}`,
+            ...data,
+        });
+    }
+
     frontPage(req, res, next) {
         try {
             this.renderTemplate(res, "index", {
                 active_section: "home",
                 features: LANDING_FEATURES,
                 base_url: this.getBaseUrl(req),
-            });
+            }, req);
         } catch (err) {
             console.error(err);
             return next(new errors.InternalServerError(err.toString()));
@@ -258,7 +282,7 @@ class Docs {
                 active_section: "guides",
                 active_guide: docFile,
                 title: titleMatch ? `${titleMatch[1]} · ${this.package.name}` : undefined,
-            });
+            }, req);
         } catch (err) {
             if ((err as NodeJS.ErrnoException).code === "ENOENT") {
                 return next(new errors.NotFoundError("Document not found"));
@@ -283,7 +307,7 @@ class Docs {
                 active_section: "api",
                 model_summaries,
                 title: `API · ${this.package.name}`,
-            });
+            }, req);
         } catch (err) {
             console.error(err);
             return next(new errors.InternalServerError(err.toString()));
@@ -317,7 +341,7 @@ class Docs {
                 active_section: "api",
                 active_model: model_slug,
                 title: `${model_slug} · API · ${this.package.name}`,
-            });
+            }, req);
         } catch (err) {
             console.error(err);
             return next(new errors.InternalServerError(err.toString()));
