@@ -1637,13 +1637,27 @@ describe('Test', () => {
 				});
 		});
 
-		it("returns 400 when limit exceeds max", (done) => {
+		it("caps limit when client requests above max", (done) => {
 			chai.request(server)
 				.get("/api/test?limit=5000")
 				.auth(init.email, init.password)
 				.end((err, res) => {
-					res.should.have.status(400);
-					res.body.message.should.match(/exceeds maximum/i);
+					res.should.have.status(200);
+					res.body.should.have.property("limit").eql(1000);
+					res.body.should.have.property("limit_capped").eql(true);
+					res.body.data.should.be.an("array");
+					done();
+				});
+		});
+
+		it("applies default limit for filtered list GET without limit", (done) => {
+			chai.request(server)
+				.get("/api/test?filter[foo]=Foo1")
+				.auth(init.email, init.password)
+				.end((err, res) => {
+					res.should.have.status(200);
+					res.body.should.have.property("limit").eql(100);
+					res.body.data.should.be.an("array");
 					done();
 				});
 		});

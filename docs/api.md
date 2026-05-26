@@ -98,13 +98,26 @@ When `query_limits.enabled` is true (default), list and query endpoints apply **
 
 #### Large collections (explicit limit)
 
-For collections with at least **10,000** documents (by default), you must pass an explicit `?limit=` between 1 and the maximum. Omitting `limit` on a large collection returns **400 Bad Request** (the default limit does not satisfy this rule).
+For collections with at least **10,000** documents (by default), you must pass an explicit `?limit=` between 1 and the maximum when listing **without** a filter. Omitting `limit` on an unfiltered large collection returns **400 Bad Request**.
+
+**Filter exemption:** If the client narrows the query, the default limit applies instead:
+
+- **GET** — non-empty `?filter[...]` (or other filter query params)
+- **POST `/query`** — non-empty JSON `query` object in the body (not `{}`)
+
+Filtered large-collection requests use the default limit, include pagination metadata (`count`, `page_count`, `next` when applicable), and may set **`has_more: true`** when the page is full but the total count was not computed.
+
+**Limit cap:** If `?limit=` exceeds the configured maximum (default **1000**), the effective limit is capped to `max`. The response includes **`limit_capped: true`** and pagination links when more pages exist.
 
 Use `GET /count/<model>` for totals. Add **`?count=true`** (or **`?page=`**) when you need `count` / `page_count` in the list response without paginating.
 
+#### Response size limit
+
+List, query, and CSV responses are rejected with **413 Request Entity Too Large** when the serialized payload exceeds **`max_response_size`** (default **`10mb`**). Accepts human-friendly sizes (`10mb`, `512kb`, `10M`, etc.) or a byte count as a number. Reduce `?limit=`, use `?fields=`, or paginate. Set `max_response_size: 0` or `"0"` to disable.
+
 #### Totals in list responses
 
-By default, list responses **omit** `count` unless you pass **`?count=true`** or **`?page=`**, to avoid expensive `countDocuments` on every request.
+By default, list responses **omit** `count` unless you pass **`?count=true`** or **`?page=`**, to avoid expensive `countDocuments` on every request. Counts are also computed when a filtered large-collection request uses the default limit, or when the client limit was capped to `max`.
 
 Configure globally when starting JXP:
 
@@ -115,6 +128,7 @@ query_limits: {
   max: 1000,
   default: 100,
   skip_count_unless_paginated: true,
+  max_response_size: "10mb",
 }
 ```
 

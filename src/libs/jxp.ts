@@ -155,10 +155,24 @@ const outputCSV = (req, res, next) => {
 			'Content-Disposition': 'attachment; filename=export.csv'
 		});
 		const csv = new CsvParser(opts).parse(data);
+		const limits = query_limits.getLimits(req);
+		if (limits.max_response_bytes > 0) {
+			const size = Buffer.byteLength(csv, "utf8");
+			if (size > limits.max_response_bytes) {
+				const err = new errors.PayloadTooLargeError(
+					`CSV export size ${size} bytes exceeds maximum ${limits.max_response_bytes} bytes. ` +
+						`Reduce ?limit= or narrow ?filter=.`
+				);
+				logRequestError(req, res, err, "response_size", `${size}B max=${limits.max_response_bytes}B`);
+				throw err;
+			}
+		}
 		res.end(csv);
 		next();
 	} catch (err) {
-		logRequestError(req, res, err, "outputCSV");
+		if (!(err instanceof errors.PayloadTooLargeError)) {
+			logRequestError(req, res, err, "outputCSV");
+		}
 		throw new errors.InternalServerError(safeErrorMessage(err));
 	}
 }
@@ -205,19 +219,24 @@ const actionGet = async (req, res) => {
 	}
 	try {
 		const estimatedCount = await req.Model.estimatedDocumentCount();
+		const result: Record<string, unknown> = {};
+		const { limit: effectiveLimit, limitCapped, filterExemption } = query_limits.enforceListLimit(
+			req,
+			estimatedCount,
+			res,
+			{ result, bodyQuery: filters }
+		);
 		let count = -1;
-		if (query_limits.shouldRunCount(req)) {
+		if (query_limits.shouldRunCount(req, { filterExemption, limitCapped })) {
 			if (estimatedCount < 100000 && Object.keys(countquery).length !== 0) {
 				count = await qcount.countDocuments();
 			} else {
 				count = estimatedCount;
 			}
 		}
-		const result: Record<string, unknown> = {};
 		if (count >= 0) {
 			result.count = count;
 		}
-		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount, res);
 		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
@@ -256,13 +275,23 @@ const actionGet = async (req, res) => {
 		}
 		result.data = await q.exec();
 		response_sanitize.sanitizeListResult(result, getStripFields(req));
+		query_limits.finalizeListPagination(
+			result,
+			req,
+			Array.isArray(result.data) ? result.data.length : 0,
+			effectiveLimit,
+			count,
+			changeUrlParams
+		);
+		query_limits.enforceResponseSize(result, req, res);
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
 		if (debug) console.timeEnd(opname);
 		if (
 			!(err instanceof errors.BadRequestError) &&
-			!(err instanceof errors.ForbiddenError)
+			!(err instanceof errors.ForbiddenError) &&
+			!(err instanceof errors.PayloadTooLargeError)
 		) {
 			logRequestError(req, res, err, "get");
 		}
@@ -270,6 +299,9 @@ const actionGet = async (req, res) => {
 			throw err;
 		}
 		if (err instanceof errors.ForbiddenError) {
+			throw err;
+		}
+		if (err instanceof errors.PayloadTooLargeError) {
 			throw err;
 		}
 		if (err.code) throw err;
@@ -577,16 +609,21 @@ const actionQuery = async (req, res) => {
 	let qcount = req.Model.find({ "$and": query });
 	let q = req.Model.find({ "$and": query });
 	try {
+		const estimatedCount = await req.Model.estimatedDocumentCount();
+		const result: Record<string, unknown> = {};
+		const { limit: effectiveLimit, limitCapped, filterExemption } = query_limits.enforceListLimit(
+			req,
+			estimatedCount,
+			res,
+			{ result, bodyQuery: sanitizedQuery }
+		);
 		let count = -1;
-		if (query_limits.shouldRunCount(req)) {
+		if (query_limits.shouldRunCount(req, { filterExemption, limitCapped })) {
 			count = await qcount.countDocuments();
 		}
-		const result: Record<string, unknown> = {};
 		if (count >= 0) {
 			result.count = count;
 		}
-		const estimatedCount = await req.Model.estimatedDocumentCount();
-		const effectiveLimit = query_limits.enforceListLimit(req, estimatedCount, res);
 		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
 		if (req.query.sort) {
 			q.sort(req.query.sort);
@@ -621,6 +658,15 @@ const actionQuery = async (req, res) => {
 		}
 		result.data = await q.exec();
 		response_sanitize.sanitizeListResult(result, getStripFields(req));
+		query_limits.finalizeListPagination(
+			result,
+			req,
+			Array.isArray(result.data) ? result.data.length : 0,
+			effectiveLimit,
+			count,
+			changeUrlParams
+		);
+		query_limits.enforceResponseSize(result, req, res);
 		res.result = result;
 		if (debug) console.timeEnd(opname);
 		res.json(result);
@@ -628,11 +674,16 @@ const actionQuery = async (req, res) => {
 		if (debug) console.timeEnd(opname);
 		if (
 			!(err instanceof errors.BadRequestError) &&
-			!(err instanceof errors.ForbiddenError)
+			!(err instanceof errors.ForbiddenError) &&
+			!(err instanceof errors.PayloadTooLargeError)
 		) {
 			logRequestError(req, res, err, "query");
 		}
-		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
+		if (
+			err instanceof errors.BadRequestError ||
+			err instanceof errors.ForbiddenError ||
+			err instanceof errors.PayloadTooLargeError
+		) {
 			throw err;
 		}
 		if (err.code) throw err;
@@ -1049,6 +1100,7 @@ const JXP = function (options: JXPConfig) {
 			default: 100,
 			require_limit_always: true,
 			skip_count_unless_paginated: true,
+			max_response_size: "10mb",
 		},
 		security: {
 			strip_fields: ["password"],

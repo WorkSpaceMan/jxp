@@ -131,6 +131,10 @@ export function loadJxpConfig(overrides: Partial<JXPConfig> = {}): JXPConfig {
 			default: envInt("QUERY_LIMITS_DEFAULT", 100),
 			require_limit_always: envBool("QUERY_LIMITS_REQUIRE_LIMIT_ALWAYS", true),
 			skip_count_unless_paginated: envBool("QUERY_LIMITS_SKIP_COUNT_UNLESS_PAGINATED", true),
+			max_response_size:
+				process.env.QUERY_LIMITS_MAX_RESPONSE_SIZE ||
+				process.env.QUERY_LIMITS_MAX_RESPONSE_BYTES ||
+				"10mb",
 		},
 		security: {
 			strip_fields: process.env.SECURITY_STRIP_FIELDS

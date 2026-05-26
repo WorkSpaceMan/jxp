@@ -19,6 +19,10 @@ export interface JXPQueryLimits {
 	require_limit_always?: boolean;
 	/** Skip countDocuments unless ?page= or ?count=true */
 	skip_count_unless_paginated?: boolean;
+	/** Max JSON/CSV response size (`10mb`, `512kb`, `10M`, or bytes as number); `0` disables */
+	max_response_size?: string | number;
+	/** @deprecated Use `max_response_size` (string or number) */
+	max_response_bytes?: string | number;
 }
 
 export interface JXPSecurityConfig {

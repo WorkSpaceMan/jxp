@@ -24,6 +24,8 @@ export interface JXPSchemaOptions {
 		enabled?: boolean;
 		large_collection_threshold?: number;
 		max?: number;
+		max_response_size?: string | number;
+		max_response_bytes?: string | number;
 	};
 	/** Static method names exposed via GET/POST /call/:modelname/:method_name */
 	callable_statics?: string[];

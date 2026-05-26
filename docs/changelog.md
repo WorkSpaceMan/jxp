@@ -2,6 +2,36 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v4.2.0 — 2026-05-26
+
+Query limit improvements: filter exemption on large collections, cap over-max limits instead of 400, and a response size guard.
+
+### Query limits
+
+#### Added
+
+- **Filter exemption** — Large collections (≥ `large_collection_threshold` docs) no longer require explicit `?limit=` when the client passes a non-empty **`?filter`** (GET/CSV) or a non-empty **`query`** object (POST `/query`). The default limit applies with pagination metadata.
+- **Response size limit** — `query_limits.max_response_size` (default **`10mb`**; env `QUERY_LIMITS_MAX_RESPONSE_SIZE`). Human-friendly sizes (`10mb`, `512kb`, `10M`) via the [`bytes`](https://www.npmjs.com/package/bytes) package. List, POST `/query`, and CSV exports return **413** when the serialized payload exceeds the limit. Numeric `max_response_bytes` remains supported for backward compatibility.
+- **`limit_capped`** — Present when the client `?limit=` was reduced to `max`.
+- **`has_more`** — Set when a full page was returned but total count is unknown (optimistic pagination).
+
+#### Changed
+
+- **`?limit=` above `max`** — Capped to `max` with pagination (was **400 Bad Request**).
+- **`shouldRunCount`** — Also runs when filter exemption or limit cap applies, so `count` / `next` are available for protected large responses.
+- **`query_limits.enforceListLimit`** — Returns `{ limit, limitCapped, filterExemption }`; logs **413** via `response_size` context.
+
+#### Migration
+
+| Scenario | v4.1.x | v4.2.0 |
+|----------|--------|--------|
+| Large collection, no filter, no `?limit=` | 400 | 400 (unchanged) |
+| Large collection + `?filter` / POST body `query` | 400 | 200 with default limit + pagination |
+| `?limit=` > max | 400 | 200 capped to `max`, `limit_capped: true` |
+| Response > 10 MiB | (no limit) | 413 |
+
+---
+
 ## v4.1.1 — 2026-05-25
 
 Bulk write authorization fixes (admins no longer need per-model opt-in) and structured request error logging for security guards (query limits, filters, aggregate, bulkwrite, auth).
@@ -37,7 +67,7 @@ Unexpected errors (non-4xx) still log a stack trace; expected `BadRequest` / `Fo
 
 #### Wired into
 
-- **`query_limits.enforceListLimit`** — missing limit on large collections, limit over max
+- **`query_limits.enforceListLimit`** — missing limit on large unfiltered collections; **`response_size`** — payload over `max_response_bytes`
 - **Filter parsing and `query_sanitize`** — denied operators, depth, regex
 - **POST `/query` and `/aggregate`** — model opt-in middleware, pipeline stage guard, invalid body
 - **POST `/bulkwrite`** — opt-in, `bulkAuth`, validation, Mongo errors
