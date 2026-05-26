@@ -13,7 +13,12 @@ import path from "path";
 import mongoose from "mongoose";
 import JXP = require("../libs/jxp");
 import { loadJxpConfig, getMongoConnectionString } from "../libs/load-config";
-import { printBanner, printBooting, printReady } from "../libs/startup";
+import {
+	fetchMongoServerVersion,
+	printBanner,
+	printBooting,
+	printReady,
+} from "../libs/startup";
 import pkg from "../../package.json";
 
 const apiconfig = loadJxpConfig();
@@ -81,6 +86,7 @@ mongoose.connect(connection_string, mongo_options);
 
 const db = mongoose.connection;
 let mongoConnectedAt: Date | null = null;
+let mongoVersion: string | undefined;
 let httpUrl: string | null = null;
 let readyPrinted = false;
 
@@ -91,7 +97,8 @@ db.on("error", (err) => {
 	}
 });
 
-db.once("open", () => {
+db.once("open", async () => {
+	mongoVersion = await fetchMongoServerVersion(db);
 	mongoConnectedAt = new Date();
 	maybePrintReady();
 });
@@ -136,6 +143,7 @@ function maybePrintReady(): void {
 		...startupCtx,
 		url: httpUrl,
 		mongooseVersion: mongoose.version,
+		mongoVersion,
 		mongoConnectedAt,
 	});
 }
