@@ -10,7 +10,9 @@ The schemas are based on Mongoose, so anything you can do with a [Mongoose schem
 
 ## Defining a schema
 
-Schemas are loaded from `MODEL_DIR` (default `./dist/models` on the sample server). Each file is named `<name>_model.js`. Each schema represents a collection in Mongo, with the Mongo collection name being the plural of the schema name. Eg. the data for `user_model.js` is stored in the `users` collection in Mongo.
+Schemas are loaded from `MODEL_DIR` (default `./dist/models` on the sample server). Each file is named `<name>_model.js`. JXP also ships **built-in** models (auth, `indexquerylog`, etc.) from the package when your app does not define them — see [Configuration — Built-in models](configuration.md#built-in-models). Set `internal: true` on schema options to hide a model from the docs API browser.
+
+Each schema represents a collection in Mongo, with the Mongo collection name being the plural of the schema name. Eg. the data for `user_model.js` is stored in the `users` collection in Mongo.
 
 A typical schema looks like `test_model.js` in your model directory:
 ```javascript

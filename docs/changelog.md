@@ -4,7 +4,42 @@ Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
 ## v4.2.0 — 2026-05-26
 
-Query limit improvements: filter exemption on large collections, cap over-max limits instead of 400, and a response size guard.
+Query limit improvements, index diagnostics (audit CLI, admin API, docs UI, query monitor), built-in framework models, and MongoDB version in the startup banner.
+
+### Index diagnostics
+
+#### Added
+
+- **Index audit** — Compare Mongoose schema indexes to MongoDB (`diffIndexes` / `syncIndexes`) across all loaded models. CLI: `npm run indexes` or **`jxp-indexes`** (`--json`, `--unused`, `--sync --confirm DROP_EXTRA_INDEXES`).
+- **Admin HTTP API** — `GET /diagnostics/indexes`, `GET /diagnostics/queries`, `POST /diagnostics/indexes/sync` (admin auth).
+- **Docs UI** — **`/docs/diagnostics`** (same sign-in as `/docs/api`): refresh audit, browse query log, sync indexes.
+- **Query monitor** — Samples read ops (`find`, `findOne`, `count`, etc.), runs `explain('executionStats')` on a clone (async), flags **alert** / **warn** plans. Dev on by default (`QUERY_INDEX_MONITOR=true`); production via `INDEX_DIAGNOSTICS_ENABLED=true` and `QUERY_INDEX_SAMPLE_RATE`.
+- **`IndexQueryLog` model** — Built-in MongoDB store with TTL (`INDEX_QUERY_LOG_RETENTION_DAYS`, default 30). In-memory ring buffer fallback. Log collection excluded from monitoring (no feedback loop).
+- **`index_diagnostics` config** — `JXP({ index_diagnostics: { enabled, query_monitor: { … } } })`; call `registerQueryIndexMonitor()` before models load (sample `server.ts` does this inside `JXP()`).
+- **Package exports** — `jxp/libs/index_diagnostics`, `jxp-indexes` bin.
+
+See [Index diagnostics](index_diagnostics.md).
+
+### Built-in models
+
+#### Added
+
+- **Package models** — When a slug is missing from `MODEL_DIR`, JXP loads from `dist/models` in the npm package: `user`, `apikey`, `token`, `refreshtoken`, `usergroups`, `indexquerylog`. App files always win.
+- **`JXP_BUILTIN_MODELS`** — `default` (all), comma list, or `none` to disable.
+- **`internal: true`** — Schema option to hide a model from the docs API browser model list.
+- **`jxp/libs/builtin_models`** — `loadAllModels`, `getJxpPackageRoot`, registry helpers.
+
+#### Changed
+
+- **`security` / `login` / `groups` / `setup`** — Resolve auth models from the pre-loaded registry instead of `require` per file from `MODEL_DIR`.
+- **Docs browser** — API overview lists **public** models only (built-ins with `internal: true` hidden).
+- **Schema link preload** — Side-effect `require` only (no `.default` read) to avoid circular load issues (e.g. User → User).
+
+### Startup
+
+#### Added
+
+- **MongoDB server version** — Fetched via `buildInfo` on connect and shown in the ready banner (`mongoVersion` in startup context).
 
 ### Query limits
 

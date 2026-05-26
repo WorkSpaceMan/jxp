@@ -13,6 +13,7 @@ nav:
   - Bulk Writes: bulk_writes.md
   - Queries: queries.md
   - Caching: caching.md
+  - Index diagnostics: index_diagnostics.md
   - Websocket: websocket.md
   - Special Features: special.md
   - Changelog: changelog.md

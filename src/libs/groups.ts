@@ -1,11 +1,10 @@
 const errors = require("restify-errors");
+const { getModelFromRegistry } = require("./builtin_models");
 
 let Groups = null;
 
-const init = config => {
-	const path = require("path");
-	const mod = require(path.join(config.model_dir, "usergroups_model"));
-	Groups = mod.default || mod;
+const init = (models, _config) => {
+	Groups = getModelFromRegistry(models, "usergroups");
 };
 
 const actionPut = async (req, res) => {

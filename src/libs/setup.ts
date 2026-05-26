@@ -1,15 +1,14 @@
 const rand_token = require("rand-token");
-const path = require("path");
 const errors = require("restify-errors");
 const security = require("./security");
 const ObjectID = require('mongodb').ObjectID;
+const { getModelFromRegistry } = require("./builtin_models");
 var User = null;
 const connection_string = require("./connection_string");
 
-const init = config => {
-	const mod = require(path.join(config.model_dir, "user_model"));
-	User = mod.default || mod;
-}
+const init = (models, _config) => {
+	User = getModelFromRegistry(models, "user");
+};
 
 const checkUserDoesNotExist = async () => {
 	try {

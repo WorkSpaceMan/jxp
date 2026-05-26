@@ -29,7 +29,11 @@ export function getDocsAccess(config: JXPConfig): DocsAccess {
 
 /** Routes that require a docs session (model browser + interactive API). */
 export function isProtectedDocsPath(pathname: string): boolean {
-	return pathname === "/docs/api" || pathname.startsWith("/docs/model/");
+	return (
+		pathname === "/docs/api" ||
+		pathname.startsWith("/docs/model/") ||
+		pathname === "/docs/diagnostics"
+	);
 }
 
 export function isDocsLoginPath(pathname: string): boolean {

@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const randToken = require("rand-token");
-const path = require("path");
 const errors = require("restify-errors");
+const { getModelFromRegistry } = require("./builtin_models");
 var APIKey = null;
 var Token = null;
 var Groups = null;
@@ -9,20 +9,15 @@ var User = null;
 var RefreshToken = null;
 var provider = "";
 
-const loadModel = (modelDir: string, file: string) => {
-	const mod = require(path.join(modelDir, file));
-	return mod.default || mod;
-};
-
 const bulkwrite_guard = require("./bulkwrite_guard");
 const { logRequestError } = require("./request_log");
 
-const init = function (config) {
-	APIKey = loadModel(config.model_dir, "apikey_model");
-	Groups = loadModel(config.model_dir, "usergroups_model.js");
-	User = loadModel(config.model_dir, "user_model");
-	Token = loadModel(config.model_dir, "token_model");
-	RefreshToken = loadModel(config.model_dir, "refreshtoken_model");
+const init = function (models, config) {
+	APIKey = getModelFromRegistry(models, "apikey");
+	Groups = getModelFromRegistry(models, "usergroups");
+	User = getModelFromRegistry(models, "user");
+	Token = getModelFromRegistry(models, "token");
+	RefreshToken = getModelFromRegistry(models, "refreshtoken");
 	if (config.url) provider = config.url;
 };
 

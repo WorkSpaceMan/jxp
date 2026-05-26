@@ -6,6 +6,11 @@ nav.docs-sidebar#docsSidebarDesktop(aria-label="Documentation navigation")
       - const file = Object.values(nav)[0]
       a.docs-nav-link(href="/docs/md/" + file class=(active_guide === file ? 'active' : ''))= label
   .docs-sidebar-section
+    .docs-sidebar-title Operations
+    a.docs-nav-link(href="/docs/diagnostics" class=(active_section === 'diagnostics' ? 'active' : ''))
+      i.bi.bi-speedometer2.me-1
+      | Index diagnostics
+  .docs-sidebar-section
     .docs-sidebar-title API
     a.docs-nav-link(href="/docs/api" class=(active_section === 'api' && !active_model ? 'active' : '')) Overview
     each model_name in model_list
@@ -23,6 +28,9 @@ nav.docs-sidebar#docsSidebarDesktop(aria-label="Documentation navigation")
         - const label = Object.keys(nav)[0]
         - const file = Object.values(nav)[0]
         a.docs-nav-link(href="/docs/md/" + file class=(active_guide === file ? 'active' : ''))= label
+    .docs-sidebar-section
+      .docs-sidebar-title Operations
+      a.docs-nav-link(href="/docs/diagnostics" class=(active_section === 'diagnostics' ? 'active' : '')) Index diagnostics
     .docs-sidebar-section
       .docs-sidebar-title API
       a.docs-nav-link(href="/docs/api" class=(active_section === 'api' && !active_model ? 'active' : '')) Overview

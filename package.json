@@ -39,6 +39,14 @@
 		},
 		"./types/jxp-config": {
 			"types": "./dist/types/jxp-config.d.ts"
+		},
+		"./libs/index_diagnostics": {
+			"types": "./dist/libs/index_diagnostics.d.ts",
+			"default": "./dist/libs/index_diagnostics.js"
+		},
+		"./libs/builtin_models": {
+			"types": "./dist/libs/builtin_models.d.ts",
+			"default": "./dist/libs/builtin_models.js"
 		}
 	},
 	"scripts": {
@@ -47,13 +55,15 @@
 		"prepare": "node -e \"require('fs').existsSync('src')&&require('child_process').execSync('npm run build',{stdio:'inherit'})\"",
 		"start": "node dist/bin/server.js",
 		"dev": "nodemon --watch src --ext ts --exec 'npm run build && node dist/bin/server.js'",
-		"test": "npm run build && mocha --require test/env.js test/bulkwrite_guard.test.js test/parse_byte_size.test.js test/query_limits.test.js test/request_log.test.js test/test.js --timeout 1000 -b --exit",
-		"setup": "node dist/bin/setup.js"
+		"test": "npm run build && mocha --require test/env.js test/builtin_models.test.js test/bulkwrite_guard.test.js test/index_diagnostics.test.js test/parse_byte_size.test.js test/query_limits.test.js test/request_log.test.js test/test.js --timeout 1000 -b --exit",
+		"setup": "node dist/bin/setup.js",
+		"indexes": "node dist/bin/index_audit.js"
 	},
 	"bin": {
 		"jxp": "dist/bin/setup.js",
 		"jxp-setup": "dist/bin/setup.js",
-		"jxp-add-admin": "dist/bin/init_db.js"
+		"jxp-add-admin": "dist/bin/init_db.js",
+		"jxp-indexes": "dist/bin/index_audit.js"
 	},
 	"repository": {
 		"type": "git",

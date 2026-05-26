@@ -1,0 +1,94 @@
+extends layout
+
+block content
+  h1.h3.mb-1 Index diagnostics
+  p.text-muted.mb-4
+    | Compare schema indexes to MongoDB, review slow-query samples, and sync indexes.
+    | Requires an 
+    strong admin
+    |  API key (filled automatically after docs sign-in, or paste into the top bar).
+
+  ul#diag-tabs.nav.nav-tabs(role="tablist")
+    li.nav-item(role="presentation")
+      button.nav-link.active#tab-indexes-btn(type="button" data-bs-toggle="tab" data-bs-target="#tab-indexes" role="tab") Indexes
+    li.nav-item(role="presentation")
+      button.nav-link#tab-queries-btn(type="button" data-bs-toggle="tab" data-bs-target="#tab-queries" role="tab") Query log
+
+  .tab-content.mt-3
+    #tab-indexes.tab-pane.fade.show.active(role="tabpanel")
+      .d-flex.flex-wrap.gap-2.mb-3
+        button#diag-refresh-indexes.btn.btn-primary.btn-sm(type="button")
+          i.bi.bi-arrow-clockwise.me-1
+          | Refresh audit
+        .form-check.form-check-inline.mb-0.align-self-center
+          input#diag-unused.form-check-input(type="checkbox")
+          label.form-check-label(for="diag-unused") Include unused ($indexStats)
+      #diag-indexes-status.small.text-muted.mb-2
+      #diag-indexes-summary
+      .table-responsive
+        table#diag-indexes-table.table.table-sm.table-hover.d-none
+          thead
+            tr
+              th Model
+              th Collection
+              th Status
+              th Missing
+              th Extra
+          tbody
+
+      hr.mt-4
+      h2.h5 Sync indexes
+      p.small.text-muted
+        | Creates indexes defined in Mongoose schemas and drops DB indexes not in the schema.
+        | Type 
+        code= sync_confirm
+        |  to confirm.
+      .row.g-2.align-items-end
+        .col-md-6
+          input#diag-sync-confirm.form-control.form-control-sm(type="text" placeholder=sync_confirm autocomplete="off")
+        .col-auto
+          button#diag-sync-btn.btn.btn-outline-danger.btn-sm(type="button" disabled) Sync indexes
+
+    #tab-queries.tab-pane.fade(role="tabpanel")
+      .d-flex.flex-wrap.gap-2.mb-3
+        button#diag-refresh-queries.btn.btn-primary.btn-sm(type="button")
+          i.bi.bi-arrow-clockwise.me-1
+          | Refresh log
+        select#diag-query-severity.form-select.form-select-sm(style="width:auto")
+          option(value="") All severities
+          option(value="alert") alert
+          option(value="warn") warn
+        .diag-model-filter(style="min-width:10rem;max-width:14rem")
+          input#diag-query-model.form-control.form-control-sm(
+            type="text"
+            list="diag-query-model-list"
+            placeholder="All models"
+            autocomplete="off"
+            aria-label="Filter by model"
+          )
+          datalist#diag-query-model-list
+            each opt in model_filter_options
+              option(value=opt.value)= opt.label
+      #diag-queries-status.small.text-muted.mb-2
+      #diag-monitor-config.small.mb-2
+      #diag-query-monitor-help.d-none
+      .table-responsive
+        table#diag-queries-table.table.table-sm.table-hover.d-none
+          thead
+            tr
+              th When
+              th Model
+              th Op
+              th Severity
+              th Docs examined
+              th Returned
+              th Scan
+              th Reason
+              th Filter
+          tbody
+
+block javascripts
+  script.
+    window.JXP_DIAG_SYNC_CONFIRM = !{JSON.stringify(sync_confirm)};
+    window.JXP_DIAG_MODEL_FILTER_OPTIONS = !{JSON.stringify(model_filter_options)};
+  script(src="/docs/assets/diagnostics.js" defer)

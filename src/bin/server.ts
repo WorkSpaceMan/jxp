@@ -13,6 +13,7 @@ import path from "path";
 import mongoose from "mongoose";
 import JXP = require("../libs/jxp");
 import { loadJxpConfig, getMongoConnectionString } from "../libs/load-config";
+import { registerQueryIndexMonitor } from "../libs/index_diagnostics";
 import {
 	fetchMongoServerVersion,
 	printBanner,
@@ -23,6 +24,8 @@ import pkg from "../../package.json";
 
 const apiconfig = loadJxpConfig();
 apiconfig.quiet_startup = true;
+
+registerQueryIndexMonitor(apiconfig.index_diagnostics);
 
 apiconfig.callbacks = {
 	post: function () {},

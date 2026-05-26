@@ -143,6 +143,17 @@ class Docs {
         return `${proto}://${host}`;
     }
 
+    isInternalModel(model: Model<unknown>): boolean {
+        const { isInternalModel: check } = require("./builtin_models");
+        return check(model);
+    }
+
+    publicModelList(): string[] {
+        return Object.keys(this.models)
+            .filter((slug) => !this.isInternalModel(this.models[slug]))
+            .sort();
+    }
+
     templateContext(req?: JXPRequest, extra: Record<string, unknown> = {}): Record<string, unknown> {
         const access = getDocsAccess(this.config);
         const session = req ? verifyDocsSession(req) : undefined;
@@ -166,7 +177,7 @@ class Docs {
         data.title = data.title || `${this.package.name} API Documentation`;
         data.name = this.package.name;
         data.version = this.package.version;
-        data.model_list = Object.keys(this.models).sort();
+        data.model_list = this.publicModelList();
         data.guide_nav = this.mkdocs.nav || [];
         data.active_section = data.active_section || "";
         data.active_guide = data.active_guide || "";
@@ -292,9 +303,36 @@ class Docs {
         }
     }
 
+    diagnostics(req, res, next) {
+        try {
+            const model_filter_options = Object.keys(this.models)
+                .sort()
+                .map((slug) => {
+                    const name = this.models[slug].modelName;
+                    const label =
+                        slug === name.toLowerCase() ? slug : `${slug} (${name})`;
+                    return { value: name, label };
+                });
+            this.renderTemplate(
+                res,
+                "diagnostics",
+                {
+                    active_section: "diagnostics",
+                    title: `Index diagnostics · ${this.package.name}`,
+                    sync_confirm: "DROP_EXTRA_INDEXES",
+                    model_filter_options,
+                },
+                req
+            );
+        } catch (err) {
+            console.error(err);
+            return next(new errors.InternalServerError(err.toString()));
+        }
+    }
+
     apiIndex(req, res, next) {
         try {
-            const model_summaries = Object.keys(this.models).sort().map(slug => {
+            const model_summaries = this.publicModelList().map(slug => {
                 const model = this.models[slug];
                 const perms = (model.schema as { opts?: { perms?: Record<string, string> } }).opts?.perms;
                 return {

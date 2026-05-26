@@ -99,9 +99,9 @@ class JXPSchema extends mongoose.Schema {
 			if (!def || typeof def !== "object" || !("link" in def) || !def.link) continue;
 			const virtual_name = def.map_to || def.virtual || String(def.link).toLowerCase();
 			if (!loaded_files.includes(def.link)) {
+				// Side-effect load only; do not read .default (circular models e.g. User → User).
 				// eslint-disable-next-line @typescript-eslint/no-require-imports
-				const linked = require(getModelFileFromRef(def.link));
-				void (linked.default || linked);
+				require(getModelFileFromRef(def.link));
 				loaded_files.push(def.link);
 			}
 			this.virtual(virtual_name, {

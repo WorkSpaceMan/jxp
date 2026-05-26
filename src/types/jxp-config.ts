@@ -56,6 +56,26 @@ export interface JXPCacheConfig {
 	ttl?: number;
 }
 
+export interface JXPQueryMonitorConfig {
+	enabled?: boolean;
+	/** 0–1; dev default 1.0, production default 0.02 */
+	sample_rate?: number;
+	min_docs_examined?: number;
+	docs_examined_ratio?: number;
+	small_collection_threshold?: number;
+	buffer_size?: number;
+}
+
+export interface JXPIndexDiagnosticsConfig {
+	enabled?: boolean;
+	query_monitor?: JXPQueryMonitorConfig;
+}
+
+export interface ResolvedIndexDiagnosticsConfig {
+	enabled: boolean;
+	query_monitor: Required<JXPQueryMonitorConfig>;
+}
+
 export interface JXPOAuthProviderConfig {
 	auth_uri: string;
 	token_uri: string;
@@ -92,6 +112,7 @@ export interface JXPConfig {
 	smtp_password?: string;
 	smtp_from?: string;
 	cache?: JXPCacheConfig;
+	index_diagnostics?: JXPIndexDiagnosticsConfig;
 	docs?: JXPDocsConfig;
 	login_rate_limit?: LoginRateLimitConfig;
 	cache_timeout?: string;

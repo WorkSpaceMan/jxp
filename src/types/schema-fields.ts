@@ -31,6 +31,8 @@ export interface JXPSchemaOptions {
 	callable_statics?: string[];
 	/** Opt out of HTTP advanced endpoints per model (default: query/aggregate on, bulkwrite off) */
 	advanced_queries?: JXPAdvancedQueries;
+	/** Framework model — hidden from docs API browser model list */
+	internal?: boolean;
 	[key: string]: unknown;
 }
 

@@ -29,6 +29,8 @@ const response_sanitize = require("./response_sanitize");
 const link_index = require("./link_index");
 const { safeErrorMessage } = require("./safe_error");
 const { logRequestError, logAndThrow } = require("./request_log");
+const index_diagnostics = require("./index_diagnostics");
+const builtin_models = require("./builtin_models");
 const schemaModule = require("./schema");
 global.JXPSchema = schemaModule.default || schemaModule;
 
@@ -1050,6 +1052,9 @@ const changeUrlParams = (req, key, val) => {
 };
 
 const JXP = function (options: JXPConfig) {
+	// Must run before models load; reads QUERY_INDEX_MONITOR / INDEX_DIAGNOSTICS_ENABLED from env
+	index_diagnostics.registerQueryIndexMonitor(options.index_diagnostics);
+
 	const server = restify.createServer();
 	const model_dir = options.model_dir || modeldir.findModelDir(path.dirname(process.argv[1]));
 	//Set up config with default
@@ -1135,22 +1140,15 @@ const JXP = function (options: JXPConfig) {
 	global.server = config.server;
 	global.model_dir = config.model_dir as string;
 
-	// Pre-load models
-	var files = fs.readdirSync(config.model_dir);
-	let modelnames = files.filter(function (fname) {
-		return fname.endsWith("_model.js");
-	});
-	modelnames.forEach(function (fname) {
-		var modelname = fname.replace("_model.js", "");
-		const mod = require(path.join(config.model_dir, fname));
-		models[modelname] = mod.default || mod;
-	});
+	// Pre-load app models, then jxp built-ins for any missing slugs
+	Object.assign(models, builtin_models.loadAllModels(config.model_dir as string));
+	index_diagnostics.wireQueryLogPersistence(models);
 	link_index.buildLinkIndex(models);
 
-	setup.init(config);
-	security.init(config);
-	login.init(config);
-	groups.init(config);
+	setup.init(models, config);
+	security.init(models, config);
+	login.init(models, config);
+	groups.init(models, config);
 	ws.init({ models });
 	cache.init(config);
 	const docs = new Docs({ config, models });
@@ -1412,6 +1410,7 @@ const JXP = function (options: JXPConfig) {
 	server.post("/docs/logout", docsAuth.logout);
 	server.get("/docs/assets/:file", docs.serveAsset.bind(docs));
 	server.get("/docs/api", docsAuth.docsAccessMiddleware, docs.apiIndex.bind(docs));
+	server.get("/docs/diagnostics", docsAuth.docsAccessMiddleware, docs.diagnostics.bind(docs));
 	server.get("/docs/md/:md_doc", docs.md.bind(docs));
 	server.get("/docs/model/:modelname", docsAuth.docsAccessMiddleware, docs.model.bind(docs));
 	server.get("/", docs.frontPage.bind(docs));
@@ -1432,6 +1431,79 @@ const JXP = function (options: JXPConfig) {
 	/* Cache */
 	server.get("/cache/stats", security.login, security.admin_only, cache.stats, outputJSON);
 	server.get("/cache/clear", security.login, security.admin_only, cache.clearAll, outputJSON);
+
+	/* Index diagnostics (admin) */
+	const actionDiagnosticsIndexes = async (req, res) => {
+		const refresh = req.query?.refresh === "true" || req.query?.refresh === "1";
+		const includeUnused = req.query?.unused === "true" || req.query?.unused === "1";
+		res.result = await index_diagnostics.getCachedIndexAudit(models, {
+			refresh: !!refresh,
+			includeUnused: !!includeUnused,
+		});
+	};
+
+	const actionDiagnosticsQueries = async (req, res) => {
+		const limit = parseInt(String(req.query?.limit ?? "50"), 10);
+		const skip = parseInt(String(req.query?.skip ?? "0"), 10);
+		const severity =
+			typeof req.query?.severity === "string" ? req.query.severity : undefined;
+		const modelRaw =
+			typeof req.query?.model === "string"
+				? req.query.model
+				: typeof req.query?.model_name === "string"
+					? req.query.model_name
+					: undefined;
+		const model_name = modelRaw
+			? builtin_models.resolveModelFilterName(models, modelRaw)
+			: undefined;
+		res.result = await index_diagnostics.listQueryLogs({
+			limit: Number.isFinite(limit) ? limit : 50,
+			skip: Number.isFinite(skip) ? skip : 0,
+			severity,
+			model_name,
+		});
+	};
+
+	const actionDiagnosticsIndexesSync = async (req, res) => {
+		const confirm =
+			typeof req.body?.confirm === "string"
+				? req.body.confirm
+				: typeof req.query?.confirm === "string"
+					? req.query.confirm
+					: undefined;
+		const who = res.user?.email || res.user?._id?.toString?.() || "unknown";
+		console.log(
+			`[index-diagnostics] sync requested by ${who} confirm=${confirm === index_diagnostics.SYNC_CONFIRM_PHRASE ? "ok" : "invalid"}`
+		);
+		try {
+			res.result = await index_diagnostics.syncAllModels(models, { confirm });
+		} catch (err) {
+			logRequestError(req, res, err, "diagnostics/indexes/sync");
+			throw err;
+		}
+	};
+
+	server.get(
+		"/diagnostics/indexes",
+		security.login,
+		security.admin_only,
+		actionDiagnosticsIndexes,
+		outputJSON
+	);
+	server.get(
+		"/diagnostics/queries",
+		security.login,
+		security.admin_only,
+		actionDiagnosticsQueries,
+		outputJSON
+	);
+	server.post(
+		"/diagnostics/indexes/sync",
+		security.login,
+		security.admin_only,
+		actionDiagnosticsIndexesSync,
+		outputJSON
+	);
 
 	return server;
 };

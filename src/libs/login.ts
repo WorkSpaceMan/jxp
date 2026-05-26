@@ -3,17 +3,11 @@ const bcrypt = require('bcryptjs');
 const security = require("../libs/security");
 const nodemailer = require('nodemailer');
 const errors = require("restify-errors");
-const path = require("path");
+const { getModelFromRegistry } = require("./builtin_models");
 let User = null;
 
-const loadModel = (modelDir: string, file: string) => {
-	const mod = require(path.join(modelDir, file));
-	return mod.default || mod;
-};
-
-var init = function (config) {
-	User = loadModel(config.model_dir, "user_model");
-	security.init(config);
+var init = function (models, _config) {
+	User = getModelFromRegistry(models, "user");
 };
 
 const recover = async (req, res) => {

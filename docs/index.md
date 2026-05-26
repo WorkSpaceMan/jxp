@@ -17,6 +17,7 @@ JXP 4 requires **Node.js 22+**, ships as compiled TypeScript, and uses environme
 * Hooks for business logic
 * Stateless and easy to deploy
 * WebSocket change subscriptions
+* [Index diagnostics](index_diagnostics.md) — schema vs DB indexes and optional query monitoring
 
 ## Links
 

@@ -87,6 +87,18 @@ When enabled, JXP uses an in-process cache ([node-cache](https://www.npmjs.com/p
 
 See [Caching](caching.md) for details.
 
+## Index diagnostics
+
+```
+INDEX_DIAGNOSTICS_ENABLED=false
+QUERY_INDEX_MONITOR=true
+QUERY_INDEX_SAMPLE_RATE=1.0
+```
+
+Admin endpoints (require admin login): `GET /diagnostics/indexes`, `GET /diagnostics/queries`, `POST /diagnostics/indexes/sync`. CLI: `npm run indexes` or `jxp-indexes`.
+
+See [Index diagnostics](index_diagnostics.md).
+
 ## Query limits
 
 ```
@@ -112,6 +124,32 @@ THROTTLE_JSON={"burst":100,"rate":50,"ip":true}
 JXP discovers models by scanning `MODEL_DIR` for `*_model.js`. You can also pass `model_dir` in the object given to `JXP(apiconfig)`.
 
 Relative `model_dir` paths resolve from `process.cwd()` (typical for npm scripts), not from the server script path.
+
+### Built-in models
+
+JXP ships framework models in the npm package (`dist/models`). If a slug is **missing** from your `MODEL_DIR`, JXP loads the built-in automatically (your app always wins when you provide the same `{slug}_model.js`):
+
+| Slug | Purpose |
+|------|---------|
+| `user` | Users / login |
+| `apikey` | API keys |
+| `token` | Access tokens |
+| `refreshtoken` | Refresh tokens |
+| `usergroups` | Group membership |
+| `indexquerylog` | Index diagnostics query log ([Index diagnostics](index_diagnostics.md)) |
+
+Optional:
+
+```
+# default — load all built-ins when missing
+# JXP_BUILTIN_MODELS=default
+
+# comma list, or none to disable
+# JXP_BUILTIN_MODELS=user,apikey,token
+# JXP_BUILTIN_MODELS=none
+```
+
+Schemas can set `internal: true` in schema options to hide a model from the docs API browser list (see [Schemas](schemas.md)).
 
 ## Programmatic config
 

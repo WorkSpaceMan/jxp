@@ -77,6 +77,13 @@ export function getRefreshTokenExpiry(): number {
 	return envInt("REFRESH_TOKEN_EXPIRY", 2678400);
 }
 
+/** TTL for IndexQueryLog documents (seconds). Default 30 days. */
+export function getIndexQueryLogRetentionSeconds(): number {
+	loadEnv();
+	const days = envInt("INDEX_QUERY_LOG_RETENTION_DAYS", 30);
+	return Math.max(1, days) * 86400;
+}
+
 /** Resolve model directory from env or global (set by JXP before models load). */
 export function getModelDirFromEnv(): string | undefined {
 	loadEnv();
