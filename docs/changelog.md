@@ -2,6 +2,41 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v5.0.0 — 2026-06-11
+
+Read-only **MCP (Model Context Protocol)** server embedded in JXP: five fixed tools, HTTP Streamable transport, stdio bridge for Cursor/LM Studio, and LLM guidance via server instructions plus a `jxp-guide` resource.
+
+### MCP server
+
+#### Added
+
+- **HTTP MCP endpoint** — `MCP_ENABLED=true` mounts `GET`/`POST` on `MCP_PATH` (default `/mcp`) on the same port as the REST API. Stateless Streamable HTTP (per-request transport).
+- **Five fixed read-only tools** — `jxp_list_models`, `jxp_describe_model`, `jxp_find`, `jxp_count`, `jxp_export_csv`. Reuses [`read_handlers`](src/libs/read_handlers.ts); same permissions as REST `GET`.
+- **Model visibility** — default-hide built-in auth models and `internal: true` schemas; `MCP_MODEL_WHITELIST` / `MCP_MODEL_BLACKLIST` env overrides.
+- **MCP query limits** — stricter overlay (`MCP_DEFAULT_LIMIT`, `MCP_MAX_LIMIT`, response/CSV caps, string truncation).
+- **LLM guidance** — server `instructions` on `initialize`; **`jxp-guide`** resource (`jxp://guide`) with built-in markdown plus app extensions via `JXPConfig.mcp` / `MCP_GUIDE_FILES`.
+- **`jxp-mcp` CLI** — stdio bridge (`dist/bin/mcp-stdio-bridge.js`) proxies tools, resources, and instructions to a remote HTTP MCP endpoint. Env: `JXP_URL`, `JXP_API_KEY`, optional `MCP_PATH`.
+- **Docs** — [MCP](mcp.md), `.env.sample` entries, Cursor rule `.cursor/rules/mcp.mdc`.
+
+#### Dependencies
+
+- `@modelcontextprotocol/server`, `@modelcontextprotocol/node`, `@modelcontextprotocol/client` (v2 alpha)
+- `zod`, `@cfworker/json-schema` (peer for MCP client)
+
+#### Migration
+
+| Topic | Action |
+|-------|--------|
+| Opt-in | MCP is **off** by default. Set `MCP_ENABLED=true` to expose `/mcp`. |
+| REST API | Unchanged when MCP is disabled. |
+| New deps | `npm install` pulls MCP packages; Node **22+** (unchanged). |
+| Cursor (HTTP) | `"url": "https://api.example.com/mcp"`, header `X-API-Key`. |
+| Cursor (stdio) | `"command": "npx", "args": ["-y", "jxp-mcp"]`, env `JXP_URL` + `JXP_API_KEY`. |
+
+`jxp-mcp` is **not** a separate npm package — it ships as a **bin entry on the `jxp` package** (`npx jxp-mcp` after `npm install jxp@5`). The bridge talks to a running JXP HTTP server; it does not embed the API.
+
+---
+
 ## v4.2.0 — 2026-05-26
 
 Query limit improvements, index diagnostics (audit CLI, admin API, docs UI, query monitor), built-in framework models, and MongoDB version in the startup banner.

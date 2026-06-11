@@ -11,6 +11,7 @@ var chaiHttp = require('chai-http');
 var should = chai.should();
 
 var init = require("./init");
+var mongoose = require("mongoose");
 
 var server = require("../dist/bin/server");
 
@@ -18,8 +19,33 @@ chai.use(chaiHttp);
 
 const pause = ms => new Promise(res => setTimeout(res, ms));
 
+function waitForMongo(timeoutMs) {
+	timeoutMs = timeoutMs || 15000;
+	return new Promise((resolve, reject) => {
+		if (mongoose.connection.readyState === 1) return resolve();
+		const timer = setTimeout(() => {
+			reject(
+				new Error(
+					`MongoDB not available (${process.env.MONGO_CONNECTION_STRING || "see MONGO_CONNECTION_STRING"}). ` +
+						"Start MongoDB before running integration tests."
+				)
+			);
+		}, timeoutMs);
+		mongoose.connection.once("open", () => {
+			clearTimeout(timer);
+			resolve();
+		});
+		mongoose.connection.once("error", (err) => {
+			clearTimeout(timer);
+			reject(err);
+		});
+	});
+}
+
 describe('Test', () => {
 	before(async function () {
+		this.timeout(15000);
+		await waitForMongo();
 		await init.init();
 	})
 
@@ -1684,6 +1710,125 @@ describe('Test', () => {
 					res.body.should.have.property("limit").eql(10);
 					done();
 				});
+		});
+	});
+
+	describe("MCP HTTP", function () {
+		this.timeout(15000);
+
+		var mcpAgent = null;
+
+		function testListenPort() {
+			return parseInt(process.env.PORT || "4005", 10);
+		}
+
+		function ensureListening(done) {
+			if (server.address()) return done();
+			const port = testListenPort();
+			server.once("error", (err) => {
+				if (err && err.code === "EADDRINUSE") return done();
+				done(err);
+			});
+			server.listen(port, "127.0.0.1", () => done());
+		}
+
+		function mcpUrl() {
+			const addr = server.address();
+			const port = addr ? addr.port : testListenPort();
+			const host =
+				addr && addr.address !== "0.0.0.0" && addr.address !== "::"
+					? addr.address
+					: "127.0.0.1";
+			return new URL("/mcp", `http://${host}:${port}/`);
+		}
+
+		before(function (done) {
+			ensureListening(() => {
+				mcpAgent = chai.request(server).keepOpen();
+				done();
+			});
+		});
+
+		after(function (done) {
+			if (mcpAgent) mcpAgent.close(done);
+			else done();
+		});
+
+		it("rejects unauthenticated MCP requests", (done) => {
+			mcpAgent
+				.post("/mcp")
+				.send({ jsonrpc: "2.0", method: "initialize", id: 1 })
+				.end((err, res) => {
+					res.should.have.status(401);
+					done();
+				});
+		});
+
+		it("lists fixed MCP tools", async () => {
+			const { Client, StreamableHTTPClientTransport } = await import("@modelcontextprotocol/client");
+			const client = new Client({ name: "jxp-test", version: "1.0.0" });
+			const transport = new StreamableHTTPClientTransport(mcpUrl(), {
+				requestInit: { headers: { "X-API-Key": apikey } },
+			});
+			await client.connect(transport);
+			const { tools } = await client.listTools();
+			const names = tools.map((t) => t.name).sort();
+			names.should.eql([
+				"jxp_count",
+				"jxp_describe_model",
+				"jxp_export_csv",
+				"jxp_find",
+				"jxp_list_models",
+			]);
+			await transport.close();
+		});
+
+		it("jxp_list_models hides apikey", async () => {
+			const { Client, StreamableHTTPClientTransport } = await import("@modelcontextprotocol/client");
+			const client = new Client({ name: "jxp-test", version: "1.0.0" });
+			const transport = new StreamableHTTPClientTransport(mcpUrl(), {
+				requestInit: { headers: { "X-API-Key": apikey } },
+			});
+			await client.connect(transport);
+			const result = await client.callTool({ name: "jxp_list_models", arguments: {} });
+			const text = result.content.find((c) => c.type === "text")?.text || "[]";
+			const models = JSON.parse(text);
+			const slugs = models.map((m) => m.slug);
+			slugs.should.include("test");
+			slugs.should.not.include("apikey");
+			await transport.close();
+		});
+
+		it("initialize returns server instructions", async () => {
+			const { Client, StreamableHTTPClientTransport } = await import("@modelcontextprotocol/client");
+			const client = new Client({ name: "jxp-test", version: "1.0.0" });
+			const transport = new StreamableHTTPClientTransport(mcpUrl(), {
+				requestInit: { headers: { "X-API-Key": apikey } },
+			});
+			await client.connect(transport);
+			const instructions = client.getInstructions();
+			instructions.should.be.a("string");
+			instructions.should.include("jxp_list_models");
+			instructions.should.include("jxp-guide");
+			instructions.should.include("Test MCP env instructions append");
+			await transport.close();
+		});
+
+		it("lists and reads jxp-guide resource", async () => {
+			const { Client, StreamableHTTPClientTransport } = await import("@modelcontextprotocol/client");
+			const client = new Client({ name: "jxp-test", version: "1.0.0" });
+			const transport = new StreamableHTTPClientTransport(mcpUrl(), {
+				requestInit: { headers: { "X-API-Key": apikey } },
+			});
+			await client.connect(transport);
+			const { resources } = await client.listResources();
+			const uris = resources.map((r) => r.uri);
+			uris.should.include("jxp://guide");
+			const { contents } = await client.readResource({ uri: "jxp://guide" });
+			const text = contents.map((c) => c.text || "").join("\n");
+			text.should.include("JXP MCP usage guide");
+			text.should.include("TEST_APP_GUIDE_MARKER");
+			await transport.close();
 		});
 	});
 });

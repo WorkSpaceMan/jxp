@@ -18,6 +18,7 @@ JXP 4 requires **Node.js 22+**, ships as compiled TypeScript, and uses environme
 * Stateless and easy to deploy
 * WebSocket change subscriptions
 * [Index diagnostics](index_diagnostics.md) — schema vs DB indexes and optional query monitoring
+* [MCP](mcp.md) — read-only Model Context Protocol for AI clients (Cursor, LM Studio); optional `jxp-mcp` stdio bridge
 
 ## Links
 

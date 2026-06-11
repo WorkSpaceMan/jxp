@@ -17,6 +17,7 @@ JXP is an opinionated RESTful API framework that lets you make an API just by de
 * Lightning-fast
 * Logging, done
 * Stateless
+* **MCP server** — read-only [Model Context Protocol](docs/mcp.md) tools for AI agents (Cursor, LM Studio) plus a built-in docs playground
 
 ## Quick Start
 
@@ -51,6 +52,7 @@ JXP 4 is implemented in TypeScript. See [docs/typescript.md](docs/typescript.md)
 * [Restful API](https://jxp.readthedocs.io/en/latest/api/)
 * [Roles and Permissions](https://jxp.readthedocs.io/en/latest/permissions/)
 * [Hooks](https://jxp.readthedocs.io/en/latest/hooks/)
+* [MCP (Model Context Protocol)](docs/mcp.md) — AI agent tools and docs playground
 * [Special Features](https://jxp.readthedocs.io/en/latest/special/)
 * [Changelog](https://jxp.readthedocs.io/en/latest/changelog/)
 * [Full docs](https://jxp.readthedocs.io/en/latest/)

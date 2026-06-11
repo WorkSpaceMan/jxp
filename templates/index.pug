@@ -11,6 +11,12 @@ block content
       if first_guide_url
         a.btn.btn-primary(href=first_guide_url) Get started
       a.btn.btn-outline-primary(href="/docs/api") Browse API
+      if mcp_enabled
+        a.btn.btn-outline-primary(href="/docs/mcp")
+          i.bi.bi-robot.me-1
+          | Ask MCP
+      else
+        a.btn.btn-outline-secondary(href="/docs/md/mcp.md") MCP setup
       a.btn.btn-outline-secondary(href="/docs/diagnostics") Index diagnostics
       a.btn.btn-outline-secondary(href="/docs/md/api.md") REST reference
 
@@ -35,6 +41,37 @@ block content
               |  panels on API resource pages. Keys are stored in the browser only when “Remember” is checked.
     .col-md-6
       .card.h-100
+        .card-header.fw-semibold
+          if mcp_enabled
+            | MCP for AI agents
+          else
+            | MCP (Model Context Protocol)
+        .card-body
+          if mcp_enabled
+            p.mb-2
+              | This server exposes read-only MCP tools at 
+              code= mcp_path
+              |  — use them from Cursor, LM Studio, or the built-in assistant.
+            pre.mb-3
+              code.
+                MCP_ENABLED=true
+                # Cursor: npx -y jxp-mcp
+            a.btn.btn-sm.btn-primary(href="/docs/mcp") Open MCP assistant
+            a.btn.btn-sm.btn-outline-secondary.ms-2(href="/docs/md/mcp.md") Setup guide
+          else
+            p.mb-2
+              | Enable 
+              code MCP_ENABLED=true 
+              |  to expose five fixed read-only tools (
+              code jxp_list_models
+              | , 
+              code jxp_find
+              | , …) for AI clients and a built-in docs playground.
+            a.btn.btn-sm.btn-outline-primary(href="/docs/md/mcp.md") Read MCP docs
+
+  .row.g-4.mb-4
+    .col-12
+      .card
         .card-header.fw-semibold API at a glance
         .card-body
           p.mb-2

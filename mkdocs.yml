@@ -16,5 +16,6 @@ nav:
   - Index diagnostics: index_diagnostics.md
   - Websocket: websocket.md
   - Special Features: special.md
+  - MCP: mcp.md
   - Changelog: changelog.md
 theme: readthedocs

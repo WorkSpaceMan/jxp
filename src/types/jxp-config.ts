@@ -71,6 +71,13 @@ export interface JXPIndexDiagnosticsConfig {
 	query_monitor?: JXPQueryMonitorConfig;
 }
 
+export interface JXPMcpConfig {
+	/** Appended after built-in MCP server instructions */
+	instructions?: string;
+	/** Markdown files merged after default.md (paths relative to cwd or absolute) */
+	guideFiles?: string[];
+}
+
 export interface ResolvedIndexDiagnosticsConfig {
 	enabled: boolean;
 	query_monitor: Required<JXPQueryMonitorConfig>;
@@ -144,6 +151,7 @@ export interface JXPConfig {
 	post_hooks?: {
 		login?: (req: JXPRequest, res: JXPResponse) => void | Promise<void>;
 	};
+	mcp?: JXPMcpConfig;
 }
 
 /** Restify request extended by JXP middleware. */

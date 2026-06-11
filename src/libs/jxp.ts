@@ -18,7 +18,6 @@ const ws = require("./ws");
 const modeldir = require("./modeldir");
 const query_manipulation = require("./query_manipulation");
 const corsMiddleware = require('restify-cors-middleware2');
-const { Parser: CsvParser } = require('@json2csv/plainjs');
 const cache = require("./cache");
 const query_limits = require("./query_limits");
 const query_sanitize = require("./query_sanitize");
@@ -31,6 +30,7 @@ const { safeErrorMessage } = require("./safe_error");
 const { logRequestError, logAndThrow } = require("./request_log");
 const index_diagnostics = require("./index_diagnostics");
 const builtin_models = require("./builtin_models");
+const read_handlers = require("./read_handlers");
 const schemaModule = require("./schema");
 global.JXPSchema = schemaModule.default || schemaModule;
 
@@ -143,20 +143,11 @@ const outputJSON = async (req, res) => {
 
 // Outputs whatever is in res.result as CSV
 const outputCSV = (req, res, next) => {
-	const opts = { "flatten": true };
 	if (!res.result.data) {
 		throw new errors.InternalServerError("Error generating CSV");
 	}
 	try {
-		const data = res.result.data.map(row => row._doc);
-		if (!data.length) {
-			throw ("")
-		}
-		res.writeHead(200, {
-			'Content-Type': 'text/csv',
-			'Content-Disposition': 'attachment; filename=export.csv'
-		});
-		const csv = new CsvParser(opts).parse(data);
+		const csv = read_handlers.resultToCsv(res.result);
 		const limits = query_limits.getLimits(req);
 		if (limits.max_response_bytes > 0) {
 			const size = Buffer.byteLength(csv, "utf8");
@@ -169,6 +160,10 @@ const outputCSV = (req, res, next) => {
 				throw err;
 			}
 		}
+		res.writeHead(200, {
+			"Content-Type": "text/csv",
+			"Content-Disposition": "attachment; filename=export.csv",
+		});
 		res.end(csv);
 		next();
 	} catch (err) {
@@ -183,131 +178,15 @@ const outputCSV = (req, res, next) => {
 const actionGet = async (req, res) => {
 	const opname = `get ${req.modelname} ${ops++}`;
 	console.time(opname);
-	let filters = {};
 	try {
-		filters = parseFilter(req.query.filter);
-		filters = query_sanitize.sanitizeFilter(filters, getSecurityOpts(req));
-	} catch (err) {
-		logRequestError(req, res, err, "filter");
-		if (err instanceof errors.BadRequestError) {
-			throw err;
-		}
-		if (err instanceof errors.ForbiddenError) {
-			throw err;
-		}
-		throw new errors.InternalServerError(safeErrorMessage(err));
-	}
-	const search = query_sanitize.parseSearchObject(req.query.search);
-	for (const i in search) {
-		filters[i] = search[i];
-	}
-	let countquery = filters;
-	let qcount = req.Model.find(filters);
-	let q = req.Model.find(filters);
-	let checkDeleted = [{ _deleted: false }, { _deleted: null }];
-	if (!req.query.showDeleted) {
-		countquery = Object.assign({ $or: checkDeleted }, countquery);
-		qcount.or(checkDeleted);
-		q.or(checkDeleted);
-	}
-	if (req.query.search) {
-		// console.log({ search: req.query.search });
-		q = req.Model.find({ $text: { $search: req.query.search } }, { score: { $meta: "textScore" } }).sort({ score: { $meta: "textScore" } });
-		countquery = Object.assign({ $text: { $search: req.query.search } }, countquery);
-		qcount = req.Model.find({ $text: { $search: req.query.search } });
-	}
-	if (res.user) {
-		q.options = ({ user: res.user });
-	}
-	try {
-		const estimatedCount = await req.Model.estimatedDocumentCount();
-		const result: Record<string, unknown> = {};
-		const { limit: effectiveLimit, limitCapped, filterExemption } = query_limits.enforceListLimit(
-			req,
-			estimatedCount,
-			res,
-			{ result, bodyQuery: filters }
-		);
-		let count = -1;
-		if (query_limits.shouldRunCount(req, { filterExemption, limitCapped })) {
-			if (estimatedCount < 100000 && Object.keys(countquery).length !== 0) {
-				count = await qcount.countDocuments();
-			} else {
-				count = estimatedCount;
-			}
-		}
-		if (count >= 0) {
-			result.count = count;
-		}
-		query_limits.applyListPagination(q, result, req, effectiveLimit, count >= 0 ? count : 0, changeUrlParams);
-		if (req.query.sort) {
-			q.sort(req.query.sort);
-			result.sort = req.query.sort;
-		}
-		if (req.query.populate) {
-			if ((typeof req.query.populate === "object") && !Array.isArray(req.query.populate)) {
-				for (let i in req.query.populate) {
-					q.populate(i, req.query.populate[i].replace(/,/g, " "));
-				}
-			} else {
-				q.populate(req.query.populate);
-			}
-			result.populate = req.query.populate;
-		}
 		if (req.query.autopopulate) {
 			res.header("jxp-autopopulate-warning", "expensive");
-			for (let key in req.Model.schema.paths) {
-				const dirpath = req.Model.schema.paths[key];
-				if (dirpath.instance == "ObjectID" && dirpath.options.link) {
-					q.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link.toLowerCase()));
-				}
-			}
-			result.autopopulate = true;
 		}
-		if (req.query.fields) {
-			const fields = req.query.fields.split(",");
-			const select = {};
-			fields.forEach(field => {
-				select[field] = 1;
-			});
-			q.select(select);
-		}
-		if (req.query.search) {
-			result.search = req.query.search;
-		}
-		result.data = await q.exec();
-		response_sanitize.sanitizeListResult(result, getStripFields(req));
-		query_limits.finalizeListPagination(
-			result,
-			req,
-			Array.isArray(result.data) ? result.data.length : 0,
-			effectiveLimit,
-			count,
-			changeUrlParams
-		);
-		query_limits.enforceResponseSize(result, req, res);
-		res.result = result;
+		await read_handlers.executeList(req, res);
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
 		if (debug) console.timeEnd(opname);
-		if (
-			!(err instanceof errors.BadRequestError) &&
-			!(err instanceof errors.ForbiddenError) &&
-			!(err instanceof errors.PayloadTooLargeError)
-		) {
-			logRequestError(req, res, err, "get");
-		}
-		if (err instanceof errors.BadRequestError) {
-			throw err;
-		}
-		if (err instanceof errors.ForbiddenError) {
-			throw err;
-		}
-		if (err instanceof errors.PayloadTooLargeError) {
-			throw err;
-		}
-		if (err.code) throw err;
-		throw new errors.InternalServerError(safeErrorMessage(err));
+		throw err;
 	}
 };
 
@@ -315,14 +194,11 @@ const actionGetOne = async (req, res) => {
 	const opname = `getOne ${req.modelname}/${req.params.item_id} ${ops++}`;
 	console.time(opname);
 	try {
-		const data = await getOne(req.Model, req.params.item_id, req.query, { user: res.user });
-		res.result = { data };
+		await read_handlers.executeGetOne(req, res);
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		logRequestError(req, res, err, "getOne");
 		if (debug) console.timeEnd(opname);
-		if (err.code) throw err;
-		throw new errors.InternalServerError(safeErrorMessage(err));
+		throw err;
 	}
 };
 
@@ -510,33 +386,12 @@ const actionDelete = async (req, res) => {
 const actionCount = async (req, res) => {
 	const opname = `count ${req.modelname} ${ops++}`;
 	console.time(opname);
-	let filters = {};
 	try {
-		filters = parseFilter(req.query.filter);
-		filters = query_sanitize.sanitizeFilter(filters, getSecurityOpts(req));
-	} catch (err) {
-		logRequestError(req, res, err, "filter");
-		if (err instanceof errors.BadRequestError || err instanceof errors.ForbiddenError) {
-			throw err;
-		}
-		throw new errors.InternalServerError(safeErrorMessage(err));
-	}
-	const search = query_sanitize.parseSearchObject(req.query.search);
-	for (const i in search) {
-		filters[i] = search[i];
-	}
-	if (!req.query.showDeleted) {
-		filters = Object.assign({ $or: [{ _deleted: false }, { _deleted: null }] }, filters);
-	}
-	try {
-		const count = await req.Model.countDocuments(filters).exec();
-		res.result = { count };
+		await read_handlers.executeCount(req, res);
 		if (debug) console.timeEnd(opname);
 	} catch (err) {
-		logRequestError(req, res, err, "count");
 		if (debug) console.timeEnd(opname);
-		if (err.code) throw err;
-		throw new errors.InternalServerError(safeErrorMessage(err));
+		throw err;
 	}
 };
 
@@ -808,161 +663,6 @@ const actionBulkWrite = async (req, res) => {
 
 
 // Utitlities
-
-const getOne = async (Model, item_id, params, options) => {
-	const query = Model.findById(item_id, {}, options);
-	if (params.populate) {
-		if ((typeof params.populate === "object") && !Array.isArray(params.populate)) {
-			for (let i in params.populate) {
-				query.populate(i, params.populate[i].replace(/,/g, " "));
-			}
-		} else {
-			query.populate(params.populate);
-		}
-	}
-	if (params.autopopulate) {
-		for (let key in Model.schema.paths) {
-			var dirpath = Model.schema.paths[key];
-			if (dirpath.instance == "ObjectID" && dirpath.options.link) {
-				query.populate(String(dirpath.options.map_to || dirpath.options.virtual || dirpath.options.link.toLowerCase()));
-			}
-		}
-	}
-	try {
-		var item = await query.exec();
-		if (!item) {
-			// console.error("Could not find document");
-			throw new errors.NotFoundError(`Could not find document ${item_id} on ${Model.modelName}`);
-		}
-		if (item._deleted && !params.showDeleted) {
-			// console.error("Document is deleted");
-			throw new errors.NotFoundError(`Document ${item_id} is deleted on ${Model.modelName}`);
-		}
-		return response_sanitize.sanitizeDocument(item);
-	} catch (err) {
-		if (err.code) throw err;
-		throw new errors.InternalServerError(safeErrorMessage(err));
-	}
-};
-
-// Helper function to check if a string is an ISO date string
-function isISODateString(str) {
-	if (typeof str !== 'string') return false;
-	const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
-	if (!isoDateRegex.test(str)) return false;
-	const date = new Date(str);
-	if (isNaN(date.getTime())) {
-		throw new errors.BadRequestError("Invalid date format");
-	}
-	return true;
-}
-
-const parseFilter = (filter, depth = 0) => {
-	const MAX_DEPTH = 10;
-
-	if (!filter) return {};
-	if (depth > MAX_DEPTH) {
-		throw new errors.BadRequestError("Maximum filter depth exceeded");
-	}
-
-	if (typeof filter !== "object" || filter === null) return filter;
-
-	// Handle arrays by merging their operators
-	if (Array.isArray(filter)) {
-		const result = {};
-		filter.forEach(item => {
-			if (typeof item === "string" && item.includes(":")) {
-				const parts = item.split(":");
-				const key = parts[0];
-				const value = parts.slice(1).join(":");
-				if (key.startsWith("$")) {
-					try {
-						if (isISODateString(value)) {
-							result[key] = new Date(value);
-						} else {
-							result[key] = value;
-						}
-					} catch (err) {
-						if (err instanceof errors.BadRequestError) {
-							throw err;
-						}
-						throw new errors.BadRequestError("Invalid date format");
-					}
-				}
-			}
-		});
-		return result;
-	}
-
-	// Create a new object to avoid modifying the input
-	const parsedFilter = {};
-
-	for (let i in filter) {
-		if (filter[i] === "false") {
-			parsedFilter[i] = false;
-			continue;
-		}
-		if (filter[i] === "true") {
-			parsedFilter[i] = true;
-			continue;
-		}
-		if (typeof filter[i] === "string") {
-			try {
-				if (isISODateString(filter[i])) {
-					parsedFilter[i] = new Date(filter[i]);
-					continue;
-				}
-			} catch (err) {
-				if (err instanceof errors.BadRequestError) {
-					throw err;
-				}
-				throw new errors.BadRequestError("Invalid date format");
-			}
-			if (filter[i].includes(":")) {
-				const parts = filter[i].split(":");
-				const key = parts[0];
-				const value = parts.slice(1).join(":");
-				if (key.startsWith("$")) {
-					try {
-						if (isISODateString(value)) {
-							if (!parsedFilter[i]) parsedFilter[i] = {};
-							parsedFilter[i][key] = new Date(value);
-						} else if (value.startsWith("[") && value.endsWith("]")) {
-							if (!parsedFilter[i]) parsedFilter[i] = {};
-							parsedFilter[i][key] = value.slice(1, -1).split(",");
-						} else if (key === "$regex" && value.startsWith("/")) {
-							if (!parsedFilter[i]) parsedFilter[i] = {};
-							const match = value.match(/^\/(.+?)\/([gimy]*)$/);
-							if (match) {
-								parsedFilter[i][key] = new RegExp(match[1], match[2]);
-							}
-						} else {
-							if (!parsedFilter[i]) parsedFilter[i] = {};
-							parsedFilter[i][key] = value;
-						}
-					} catch (err) {
-						if (err instanceof errors.BadRequestError) {
-							throw err;
-						}
-						throw new errors.BadRequestError("Invalid date format");
-					}
-				} else {
-					parsedFilter[i] = filter[i];
-				}
-			} else {
-				parsedFilter[i] = filter[i];
-			}
-		} else if (Array.isArray(filter[i])) {
-			parsedFilter[i] = parseFilter(filter[i], depth + 1);
-		} else if (typeof filter[i] === "object") {
-			parsedFilter[i] = parseFilter(filter[i], depth + 1);
-		} else {
-			parsedFilter[i] = filter[i];
-		}
-	}
-
-	return parsedFilter;
-};
 
 const _deSerialize = (data) => {
 	function assign(obj, keyPath, value) {
@@ -1410,6 +1110,8 @@ const JXP = function (options: JXPConfig) {
 	server.post("/docs/logout", docsAuth.logout);
 	server.get("/docs/assets/:file", docs.serveAsset.bind(docs));
 	server.get("/docs/api", docsAuth.docsAccessMiddleware, docs.apiIndex.bind(docs));
+	server.get("/docs/mcp", docsAuth.docsAccessMiddleware, docs.mcpPlayground.bind(docs));
+	server.post("/docs/mcp/call", docsAuth.docsAccessMiddleware, docs.mcpCall.bind(docs));
 	server.get("/docs/diagnostics", docsAuth.docsAccessMiddleware, docs.diagnostics.bind(docs));
 	server.get("/docs/md/:md_doc", docs.md.bind(docs));
 	server.get("/docs/model/:modelname", docsAuth.docsAccessMiddleware, docs.model.bind(docs));
@@ -1504,6 +1206,9 @@ const JXP = function (options: JXPConfig) {
 		actionDiagnosticsIndexesSync,
 		outputJSON
 	);
+
+	const { mountMcp } = require("./mcp/mount");
+	mountMcp(server, { config, models });
 
 	return server;
 };

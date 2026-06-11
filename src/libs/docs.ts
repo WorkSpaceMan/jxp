@@ -13,6 +13,10 @@ import errors from "restify-errors";
 import type { JXPConfig, JXPRequest } from "../types/jxp-config";
 import type { Model } from "mongoose";
 import { getDocsAccess, verifyDocsSession } from "./docs-auth";
+import { isMcpEnabled, getMcpConfig } from "./mcp/config";
+import { authenticateDocsMcpRequest } from "./mcp/docs_auth";
+import { executeMcpTool, isAllowedMcpTool } from "./mcp/execute_tool";
+import { serializeField } from "./schema_serialize";
 
 const readFile = util.promisify(fs.readFile);
 const packageRoot = path.join(__dirname, "../..");
@@ -30,6 +34,7 @@ const LANDING_FEATURES = [
     { title: "Schema-driven", description: "Add or change models by editing Mongoose schemas — the API updates automatically." },
     { title: "Permissions", description: "Per-model CRUD rules by user group, owner, and admin." },
     { title: "Hooks & logic", description: "pre/post hooks and custom handlers for business rules." },
+    { title: "MCP for AI agents", description: "Read-only Model Context Protocol tools on the same port — use with Cursor, LM Studio, or the built-in playground." },
 ];
 
 type EndpointDef = {
@@ -72,48 +77,6 @@ const buildEndpoints = (modelSlug: string): EndpointDef[] => {
             description: "Delete a document (soft-delete when configured).",
         },
     ];
-};
-
-// Helper function to safely serialize schema fields
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const serializeField = (field: any) => {
-    const safeField: Record<string, unknown> = {
-        path: field.path,
-        instance: field.instance,
-        options: { ...field.options },
-        validators: field.validators?.map(v => ({
-            type: v.type?.name,
-            message: v.message
-        })),
-        isRequired: field.isRequired
-    };
-
-    if (typeof field.defaultValue === 'function') {
-        safeField.defaultValue = '[Function]';
-    } else if (field.defaultValue === undefined && field.options.default !== undefined) {
-        if (typeof field.options.default === 'function') {
-            safeField.defaultValue = '[Function]';
-        } else {
-            safeField.defaultValue = field.options.default;
-        }
-    } else {
-        safeField.defaultValue = field.defaultValue;
-    }
-
-    if (field.instance === 'Array' && field.caster) {
-        safeField.arrayType = field.caster.instance;
-        if (Array.isArray(safeField.defaultValue)) {
-            safeField.defaultValue = JSON.stringify(safeField.defaultValue);
-        }
-    }
-    if (field.instance === 'Embedded' || field.instance === 'DocumentArray') {
-        safeField.schema = Object.keys(field.schema.paths).map(p => ({
-            path: p,
-            type: field.schema.paths[p].instance
-        }));
-    }
-
-    return safeField;
 };
 
 class Docs {
@@ -183,6 +146,16 @@ class Docs {
         data.active_guide = data.active_guide || "";
         data.active_model = data.active_model || "";
         data.first_guide_url = data.first_guide_url ?? this.getFirstGuideUrl();
+        data.mcp_enabled = isMcpEnabled();
+        data.mcp_path = getMcpConfig().path;
+        if (req) {
+            const baseUrl = (data.base_url as string | undefined) ?? this.getBaseUrl(req);
+            data.base_url = baseUrl;
+            data.mcp_url = (data.mcp_url as string | undefined) ?? `${baseUrl}${getMcpConfig().path}`;
+            data.mcp_server_slug =
+                (data.mcp_server_slug as string | undefined) ??
+                (this.package.name.replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase() || "jxp");
+        }
         const body = template(data);
         res.writeHead(200, {
             'Content-Length': Buffer.byteLength(body),
@@ -276,6 +249,74 @@ class Docs {
             console.error(err);
             return next(new errors.InternalServerError(err.toString()));
         }
+    }
+
+    mcpPlayground(req, res, next) {
+        try {
+            if (!isMcpEnabled()) {
+                return next(new errors.NotFoundError("MCP is not enabled on this server"));
+            }
+            const baseUrl = this.getBaseUrl(req);
+            const mcpPath = getMcpConfig().path;
+            const mcpUrl = `${baseUrl}${mcpPath}`;
+            const serverSlug =
+                this.package.name.replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase() || "jxp";
+            const mcpHttpJson = JSON.stringify(
+                {
+                    mcpServers: {
+                        [serverSlug]: {
+                            url: mcpUrl,
+                            headers: { "X-API-Key": "YOUR_API_KEY" },
+                        },
+                    },
+                },
+                null,
+                2
+            );
+            const mcpStdioJson = JSON.stringify(
+                {
+                    mcpServers: {
+                        [serverSlug]: {
+                            command: "npx",
+                            args: ["-y", "jxp-mcp"],
+                            env: { JXP_URL: baseUrl, JXP_API_KEY: "YOUR_API_KEY" },
+                        },
+                    },
+                },
+                null,
+                2
+            );
+            this.renderTemplate(res, "mcp", {
+                active_section: "mcp",
+                title: `MCP assistant · ${this.package.name}`,
+                mcp_path: mcpPath,
+                mcp_url: mcpUrl,
+                base_url: baseUrl,
+                mcp_server_slug: serverSlug,
+                mcp_http_json: mcpHttpJson,
+                mcp_stdio_json: mcpStdioJson,
+            }, req);
+        } catch (err) {
+            console.error(err);
+            return next(new errors.InternalServerError(err.toString()));
+        }
+    }
+
+    async mcpCall(req, res) {
+        if (!isMcpEnabled()) {
+            throw new errors.NotFoundError("MCP is not enabled");
+        }
+        const name = String(req.body?.name ?? "").trim();
+        if (!name || !isAllowedMcpTool(name)) {
+            throw new errors.BadRequestError("Invalid MCP tool name");
+        }
+        const args =
+            req.body?.arguments && typeof req.body.arguments === "object" && !Array.isArray(req.body.arguments)
+                ? (req.body.arguments as Record<string, unknown>)
+                : {};
+        const auth = await authenticateDocsMcpRequest(req);
+        const result = await executeMcpTool(name, args, this.config, this.models, auth);
+        res.send(result);
     }
 
     md(req, res, next) {

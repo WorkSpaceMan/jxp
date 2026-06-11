@@ -1,0 +1,39 @@
+---
+description: JXP MCP server design constraints (read-only v1, fixed tools, env config)
+globs:
+  - src/libs/mcp/**
+  - src/bin/mcp-stdio-bridge.ts
+  - docs/mcp.md
+  - test/mcp*.test.js
+---
+
+# JXP MCP
+
+## Non-negotiables
+
+- **Fixed tool surface** — exactly five tools, always: `jxp_list_models`, `jxp_describe_model`, `jxp_find`, `jxp_count`, `jxp_export_csv`. Never register per-model or dynamic tools (breaks Cursor/LM Studio).
+- **Fixed guide resource** — exactly one MCP resource: `jxp-guide` (`jxp://guide`). Full markdown guide; apps extend via `JXPConfig.mcp.guideFiles` / `MCP_GUIDE_FILES`, not extra resources.
+- **Server instructions** — short workflow text on `initialize`; built in [`guides.ts`](src/libs/mcp/guides.ts); apps append via `JXPConfig.mcp.instructions` / `MCP_INSTRUCTIONS_APPEND`.
+- **Read-only v1** — no create/update/delete tools; reuse [`read_handlers.ts`](src/libs/read_handlers.ts), do not duplicate query logic in tool handlers.
+- **Config via `MCP_*` env** — not schema options in v1. Document changes in [`.env.sample`](.env.sample) and [`docs/mcp.md`](docs/mcp.md).
+- **Visibility** — caller must have read permission; default-hide builtins + `internal: true`; `MCP_MODEL_BLACKLIST` always wins; `MCP_MODEL_WHITELIST` only overrides default-hide (never grants perms).
+- **Limits** — MCP `query_limits` overlay must stay stricter than HTTP defaults (`MCP_DEFAULT_LIMIT`, `MCP_MAX_LIMIT`, `MCP_MAX_RESPONSE_SIZE`, `MCP_MAX_CSV_SIZE`, string truncation).
+- **Auth** — per-request API key (`X-API-Key` or Bearer); use [`mcp/auth.ts`](src/libs/mcp/auth.ts) + `mcpAuthStorage` AsyncLocalStorage in HTTP handlers.
+- **stdio bridge** — [`mcp-stdio-bridge.ts`](src/bin/mcp-stdio-bridge.ts) proxies tools, resources, and instructions to HTTP; never duplicate tool implementations.
+
+## Where to change what
+
+| Change | File |
+|--------|------|
+| Env / limits | `src/libs/mcp/config.ts` |
+| Instructions / guide merge | `src/libs/mcp/guides.ts`, `src/libs/mcp/guides/default.md` |
+| Model visibility | `src/libs/mcp/model_visibility.ts` |
+| Tool + resource registration | `src/libs/mcp/server.ts` |
+| Restify mount | `src/libs/mcp/mount.ts` |
+| Read path | `src/libs/read_handlers.ts` (shared with REST) |
+| Wire-in | `src/libs/jxp.ts` → `mountMcp()` |
+| App project guide | `{app}/mcp/guide.md` + `JXPConfig.mcp` in `bin/server.ts` |
+
+## Tests
+
+Run `npm test` after MCP changes. Guides: `test/mcp_guides.test.js`. Visibility: `test/mcp_visibility.test.js`. HTTP + MCP client: `test/test.js` (`MCP HTTP` describe; `MCP_ENABLED=true` in `.env.test`).

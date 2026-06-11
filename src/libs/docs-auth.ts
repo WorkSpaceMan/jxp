@@ -31,8 +31,10 @@ export function getDocsAccess(config: JXPConfig): DocsAccess {
 export function isProtectedDocsPath(pathname: string): boolean {
 	return (
 		pathname === "/docs/api" ||
+		pathname === "/docs/mcp" ||
 		pathname.startsWith("/docs/model/") ||
-		pathname === "/docs/diagnostics"
+		pathname === "/docs/diagnostics" ||
+		pathname === "/docs/mcp/call"
 	);
 }
 
@@ -211,6 +213,6 @@ export function logDocsAccessMode(config: JXPConfig): void {
 	} else if (access === "public") {
 		console.log("API docs browser: public (no login for model explorer)");
 	} else {
-		console.log("API docs browser: protected (login required for /docs/api and /docs/model/*)");
+		console.log("API docs browser: protected (login required for /docs/api, /docs/mcp, and /docs/model/*)");
 	}
 }

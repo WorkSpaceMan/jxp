@@ -1,0 +1,112 @@
+extends layout
+
+block content
+  h1.mb-1 MCP assistant
+  p.text-muted.mb-4
+    | Connect Cursor or LM Studio to this API, then try the playground below.
+
+  .card.mb-4.mcp-setup-card(
+    data-mcp-url=mcp_url
+    data-base-url=base_url
+    data-mcp-path=mcp_path
+    data-server-slug=mcp_server_slug
+  )
+    .card-header.fw-semibold
+      i.bi.bi-plug.me-1
+      | Add to your MCP config
+    .card-body
+      p.mb-2
+        | Merge into 
+        code mcp.json
+        |  (Cursor: 
+        strong Cursor Settings → MCP
+        | ; LM Studio: server settings). Your API key is filled in from your session.
+      ul.nav.nav-tabs#mcpConfigTabs(role="tablist")
+        li.nav-item(role="presentation")
+          button.nav-link.active#mcp-http-tab(data-bs-toggle="tab" data-bs-target="#mcp-http-pane" type="button" role="tab" aria-controls="mcp-http-pane" aria-selected="true") Cursor / HTTP
+        li.nav-item(role="presentation")
+          button.nav-link#mcp-stdio-tab(data-bs-toggle="tab" data-bs-target="#mcp-stdio-pane" type="button" role="tab" aria-controls="mcp-stdio-pane" aria-selected="false") stdio (jxp-mcp)
+      .tab-content.border.border-top-0.rounded-bottom.p-3.bg-light#mcpConfigTabContent
+        .tab-pane.fade.show.active#mcp-http-pane(role="tabpanel" aria-labelledby="mcp-http-tab" tabindex="0")
+          p.small.text-muted.mb-2 Recommended for Cursor — receives server instructions on connect.
+          .position-relative
+            pre.mcp-json-block.mb-2#mcpJsonHttp(data-config="http")= mcp_http_json
+            button.btn.btn-sm.btn-outline-secondary.mcp-copy-btn(type="button" data-target="mcpJsonHttp")
+              i.bi.bi-clipboard.me-1
+              | Copy
+        .tab-pane.fade#mcp-stdio-pane(role="tabpanel" aria-labelledby="mcp-stdio-tab" tabindex="0")
+          p.small.text-muted.mb-2 Uses 
+            code npx jxp-mcp
+            |  to proxy stdio → HTTP (tools, resources, instructions).
+          .position-relative
+            pre.mcp-json-block.mb-2#mcpJsonStdio(data-config="stdio")= mcp_stdio_json
+            button.btn.btn-sm.btn-outline-secondary.mcp-copy-btn(type="button" data-target="mcpJsonStdio")
+              i.bi.bi-clipboard.me-1
+              | Copy
+      p.small.text-muted.mb-0.mt-3
+        | HTTP endpoint: 
+        code= mcp_url
+        |  · 
+        a(href="/docs/md/mcp.md") Full MCP docs
+
+  h2.h5.mb-3 Try it here
+  p.text-muted.mb-3.small
+    | Same read-only tools and permissions as 
+    code GET /api
+    | . Commands below call 
+    code POST /docs/mcp/call
+    |  with your signed-in key.
+
+  .mcp-chat-wrap
+    .mcp-chat-thread#mcpChatThread(role="log" aria-live="polite" aria-label="MCP conversation")
+      .mcp-msg.mcp-msg-bot
+        .mcp-msg-label Assistant
+        .mcp-msg-body
+          p.mb-2 Ask about your data — or try:
+          ul.small.mb-0
+            li
+              code list models
+            li
+              code describe MODEL
+            li
+              code count MODEL
+            li
+              code find MODEL limit=5
+            li
+              code help
+
+    .mcp-chat-input-wrap
+      .d-flex.flex-wrap.gap-2.mb-2
+        each action in [{label: 'List models', cmd: 'list models'}, {label: 'Help', cmd: 'help'}]
+          button.btn.btn-sm.btn-outline-secondary.mcp-quick-btn(type="button" data-cmd=action.cmd)= action.label
+      form#mcpChatForm
+        .input-group
+          input#mcpChatInput.form-control(type="text" placeholder="Ask about your data…" autocomplete="off" aria-label="MCP message")
+          button.btn.btn-primary(type="submit")
+            i.bi.bi-send-fill.me-1
+            | Send
+
+  details.mt-4
+    summary.fw-semibold Advanced — call a tool directly
+    p.small.text-muted.mt-2 Pick a tool and pass JSON arguments (same as Cursor/LM Studio MCP clients).
+    .mcp-tool-panel.mt-2
+      .row.g-2.mb-2
+        .col-md-4
+          label.form-label.small.fw-semibold Tool
+          select#mcpToolSelect.form-select.form-select-sm
+            option(value="jxp_list_models") jxp_list_models
+            option(value="jxp_describe_model") jxp_describe_model
+            option(value="jxp_find") jxp_find
+            option(value="jxp_count") jxp_count
+            option(value="jxp_export_csv") jxp_export_csv
+        .col-md-8
+          label.form-label.small.fw-semibold Arguments (JSON)
+          textarea#mcpToolArgs.form-control.form-control-sm.font-monospace(rows="4") {}
+      button.btn.btn-sm.btn-outline-primary#mcpToolRun(type="button")
+        i.bi.bi-play-fill.me-1
+        | Run tool
+
+block javascripts
+  script.
+    window.__MCP_SETUP__ = !{JSON.stringify({ mcpUrl: mcp_url || '', baseUrl: base_url || '', mcpPath: mcp_path || '/mcp', serverSlug: mcp_server_slug || 'jxp' })};
+  script(src="/docs/assets/mcp-console.js" defer)

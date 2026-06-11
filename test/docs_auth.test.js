@@ -60,6 +60,8 @@ describe("docs_auth", () => {
 	describe("isProtectedDocsPath", () => {
 		it("only gates model explorer routes", () => {
 			expect(docsAuth.isProtectedDocsPath("/docs/api")).to.be.true;
+			expect(docsAuth.isProtectedDocsPath("/docs/mcp")).to.be.true;
+			expect(docsAuth.isProtectedDocsPath("/docs/mcp/call")).to.be.true;
 			expect(docsAuth.isProtectedDocsPath("/docs/model/user")).to.be.true;
 			expect(docsAuth.isProtectedDocsPath("/")).to.be.false;
 			expect(docsAuth.isProtectedDocsPath("/docs/md/api.md")).to.be.false;

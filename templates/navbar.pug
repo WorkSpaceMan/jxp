@@ -7,6 +7,8 @@ header.docs-topbar.navbar.navbar-expand-lg.sticky-top
     .ms-auto.d-flex.align-items-center.gap-2.flex-wrap
       if docs_access === 'protected' && !docs_authenticated
         a.btn.btn-sm.btn-outline-primary(href="/docs/login?next=/docs/api") Explore API
+        if mcp_enabled
+          a.btn.btn-sm.btn-outline-primary(href="/docs/login?next=/docs/mcp") Ask MCP
       if docs_access !== 'disabled' && (docs_access !== 'protected' || docs_authenticated)
         .docs-api-key-wrap
           label.visually-hidden(for="docs-api-key") API Key

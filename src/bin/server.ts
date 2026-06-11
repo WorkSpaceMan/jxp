@@ -133,8 +133,9 @@ setInterval(() => {
 const server = JXP(apiconfig);
 
 let port = process.env.NODE_DOCKER_PORT || process.env.PORT || String(apiconfig.port || 4001);
+const listenHost = process.env.NODE_ENV === "test" ? "127.0.0.1" : undefined;
 if (process.env.NODE_ENV === "test") port = "4005";
-server.listen(parseInt(String(port), 10), function () {
+server.listen(parseInt(String(port), 10), listenHost, function () {
 	httpUrl = server.url;
 	maybePrintReady();
 });
