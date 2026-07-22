@@ -2,6 +2,19 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v5.0.2 — 2026-07-22
+
+### Changed
+
+- **Dependencies** — bump runtime and tooling packages: MCP SDK packages to `2.0.0-beta.5`, `jxp-helper` to `^2.0.0`, `commander` 15, `dotenv` 17, `glob` 13, `js-yaml` 5, `nodemailer` 9, `mongoose` `6.13.10`, TypeScript `^5.9.3`, and other patch/minor updates. Drop obsolete `@types/bcryptjs` (types ship with `bcryptjs`).
+- **`jxp-helper` v2** — use named `JXPHelper` import and pass required `{ server, apikey }` into the constructor when both globals are set.
+
+### Notes
+
+- Mongoose remains on the **6.x** line (not 9.x) for compatibility with the current stack.
+
+---
+
 ## v5.0.1 — 2026-07-22
 
 ### Fixed

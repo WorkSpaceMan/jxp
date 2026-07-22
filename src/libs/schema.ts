@@ -1,6 +1,6 @@
 import mongoose, { type Model, type SchemaDefinition } from "mongoose";
 import path from "path";
-import JXPHelper = require("jxp-helper");
+import { JXPHelper } from "jxp-helper";
 import modeldir = require("./modeldir");
 import { getModelDirFromEnv } from "./load-config";
 import type { JXPDefinition, JXPSchemaOptions } from "../types/schema-fields";
@@ -55,11 +55,10 @@ class JXPSchema extends mongoose.Schema {
 			definition
 		);
 		if (!global.jxphelper) {
-			const jxp_settings: { apikey?: string; server?: string } = {};
-			if (global.apikey) jxp_settings.apikey = global.apikey;
-			if (global.server) jxp_settings.server = global.server;
-			if (jxp_settings.apikey && jxp_settings.server) {
-				global.jxphelper = new JXPHelper(jxp_settings);
+			const apikey = global.apikey;
+			const server = global.server;
+			if (apikey && server) {
+				global.jxphelper = new JXPHelper({ apikey, server });
 			}
 		}
 		super(definition as SchemaDefinition, opts);
