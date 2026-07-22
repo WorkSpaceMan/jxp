@@ -1,14 +1,14 @@
 {
 	"compilerOptions": {
 		"target": "ES2022",
-		"module": "CommonJS",
+		"module": "nodenext",
 		"lib": ["ES2022"],
 		"strict": false,
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"resolveJsonModule": true,
-		"moduleResolution": "node",
+		"moduleResolution": "nodenext",
 		"moduleDetection": "force",
 		"rootDir": "src",
 		"outDir": "dist",
