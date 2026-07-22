@@ -1,7 +1,7 @@
 {
 	"name": "jxp",
 	"description": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-	"version": "5.0.0",
+	"version": "5.0.1",
 	"private": false,
 	"main": "dist/libs/jxp.js",
 	"types": "dist/libs/jxp.d.ts",
@@ -55,7 +55,7 @@
 		"prepare": "node -e \"require('fs').existsSync('src')&&require('child_process').execSync('npm run build',{stdio:'inherit'})\"",
 		"start": "node dist/bin/server.js",
 		"dev": "nodemon --watch src --ext ts --exec 'npm run build && node dist/bin/server.js'",
-		"test": "npm run build && mocha --require test/env.js test/builtin_models.test.js test/bulkwrite_guard.test.js test/index_diagnostics.test.js test/mcp_guides.test.js test/mcp_visibility.test.js test/parse_byte_size.test.js test/query_limits.test.js test/request_log.test.js test/test.js --timeout 1000 -b --exit",
+		"test": "npm run build && mocha --require test/env.js test/builtin_models.test.js test/bulkwrite_guard.test.js test/index_diagnostics.test.js test/mcp_guides.test.js test/mcp_visibility.test.js test/parse_byte_size.test.js test/query_limits.test.js test/request_log.test.js test/schema_description.test.js test/test.js --timeout 1000 -b --exit",
 		"setup": "node dist/bin/setup.js",
 		"indexes": "node dist/bin/index_audit.js"
 	},

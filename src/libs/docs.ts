@@ -199,7 +199,7 @@ class Docs {
 
     async metaModels(req, res) {
         try {
-            const models = await getModelFileContents(this.config.model_dir);
+            const models = await getModelFileContents(this.config.model_dir, this.models);
             res.send(models);
         } catch (err) {
             console.error(err);

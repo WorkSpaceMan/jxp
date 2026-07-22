@@ -27,7 +27,7 @@ const call_guard = require("./call_guard");
 const response_sanitize = require("./response_sanitize");
 const link_index = require("./link_index");
 const { safeErrorMessage } = require("./safe_error");
-const { logRequestError, logAndThrow } = require("./request_log");
+const { logRequestError, logAndThrow, sanitizeRequestUrl } = require("./request_log");
 const index_diagnostics = require("./index_diagnostics");
 const builtin_models = require("./builtin_models");
 const read_handlers = require("./read_handlers");
@@ -39,6 +39,17 @@ var models = {};
 var ops = 0;
 
 var debug = false;
+
+const SAFE_COMBINED_LOG_FORMAT =
+	':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" ' +
+	':status :res[content-length] ":safe-referrer" ":user-agent"';
+
+morgan.token("safe-url", (req) =>
+	sanitizeRequestUrl(req.originalUrl || req.url || "")
+);
+morgan.token("safe-referrer", (req) =>
+	sanitizeRequestUrl(req.headers?.referer || req.headers?.referrer || "-")
+);
 
 const USER_PRIVILEGE_FIELDS = ["admin", "password", "groups"];
 
@@ -870,7 +881,7 @@ const JXP = function (options: JXPConfig) {
 	}
 
 	var accessLogStream = fs.createWriteStream(config.log, { flags: "a" });
-	server.use(morgan("combined", { stream: accessLogStream }));
+	server.use(morgan(SAFE_COMBINED_LOG_FORMAT, { stream: accessLogStream }));
 
 	// CORS
 	const corsOrigins = config.cors?.origins?.length ? config.cors.origins : ["*"];

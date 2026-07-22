@@ -2,6 +2,19 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v5.0.1 — 2026-07-22
+
+### Fixed
+
+- **Schema metadata (`GET /model`)** — stop deleting `require.cache` and re-compiling model files when listing schemas. Prefer the already-loaded JXP model registry (and Mongoose registry by normalized name) so underscore-separated filenames such as `whitebeard_customer_model.js` no longer trigger `OverwriteModelError` on later requests (e.g. segment `/call` after docs metadata).
+- **`MODEL_DIR` resolution** — `getModelDirFromEnv()` prefers `global.model_dir` (set from `JXPConfig.model_dir`) over a stale `MODEL_DIR` environment variable.
+
+### Security
+
+- **Access and error logs** — redact `apikey`, `api_key`, and `x-api-key` query values from Morgan access logs (URL and referrer) and from structured `request_log` summaries so credentials are not written to disk.
+
+---
+
 ## v5.0.0 — 2026-06-11
 
 Read-only **MCP (Model Context Protocol)** server embedded in JXP: five fixed tools, HTTP Streamable transport, stdio bridge for Cursor/LM Studio, and LLM guidance via server instructions plus a `jxp-guide` resource.

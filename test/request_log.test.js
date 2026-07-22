@@ -4,6 +4,7 @@ const {
 	requestQueryHints,
 	requestClientInfo,
 	clientIp,
+	sanitizeRequestUrl,
 	authHint,
 	summarizeBulkBody,
 	summarizeAggregatePipeline,
@@ -19,6 +20,28 @@ describe("request_log", () => {
 		expect(s).to.include("model=whitebeard_customer");
 		expect(s).to.include("user=admin@example.com");
 		expect(s).to.include("admin");
+	});
+
+	it("redacts API keys from request URLs", () => {
+		const url =
+			"/call/segment/preview_segment?apikey=test-secret&limit=5&API_KEY=other-secret";
+		const sanitized = sanitizeRequestUrl(url);
+
+		expect(sanitized).to.equal(
+			"/call/segment/preview_segment?apikey=[REDACTED]&limit=5&API_KEY=[REDACTED]"
+		);
+		expect(sanitized).not.to.include("test-secret");
+		expect(sanitized).not.to.include("other-secret");
+	});
+
+	it("redacts API keys from error request summaries", () => {
+		const s = requestSummary({
+			method: "POST",
+			url: "/call/segment/preview_segment?apikey=test-secret",
+		});
+
+		expect(s).to.include("apikey=[REDACTED]");
+		expect(s).not.to.include("test-secret");
 	});
 
 	it("summarizes bulk operation types", () => {

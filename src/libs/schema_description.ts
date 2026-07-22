@@ -2,7 +2,35 @@ const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
 
-const getModelFileContents = (model_dir) => {
+type ModelRegistry = Record<string, {
+    modelName?: string;
+    schema?: { get(name: string): unknown };
+}>;
+
+function normalizeModelName(name: string): string {
+    return name.replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function resolveLoadedModel(modelname: string, filePath: string, models: ModelRegistry) {
+    if (models[modelname]) return models[modelname];
+
+    const cached = require.cache[require.resolve(filePath)]?.exports;
+    if (cached) return cached.default || cached;
+
+    const normalized = normalizeModelName(modelname);
+    const registered = Object.values(mongoose.models).find(
+        (model: { modelName?: string }) =>
+            model.modelName && normalizeModelName(model.modelName) === normalized
+    );
+    if (registered) return registered;
+
+    // Model files are normally preloaded by JXP. This fallback supports callers
+    // that use schema_description directly without mutating the module cache.
+    const loaded = require(filePath);
+    return loaded.default || loaded;
+}
+
+const getModelFileContents = (model_dir, registeredModels: ModelRegistry = {}) => {
     return new Promise((resolve, reject) => {
         try {
             fs.readdir(model_dir, function (err, files) {
@@ -28,25 +56,12 @@ const getModelFileContents = (model_dir) => {
                 for (const file of modelFiles) {
                     const modelname = path.basename(file, ".js").replace("_model", "");
                     try {
-                        // Try to get the model from mongoose first
-                        let modelobj;
-                        try {
-                            // Convert modelname to proper case for mongoose (first letter uppercase)
-                            const modelKey = modelname.charAt(0).toUpperCase() + modelname.slice(1);
-                            modelobj = mongoose.models[modelKey];
-
-                            // If model doesn't exist in mongoose, try to load it from file
-                            if (!modelobj) {
-                                const filePath = path.join(model_dir, file);
-                                delete require.cache[require.resolve(filePath)];
-                                modelobj = require(filePath);
-                            }
-                        } catch (e) {
-                            // If getting from mongoose fails, try loading from file
-                            const filePath = path.join(model_dir, file);
-                            delete require.cache[require.resolve(filePath)];
-                            modelobj = require(filePath);
-                        }
+                        const filePath = path.join(model_dir, file);
+                        const modelobj = resolveLoadedModel(
+                            modelname,
+                            filePath,
+                            registeredModels
+                        );
 
                         // Check if we have a valid model with schema and permissions
                         if (modelobj && modelobj.schema) {
@@ -65,11 +80,9 @@ const getModelFileContents = (model_dir) => {
                         errors.push(`Invalid model structure for ${modelname}`);
 
                     } catch (error) {
-                        // Only add to errors if it's not an OverwriteModelError
-                        if (!error.message.includes('Cannot overwrite')) {
-                            errors.push(`Error with model ${modelname}: ${error.message}`);
-                            console.error(`Error processing model ${modelname}:`, error);
-                        }
+                        const message = error instanceof Error ? error.message : String(error);
+                        errors.push(`Error with model ${modelname}: ${message}`);
+                        console.error(`Error processing model ${modelname}:`, error);
                     }
                 }
 

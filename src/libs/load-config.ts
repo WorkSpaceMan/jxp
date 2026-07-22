@@ -84,10 +84,10 @@ export function getIndexQueryLogRetentionSeconds(): number {
 	return Math.max(1, days) * 86400;
 }
 
-/** Resolve model directory from env or global (set by JXP before models load). */
+/** Resolve model directory from global (JXP config) or env. */
 export function getModelDirFromEnv(): string | undefined {
 	loadEnv();
-	return process.env.MODEL_DIR || global.model_dir;
+	return global.model_dir || process.env.MODEL_DIR;
 }
 
 /**

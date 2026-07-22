@@ -55,6 +55,14 @@ function truncate(value: string, max = 120): string {
 	return `${oneLine.slice(0, max - 1)}…`;
 }
 
+/** Redact API credentials from relative or absolute URLs before logging. */
+export function sanitizeRequestUrl(value: string): string {
+	return String(value).replace(
+		/([?&](?:apikey|api_key|x-api-key)=)[^&#]*/gi,
+		"$1[REDACTED]"
+	);
+}
+
 /** How the request authenticated (no secrets logged). */
 export function authHint(req: ReqLike): string | undefined {
 	if (req.query?.apikey) return "apikey-query";
@@ -167,7 +175,7 @@ function summarizeRequestDetail(req: ReqLike): string | undefined {
 
 export function requestSummary(req: ReqLike, res?: ResLike): string {
 	const method = req.method || "?";
-	const path = req.url || req.path || "?";
+	const path = sanitizeRequestUrl(req.url || req.path || "?");
 	const bits = [`${method} ${path}`];
 	const model = req.modelname || req.params?.modelname;
 	if (model) bits.push(`model=${model}`);
@@ -227,6 +235,7 @@ export function logAndThrow(
 module.exports = {
 	filterLogUser,
 	clientIp,
+	sanitizeRequestUrl,
 	authHint,
 	requestClientInfo,
 	requestSummary,
