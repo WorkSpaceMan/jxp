@@ -1,7 +1,7 @@
 {
 	"name": "jxp",
 	"description": "An opinionated RESTful API library based on Mongoose and Restify. Make an API by just writing Mongoose models.",
-	"version": "5.0.2",
+	"version": "5.0.3",
 	"private": false,
 	"main": "dist/libs/jxp.js",
 	"types": "dist/libs/jxp.d.ts",
@@ -130,9 +130,11 @@
 		"node": ">=22.0.0"
 	},
 	"overrides": {
+		"@hono/node-server": "^2.0.5",
 		"find-my-way": "^8.2.2",
 		"send": "^0.19.0",
 		"serialize-javascript": "^7.0.5",
-		"diff": "^8.0.3"
+		"diff": "^8.0.3",
+		"uuid": "^11.1.1"
 	}
 }
