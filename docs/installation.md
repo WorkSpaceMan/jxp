@@ -42,6 +42,20 @@ Then include in your project:
 
 `const JXP = require("jxp")`
 
+### Align your `mongoose` version with JXP
+
+JXP depends on `mongoose` and loads built-in models (for example `apikey`) through that copy. Your app typically calls `mongoose.connect()` using its own `mongoose` dependency.
+
+If the two versions differ — even a patch difference such as `6.13.9` vs `6.13.10` — Node resolves **two separate Mongoose instances**. The app connection succeeds on one instance, while JXP queries run on the other and buffer until they time out:
+
+```text
+MongooseError: Operation `apikeys.findOne()` buffering timed out after 10000ms
+```
+
+**Fix:** pin your app's `mongoose` to the same version JXP declares (see `jxp`'s `package.json`), then reinstall. With pnpm/npm you can confirm a single resolution with `pnpm list mongoose` / `npm ls mongoose`.
+
+When developing against a local JXP clone (`npm link` / app `link:jxp`), also share one `mongoose` install between the app and the clone (symlink the app's `node_modules/mongoose` into the clone) so both sides use the connected instance.
+
 ## Setup
 
 NOTE: All the `/setup` endpoints will only run if the user table is empty to ensure that you can't overwrite an existing installation.
