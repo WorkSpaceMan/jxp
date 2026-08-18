@@ -870,6 +870,98 @@ describe('Test', () => {
 					});
 			});
 		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate $in of ObjectId() strings", (done) => {
+				var query = [
+					{
+						$match: {
+							"_id": { $in: [`ObjectId("${objectid}")`] }
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+					.post("/aggregate/test")
+					.auth(init.email, init.password)
+					.send({ query })
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("count");
+						res.body.data[0].count.should.eql(1);
+						done();
+					});
+			});
+		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate query with a $oid wrapper", (done) => {
+				var query = [
+					{
+						$match: {
+							"_id": { "$oid": objectid }
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+					.post("/aggregate/test")
+					.auth(init.email, init.password)
+					.send({ query })
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("count");
+						res.body.data[0].count.should.eql(1);
+						done();
+					});
+			});
+		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate $in of $oid wrappers", (done) => {
+				var query = [
+					{
+						$match: {
+							"_id": { $in: [{ "$oid": objectid }] }
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+					.post("/aggregate/test")
+					.auth(init.email, init.password)
+					.send({ query })
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("count");
+						res.body.data[0].count.should.eql(1);
+						done();
+					});
+			});
+		});
+		describe("/POST aggregate", () => {
+			it("it should POST an aggregate query with a $date wrapper", (done) => {
+				var query = [
+					{
+						$match: {
+							"date_field": { "$gte": { "$date": "2024-03-20T00:00:00.000Z" } }
+						}
+					},
+					{ $group: { _id: null, count: { $sum: 1 } } }
+				];
+				chai.request(server)
+					.post("/aggregate/test")
+					.auth(init.email, init.password)
+					.send({ query })
+					.end((err, res) => {
+						res.should.have.status(200);
+						res.body.data.should.be.an('array');
+						res.body.data[0].should.have.property("count");
+						res.body.data[0].count.should.be.gte(1);
+						done();
+					});
+			});
+		});
 		describe("/POST aggregate allowDiskUse", () => {
 			it("it should POST an aggregate query with allowDiskUse", (done) => {
 				var query = [

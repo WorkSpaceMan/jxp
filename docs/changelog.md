@@ -2,6 +2,26 @@
 
 Notable changes to [JXP](https://github.com/WorkSpaceMan/jxp).
 
+## v5.1.0 — 2026-08-18
+
+### Fixed
+
+- **Aggregate `ObjectId()` / `new Date()` / `relative_date()` in `$in`** — `fix_query` now rewrites only string leaves. Previously it stringified arrays, so `$in: ["ObjectId(\"<id>\")", …]` matched the first id and collapsed `$in` to a scalar. Mongo then failed with `$in needs an array`. Single-value `ObjectId("…")` matches were already correct. See [Aggregations](aggregations.md#aggregations-with-objectids).
+
+### Added
+
+- **Typed aggregate literals** — aggregate pipelines now accept limited Extended JSON-style wrappers: `{ "$oid": "…" }` for ObjectIds and `{ "$date": "…" }` for dates. Legacy `ObjectId("…")`, `new Date("…")`, and `relative_date(…)` strings remain supported for backward compatibility.
+
+---
+
+## v5.0.3 — 2026-07-22
+
+### Changed
+
+- **Packaging** — silence npm install warnings and a TypeScript compile warning. No API change.
+
+---
+
 ## v5.0.2 — 2026-07-22
 
 ### Changed

@@ -33,19 +33,42 @@ const fix_params = s => {
     return s.split(",").map(i => i.trim().replace(/\"/g, "")).map(i => (i === "null") ? null : i);
 }
 
+const convert_literal_object = val => {
+    if (!val || typeof val !== "object" || Array.isArray(val)) return null;
+    const keys = Object.keys(val);
+    if (keys.length !== 1) return null;
+    if (keys[0] === "$oid" && typeof val.$oid === "string") {
+        return ObjectId(val.$oid);
+    }
+    if (keys[0] === "$date" && typeof val.$date === "string") {
+        return new Date(val.$date);
+    }
+    return null;
+}
+
 const fix_query = query => {
     const cleaned = traverse(query).map(function (this: { update: (v: unknown, keep?: boolean) => void }, val: unknown) {
-        const date_parts = /^(new Date\(\")([\d\.\-\+zZT\:]*)(\"\))/g.exec(String(val));
+        const literal = convert_literal_object(val);
+        if (literal) {
+            this.update(literal, true);
+            return;
+        }
+        // Only rewrite string leaves. Stringifying arrays (e.g. `$in: [ObjectId("…"), …]`)
+        // matches the ObjectId regex on the first element and collapses `$in` to a scalar.
+        if (typeof val !== "string") return;
+        const date_parts = /^(new Date\(\")([\d\.\-\+zZT\:]*)(\"\))/g.exec(val);
         if (date_parts) {
             const newval = new Date(date_parts[2]);
             this.update(newval, true);
+            return;
         }
-        const objectid_parts = /^(ObjectId\(\")([a-zA-Z\d]*)(\"\))/g.exec(String(val));
+        const objectid_parts = /^(ObjectId\(\")([a-zA-Z\d]*)(\"\))/g.exec(val);
         if (objectid_parts) {
             const newval = ObjectId(objectid_parts[2]);
             this.update(newval, true);
+            return;
         }
-        const startof_parts = /^(relative_date\()(.*)(\))/g.exec(String(val));
+        const startof_parts = /^(relative_date\()(.*)(\))/g.exec(val);
         if (startof_parts) {
             const params = fix_params(startof_parts[2]);
             const newval = relative_date.apply(null, params);

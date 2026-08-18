@@ -36,23 +36,42 @@ POST the pipeline as a **JSON array**, or wrap it in a `"query"` property. Both 
 
 ### Aggregations with ObjectIds
 
-Because we can't define ObjectIds in our aggregate functions, we need to send the ObjectIds as strings and then convert them in the pipeline.
+Because HTTP JSON cannot carry Mongo ObjectIds as native values, JXP accepts a limited Extended JSON-style wrapper and converts it before execution.
 
-There are two ways of doing this. We can embed `"ObjectId(\"<your object id>\")"` or you can convert in the pipeline. Embedding will be faster on execution.
-
-Embedding:
+Recommended form:
 
 ```json
 {
     "query": [
         {
             "$match": {
-                "campaign_id": "ObjectId(\"5fd45d05f2b93af8d59588fb\")"
+                "campaign_id": { "$oid": "5fd45d05f2b93af8d59588fb" }
             }
         }
     ]
 }
 ```
+
+`$in` of ObjectIds:
+
+```json
+{
+    "query": [
+        {
+            "$match": {
+                "_id": {
+                    "$in": [
+                        { "$oid": "5fd45d05f2b93af8d59588fb" },
+                        { "$oid": "5fd45d05f2b93af8d59588fc" }
+                    ]
+                }
+            }
+        }
+    ]
+}
+```
+
+Backward compatibility: legacy string forms such as `"ObjectId(\"<your object id>\")"` are still accepted. Typed wrappers are clearer and avoid overloading ordinary strings.
 
 Using a pipeline to add a field:
 
@@ -81,11 +100,9 @@ Using a pipeline to add a field:
 
 ### Aggregations with dates
 
-Because we can't define Date objects in our aggregate functions, we need to send the dates as strings and then convert them in the pipeline.
+Because HTTP JSON cannot carry Date values as native objects, JXP also accepts a limited Extended JSON-style wrapper for dates.
 
-There are two ways of doing this. We can embed `"new Date(\"<your date>\")"` or you can convert in the pipeline. Embedding will be faster on execution.
-
-Embedding:
+Recommended form:
 
 ```json
 {
@@ -93,13 +110,15 @@ Embedding:
         {
             "$match": {
                 "timestamp": {
-                    "$gte": "new Date(\"2021-03-03T00:00:00.0Z\")"
+                    "$gte": { "$date": "2021-03-03T00:00:00.0Z" }
                 }
             }
         }
     ]
 }
 ```
+
+Backward compatibility: legacy string forms such as `"new Date(\"<your date>\")"` are still accepted. As with ObjectIds, wrappers can be used as field values or as `$in` elements.
 
 Using a pipeline to add a date field:
 
